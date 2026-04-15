@@ -55,7 +55,7 @@ export class SelectExpression<TE extends object = any, T = unknown> implements I
             return this.selects;
         }
 
-        if (this.distinct) {
+        if (this.distinct || this.isAggregated) {
             return Enumerable.from(this.relationColumns).union(this.resolvedSelects);
         }
 
@@ -144,6 +144,7 @@ export class SelectExpression<TE extends object = any, T = unknown> implements I
         }
     }
     public distinct: boolean;
+    public isAggregated: boolean;
 
     //#region Properties
     private _entity: IEntityExpression<TE>;
@@ -362,6 +363,7 @@ export class SelectExpression<TE extends object = any, T = unknown> implements I
         });
 
         clone.distinct = this.distinct;
+        clone.isAggregated = this.isAggregated;
         clone.where = resolveClone(this.where, replaceMap);
         clone.paramExps = this.paramExps.map((o) => replaceMap.has(o) ? replaceMap.get(o) as SqlParameterExpression : o);
         Object.assign(clone.paging, this.paging);
@@ -380,7 +382,7 @@ export class SelectExpression<TE extends object = any, T = unknown> implements I
         return this.entity;
     }
     public hashCode() {
-        let code: number = hashCode("MAP", hashCode(this.entity.name, this.distinct ? 1 : 0));
+        let code: number = hashCode("MAP", hashCode(this.entity.name, this.distinct || this.isAggregated ? 1 : 0));
         code = hashCodeAdd(code, Enumerable.from(this.selects).map((o) => o.hashCode()).sum());
         if (this.where) {
             code = hashCodeAdd(this.where.hashCode(), code);

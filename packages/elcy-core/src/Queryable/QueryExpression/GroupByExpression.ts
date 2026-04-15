@@ -111,7 +111,7 @@ export class GroupByExpression<TE extends object = object, K = unknown, T = unkn
         return this.itemSelect.relationColumns;
     }
     public override get projectedColumns(): IEnumerable<IColumnExpression> {
-        if (this.isAggregate) {
+        if (this.isAggregated) {
             return Enumerable.from(this.relationColumns).union(this.resolvedSelects);
         }
         return this.itemSelect.projectedColumns;
@@ -134,7 +134,7 @@ export class GroupByExpression<TE extends object = object, K = unknown, T = unkn
 
     public override get resolvedIncludes(): IEnumerable<IncludeRelation<TE>> {
         let includes = super.resolvedIncludes;
-        if (!this.isAggregate && this.keyRelation) {
+        if (!this.isAggregated && this.keyRelation) {
             if (this.keyRelation.isEmbedded) {
                 includes = Enumerable.from(this.keyRelation.child.resolvedIncludes).union(includes);
             }
@@ -152,7 +152,7 @@ export class GroupByExpression<TE extends object = object, K = unknown, T = unkn
         return join;
     }
     public override get resolvedSelects(): IEnumerable<IColumnExpression> {
-        let selects = Enumerable.from(this.isAggregate ? this.selects : this.itemSelect.selects);
+        let selects = Enumerable.from(this.isAggregated ? this.selects : this.itemSelect.selects);
         for (const include of this.includes) {
             if (include.isEmbedded) {
                 const cloneMap = new Map();
@@ -230,7 +230,6 @@ export class GroupByExpression<TE extends object = object, K = unknown, T = unkn
     }
 
     public having: IExpression<boolean>;
-    public isAggregate: boolean;
     public readonly itemSelect: GroupedExpression<TE, K, T>;
     public keyRelation: IncludeRelation<TE, any>;
     public addKeyRelation<TChild extends object>(child: SelectExpression<TChild>, relation: IExpression<boolean>, type?: RelationshipType): IncludeRelation<TE, TChild> {
@@ -253,11 +252,11 @@ export class GroupByExpression<TE extends object = object, K = unknown, T = unkn
         clone.having = resolveClone(this.having, replaceMap);
         clone.selects = this.selects.map((o) => resolveClone(o, replaceMap));
         clone.itemExpression = resolveClone(this.itemExpression, replaceMap);
-        clone.isAggregate = this.isAggregate;
+        clone.isAggregated = this.isAggregated;
         return clone;
     }
     public override getItemExpression() {
-        if (this.isAggregate) {
+        if (this.isAggregated) {
             return this.itemSelect.getItemExpression();
         }
         return this.itemSelect;

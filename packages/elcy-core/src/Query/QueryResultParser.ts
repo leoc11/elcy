@@ -60,7 +60,7 @@ class SelectExpressionParserFactory<TE extends object, T> {
     public readonly itemSelectExp: SelectExpression<TE, T>;
     constructor(public readonly selectExp: SelectExpression<TE, T>) {
         this.itemSelectExp = selectExp;
-        if (selectExp instanceof GroupByExpression && !selectExp.isAggregate) {
+        if (selectExp instanceof GroupByExpression && !selectExp.isAggregated) {
             this.itemSelectExp = selectExp.itemSelect;
         }
 
@@ -231,7 +231,7 @@ class SelectExpressionParserFactory<TE extends object, T> {
         const source = Enumerable.from(queryResult.rows)[Symbol.iterator]();
         const context = this;
         const selectExp = this.selectExp;
-        const isGroup = this.selectExp instanceof GroupByExpression && !this.selectExp.isAggregate;
+        const isGroup = this.selectExp instanceof GroupByExpression && !this.selectExp.isAggregated;
         const generator = function* (dbContext: DbContext, parseMap: Map<SelectExpression, ParserFunction>, id?: Record<string, ValueType>) {
             let idKey = isNull(id) ? "" : getRelationKey(id, Object.keys(id));
             if (Array.isArray(groupedDataMap.get(idKey))) {

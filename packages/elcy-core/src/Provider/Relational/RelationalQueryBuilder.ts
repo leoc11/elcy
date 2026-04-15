@@ -648,10 +648,10 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         let result = "";
         if (sqlExp.orders.length <= 0) {
             if (sqlExp.distinct) {
-                result += `${this.newLine()}ORDER BY ${this.toString(sqlExp.projectedColumns.find(o => true))}`;
+                result += `${this.newLine()}ORDER BY ${this.toString(sqlExp.projectedColumns.find(o => true), param)}`;
             }
             else {
-                result += `${this.newLine()}ORDER BY (SELECT NULL)`;
+                result += `${this.newLine()}ORDER BY ${this.toString(sqlExp.entity.primaryColumns.find(o => true), param)}`;
             }
         }
         if (sqlExp.paging.skip) {
@@ -848,10 +848,10 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
 
         const entityQ = this.getEntityQueryString(selectExp.entity, context);
 
-        if (selectExp instanceof GroupByExpression && !selectExp.isAggregate && selectExp.having && !Enumerable.from(selectExp.joins).ofType(HavingJoinRelation).some()) {
+        if (selectExp instanceof GroupByExpression && !selectExp.isAggregated && selectExp.having && !Enumerable.from(selectExp.joins).ofType(HavingJoinRelation).some()) {
             const clone = selectExp.clone();
             clone.entity.alias = "rel_" + clone.entity.alias;
-            clone.isAggregate = true;
+            clone.isAggregated = true;
             clone.distinct = true;
             clone.selects = clone.resolvedGroupBy.slice();
 
@@ -875,7 +875,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             context.state = "";
         }
 
-        if (selectExp instanceof GroupByExpression && selectExp.isAggregate) {
+        if (selectExp instanceof GroupByExpression && selectExp.isAggregated) {
             if (selectExp.groupBy.length > 0) {
                 selectQuerySuffix += this.newLine() + "GROUP BY " + selectExp.resolvedGroupBy.map((o) => this.getColumnQueryString(o, context)).join(", ");
             }

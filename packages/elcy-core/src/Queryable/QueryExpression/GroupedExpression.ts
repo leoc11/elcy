@@ -73,6 +73,7 @@ export class GroupedExpression<TE extends object, K = unknown, T = TE> extends S
             this.itemExpression = select.itemExpression;
             this.selects = select.selects.slice();
             this.distinct = select.distinct;
+            this.isAggregated = select.isAggregated;
             this.where = select.where;
             this.orders = select.orders.slice();
             Object.assign(this.paging, select.paging);

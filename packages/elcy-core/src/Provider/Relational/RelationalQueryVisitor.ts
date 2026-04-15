@@ -522,7 +522,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
 
                     if (selectExp !== selectOperand.getItemExpression()) {
                         if (selectOperand instanceof GroupByExpression) {
-                            selectOperand.isAggregate = true;
+                            selectOperand.isAggregated = true;
                         }
 
                         if (exp.methodName === "map") {
@@ -700,7 +700,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                     const isSubSelect = objectOperandSelect.isSubSelect;
                     if (isSubSelect) {
                         item = this.visit(item, param);
-                        objectOperandSelect.distinct = true;
+                        objectOperandSelect.isAggregated = true;
                         ArrayExtension.delete(objectOperandSelect.parentRelation.parent.joins, objectOperandSelect.parentRelation as any);
                         objectOperandSelect.parentRelation = null;
                         return new MethodCallExpression(objectOperandSelect, "includes", [item]);
@@ -720,7 +720,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         const column = new ComputedColumnExpression(objectOperandSelect.entity, new ValueExpression(true), this.newAlias("column") as StringKeyOf<ElementType<TE>>);
                         objectOperandSelect.selects = [column];
                         objectOperandSelect.paging.take = new ValueExpression(1);
-                        objectOperandSelect.distinct = true;
+                        objectOperandSelect.isAggregated = true;
                         return objectOperand as unknown as IExpression<T>;
                     }
 
@@ -811,7 +811,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         const column = new ComputedColumnExpression(objectOperand.entity, countExp, this.newAlias("column"));
                         objectOperand.selects = [column];
                         objectOperand.itemExpression = column;
-                        objectOperand.distinct = true;
+                        objectOperand.isAggregated = true;
                         return objectOperand as unknown as IExpression<T>;
                     }
                     else if (selectOperand instanceof GroupedExpression || (parentRel?.parent instanceof GroupByExpression)) {
@@ -830,7 +830,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                             }
                         }
                         const groupExp = new GroupByExpression(selectOperand, objExp);
-                        groupExp.isAggregate = true;
+                        groupExp.isAggregated = true;
                         const column = new ComputedColumnExpression(groupExp.entity, countExp as unknown as IExpression<Extract<number, T>>, this.newAlias("column") as StringKeyOf<ElementType<TE>>);
                         column.isNullable = false;
                         groupExp.selects.push(column);
@@ -867,7 +867,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                             }
 
                             const groupedBridge = new GroupByExpression(bridge, groupKey);
-                            groupedBridge.isAggregate = true;
+                            groupedBridge.isAggregated = true;
 
                             parentSelect.addJoin(groupedBridge, bridgeParentRelation, "LEFT");
                             ArrayExtension.add(groupedBridge.selects, bridgeColumn);
@@ -911,7 +911,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         // call from queryable
                         const column = new ComputedColumnExpression(selectOperand.entity, aggregateExp, this.newAlias("column") as StringKeyOf<ElementType<TE>>);
                         objectOperand.selects = [column];
-                        objectOperand.distinct = true;
+                        objectOperand.isAggregated = true;
                         return objectOperand as unknown as IExpression<T>;
                     }
                     else if (selectOperand instanceof GroupByExpression || (parentRel && parentRel.parent instanceof GroupByExpression)) {
@@ -926,7 +926,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                             }
                         }
                         const groupExp = new GroupByExpression(selectOperand, objExp);
-                        groupExp.isAggregate = true;
+                        groupExp.isAggregated = true;
                         const column = new ComputedColumnExpression(groupExp.entity, aggregateExp, this.newAlias("column") as StringKeyOf<ElementType<TE>>);
                         column.isNullable = false;
                         groupExp.selects.push(column);
@@ -963,7 +963,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                             }
 
                             const groupedBridge = new GroupByExpression(bridge, groupKey);
-                            groupedBridge.isAggregate = true;
+                            groupedBridge.isAggregated = true;
 
                             parentSelect.addJoin(groupedBridge, bridgeParentRelation, "LEFT");
                             ArrayExtension.add(groupedBridge.selects, bridgeColumn);
@@ -1007,7 +1007,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         // call from queryable
                         const column = new ComputedColumnExpression(selectOperand.entity, aggregateExp, this.newAlias("column") as StringKeyOf<ElementType<TE>>);
                         objectOperand.selects = [column];
-                        objectOperand.distinct = true;
+                        objectOperand.isAggregated = true;
                         return objectOperand as unknown as IExpression<T>;
                     }
                     else if (selectOperand instanceof GroupByExpression || (parentRel && parentRel.parent instanceof GroupByExpression)) {
@@ -1022,7 +1022,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                             }
                         }
                         const groupExp = new GroupByExpression(selectOperand, objExp);
-                        groupExp.isAggregate = true;
+                        groupExp.isAggregated = true;
                         const column = new ComputedColumnExpression(groupExp.entity, aggregateExp, this.newAlias("column") as StringKeyOf<ElementType<TE>>);
                         column.isNullable = false;
                         groupExp.selects.push(column);
@@ -1059,7 +1059,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                             }
 
                             const groupedBridge = new GroupByExpression(bridge, groupKey);
-                            groupedBridge.isAggregate = true;
+                            groupedBridge.isAggregated = true;
 
                             parentSelect.addJoin(groupedBridge, bridgeParentRelation, "LEFT");
                             ArrayExtension.add(groupedBridge.selects, bridgeColumn);
@@ -1092,7 +1092,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         // call from queryable
                         const column = new ComputedColumnExpression(selectOperand.entity, aggregateExp, this.newAlias("column") as StringKeyOf<ElementType<TE>>);
                         objectOperand.selects = [column];
-                        objectOperand.distinct = true;
+                        objectOperand.isAggregated = true;
                         return objectOperand as unknown as IExpression<T>;
                     }
                     else if (selectOperand instanceof GroupByExpression || (parentRel && parentRel.parent instanceof GroupByExpression)) {
@@ -1108,7 +1108,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         }
 
                         const groupExp = new GroupByExpression(selectOperand, objExp);
-                        groupExp.isAggregate = true;
+                        groupExp.isAggregated = true;
                         const column = new ComputedColumnExpression(groupExp.entity, aggregateExp, this.newAlias("column") as StringKeyOf<ElementType<TE>>);
                         column.isNullable = false;
                         groupExp.selects.push(column);
@@ -1145,7 +1145,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                             }
 
                             const groupedBridge = new GroupByExpression(bridge, groupKey);
-                            groupedBridge.isAggregate = true;
+                            groupedBridge.isAggregated = true;
 
                             parentSelect.addJoin(groupedBridge, bridgeParentRelation, "LEFT");
                             ArrayExtension.add(groupedBridge.selects, bridgeColumn);
@@ -1187,7 +1187,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         const column = new ComputedColumnExpression(objectOperand.entity, anyExp, this.newAlias("column"));
                         objectOperand.selects = [column];
                         objectOperand.paging.take = new ValueExpression(1);
-                        objectOperand.distinct = true;
+                        objectOperand.isAggregated = true;
                         return objectOperand as unknown as IExpression<T>;
                     }
                     else if (selectOperand instanceof GroupedExpression || (parentRel && parentRel.parent instanceof GroupByExpression)) {
@@ -1206,7 +1206,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                             }
                         }
                         const groupExp = new GroupByExpression(selectOperand, objExp);
-                        groupExp.isAggregate = true;
+                        groupExp.isAggregated = true;
                         const column = new ComputedColumnExpression(groupExp.entity, anyExp, this.newAlias("column") as StringKeyOf<ElementType<TE>>);
                         column.isNullable = false;
                         groupExp.selects.push(column);
@@ -1253,7 +1253,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                             }
 
                             const groupedBridge = new GroupByExpression(bridge, groupKey);
-                            groupedBridge.isAggregate = true;
+                            groupedBridge.isAggregated = true;
 
                             parentSelect.addJoin(groupedBridge, bridgeParentRelation, "LEFT");
                             ArrayExtension.add(groupedBridge.selects, bridgeColumn);
@@ -1343,7 +1343,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                             keyExp = filterer.entity.primaryColumns.find(() => true);
                         }
                         const groupExp = new GroupByExpression(filterer, keyExp);
-                        groupExp.isAggregate = true;
+                        groupExp.isAggregated = true;
                         groupExp.selects = [colCountExp];
 
                         // add join relation to current object operand
@@ -1368,13 +1368,13 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                     }
 
                     if (param.scope === "queryable") {
-                        if (objectOperand instanceof GroupByExpression && !objectOperand.isAggregate) {
+                        if (objectOperand instanceof GroupByExpression && !objectOperand.isAggregated) {
                             // join to select that will page result by group instead of item.
                             const selectExp = objectOperand.itemSelect.clone();
                             selectExp.entity.alias = this.newAlias();
                             selectExp.selects = selectExp.groupBy.slice();
                             selectExp.includes = [];
-                            selectExp.distinct = true;
+                            selectExp.isAggregated = true;
                             selectOperand = selectExp;
 
                             let relation: IExpression<boolean>;
@@ -1455,7 +1455,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                                 keyExp = filterer.entity.primaryColumns.find(() => true);
                             }
                             const innerGroupExp = new GroupByExpression(filterer, keyExp);
-                            innerGroupExp.isAggregate = true;
+                            innerGroupExp.isAggregated = true;
                             innerGroupExp.selects.push(colCountExp);
 
                             // add join relation to current object operand
@@ -1889,7 +1889,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
         embeddedSelect.includes = includes;
         embeddedSelect.itemExpression = expression;
         if (embeddedSelect instanceof GroupByExpression) {
-            embeddedSelect.isAggregate = true;
+            embeddedSelect.isAggregated = true;
         }
 
         if (requireCopy) {
