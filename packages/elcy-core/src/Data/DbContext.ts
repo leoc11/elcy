@@ -59,7 +59,7 @@ import { TernaryExpression } from "src/ExpressionBuilder/Expression/TernaryExpre
 import { BitwiseAndExpression } from "src/ExpressionBuilder/Expression/BitwiseAndExpression";
 import { AdditionExpression } from "src/ExpressionBuilder/Expression/AdditionExpression";
 import { IColumnMetaData } from "src/MetaData/Interface/IColumnMetaData";
-import { getColumnMetadata } from "src/MetaData/MetaDataMapper";
+import { getColumnMetadata, getEntityMetadata } from "src/MetaData/MetaDataMapper";
 import { RelationMetaData } from "src/MetaData/Relation/RelationMetaData";
 
 const connectionManagerMap = new WeakMap<Function, IConnectionManager<any>>();
@@ -118,7 +118,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
 
         return this._resultCacheManager;
     }
-    constructor(factory?: () => IConnectionManager<TDB> | IDriver<TDB>, types: IObjectType[] = []) {
+    constructor(factory?: () => IConnectionManager<TDB> | IDriver<TDB>, types?: IObjectType[]) {
         if (factory) {
             this.factory = factory;
         }
@@ -134,7 +134,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
     public connection?: IConnection;
     public deferredQueries: DeferredQuery[] = [];
     public entityEntries = new EntityChangeMap();
-    public readonly entityTypes: Array<IObjectType>;
+    public readonly entityTypes?: Array<IObjectType>;
     public modifiedEmbeddedEntries: EmbeddedEntityEntryMap = new EmbeddedEntityEntryMap();
     protected readonly factory: () => IConnectionManager<TDB> | IDriver<TDB>;
     protected abstract readonly namingStrategy: NamingStrategy;
@@ -699,14 +699,14 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
         if (!isClearCache) {
             result = this._cachedDbSets.get(type);
         }
-        if (!result && this.entityTypes.includes(type)) {
+        if (!result && this.entityTypes?.includes(type) !== false && getEntityMetadata(type)) {
             result = new DbSet(type, this);
             this._cachedDbSets.set(type, result);
         }
         return result;
     }
     public async syncSchema() {
-        const schemaQuery = await this.getUpdateSchemaQueries(this.entityTypes);
+        const schemaQuery = await this.getUpdateSchemaQueries(this.entityTypes ?? []);
         const commands = this.queryBuilder.mergeQueries(schemaQuery.commit);
 
         // must be executed to all connection in case connection manager handle replication
