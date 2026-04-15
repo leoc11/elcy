@@ -341,7 +341,7 @@ exports[`Sqlite QUERYABLE MAP should return a value from scalar navigation prope
 "SELECT "entity0"."id",
 	"entity1"."plainDate" AS "column0"
 FROM "Table1Manies" AS "entity0"
-LEFT JOIN (
+INNER JOIN (
 	SELECT "entity1"."id",
 		"entity1"."bigint",
 		"entity1"."binary",
@@ -532,7 +532,7 @@ INNER JOIN (
 		"entity1"."table2Id",
 		"entity3"."rowVersion" AS "column0"
 	FROM "Table1_Table2s" AS "entity1"
-	LEFT JOIN "fixture"."Table2s" AS "entity3" ON ("entity1"."table2Id"="entity3"."id")
+	INNER JOIN "fixture"."Table2s" AS "entity3" ON ("entity1"."table2Id"="entity3"."id")
 	INNER JOIN (
 		SELECT "entity0"."id"
 		FROM "fixture"."Table1s" AS "entity0"
@@ -550,7 +550,7 @@ ORDER BY "entity2"."table1Id" ASC, "entity2"."table2Id" ASC"
 	"entity1"."table2Id",
 	"entity3"."rowVersion" AS "column0"
 FROM "Table1_Table2s" AS "entity1"
-LEFT JOIN "fixture"."Table2s" AS "entity3" ON ("entity1"."table2Id"="entity3"."id")
+INNER JOIN "fixture"."Table2s" AS "entity3" ON ("entity1"."table2Id"="entity3"."id")
 INNER JOIN (
 	SELECT "entity0"."id"
 	FROM "fixture"."Table1s" AS "entity0"
@@ -673,7 +673,7 @@ exports[`Sqlite QUERYABLE MAP should work in chain 1`] = `
 "SELECT "entity0"."id",
 	"entity1"."bigint" AS "column0"
 FROM "Table1Manies" AS "entity0"
-LEFT JOIN (
+INNER JOIN (
 	SELECT "entity1"."id",
 		"entity1"."bigint",
 		"entity1"."binary",
@@ -848,7 +848,7 @@ INNER JOIN (
 		"entity2"."id" AS "column0",
 		"entity1"."option12"
 	FROM "Table1_Table2s" AS "entity1"
-	LEFT JOIN "fixture"."Table2s" AS "entity2" ON ("entity1"."table2Id"="entity2"."id")
+	INNER JOIN "fixture"."Table2s" AS "entity2" ON ("entity1"."table2Id"="entity2"."id")
 ) AS "entity1" ON ("entity1"."column0"="entity3"."table2Id")
 INNER JOIN (
 	SELECT "entity0"."id",
@@ -923,7 +923,7 @@ INNER JOIN (
 		FROM "fixture"."Table1s" AS "entity0"
 		WHERE ("entity0"."deleted"=false)
 	) AS "entity0" ON ("entity0"."id"="entity1"."table1Id")
-	LEFT JOIN "fixture"."Table2s" AS "entity2" ON ("entity1"."table2Id"="entity2"."id")
+	INNER JOIN "fixture"."Table2s" AS "entity2" ON ("entity1"."table2Id"="entity2"."id")
 ) AS "entity1" ON ("entity1"."column0"="entity3"."table2Id")"
 ,
     "type": 1,
@@ -948,7 +948,7 @@ INNER JOIN (
 		"entity2"."id" AS "column0",
 		"entity1"."option12"
 	FROM "Table1_Table2s" AS "entity1"
-	LEFT JOIN "fixture"."Table2s" AS "entity2" ON ("entity1"."table2Id"="entity2"."id")
+	INNER JOIN "fixture"."Table2s" AS "entity2" ON ("entity1"."table2Id"="entity2"."id")
 ) AS "entity1" ON ("entity1"."column0"="entity3"."table2Id")
 INNER JOIN (
 	SELECT "entity0"."id",
@@ -1024,7 +1024,7 @@ exports[`Sqlite QUERYABLE FILTER should filter included list 1`] = `
 	"entity1"."table2Id",
 	"entity1"."option12"
 FROM "Table1_Table2s" AS "entity1"
-LEFT JOIN "fixture"."Table2s" AS "entity2" ON ("entity1"."table2Id"="entity2"."id")
+INNER JOIN "fixture"."Table2s" AS "entity2" ON ("entity1"."table2Id"="entity2"."id")
 INNER JOIN (
 	SELECT "entity0"."id",
 		"entity0"."bigint",
@@ -1096,7 +1096,7 @@ exports[`Sqlite QUERYABLE FILTER should be supported in select statement 1`] = `
 	"entity1"."table2Id",
 	"entity1"."option12"
 FROM "Table1_Table2s" AS "entity1"
-LEFT JOIN "fixture"."Table2s" AS "entity2" ON ("entity1"."table2Id"="entity2"."id")
+INNER JOIN "fixture"."Table2s" AS "entity2" ON ("entity1"."table2Id"="entity2"."id")
 INNER JOIN (
 	SELECT "entity0"."id"
 	FROM "fixture"."Table1s" AS "entity0"
@@ -1130,7 +1130,7 @@ exports[`Sqlite QUERYABLE FILTER could be used more than once in chain 1`] = `
 	"entity0"."integer",
 	"entity0"."deleted"
 FROM "Table1Manies" AS "entity0"
-LEFT JOIN (
+INNER JOIN (
 	SELECT "entity1"."id",
 		"entity1"."bigint",
 		"entity1"."binary",
@@ -1190,8 +1190,8 @@ exports[`Sqlite QUERYABLE FILTER should filter with navigation property 1`] = `
 	"entity0"."string",
 	"entity0"."number"
 FROM "Table1_Table2_Manies" AS "entity0"
-LEFT JOIN "Table1_Table2s" AS "entity1" ON (("entity0"."table1Id"="entity1"."table1Id") AND ("entity0"."table2Id"="entity1"."table2Id"))
-LEFT JOIN (
+INNER JOIN "Table1_Table2s" AS "entity1" ON (("entity0"."table1Id"="entity1"."table1Id") AND ("entity0"."table2Id"="entity1"."table2Id"))
+INNER JOIN (
 	SELECT "entity2"."id",
 		"entity2"."bigint",
 		"entity2"."binary",
@@ -1215,7 +1215,7 @@ LEFT JOIN (
 		"entity2"."modifiedDate"
 	FROM "fixture"."Table1s" AS "entity2"
 	WHERE ("entity2"."deleted"=false)
-) AS "entity2" ON ("entity1"."table1Id" IS "entity2"."id")
+) AS "entity2" ON ("entity1"."table1Id"="entity2"."id")
 WHERE ("entity2"."computed">10000)"
 ,
     "type": 1,
@@ -1267,7 +1267,7 @@ exports[`Sqlite QUERYABLE ORDER BY by related entity 1`] = `
 	"entity0"."table2Id",
 	"entity0"."option12"
 FROM "Table1_Table2s" AS "entity0"
-LEFT JOIN (
+INNER JOIN (
 	SELECT "entity1"."id",
 		"entity1"."bigint",
 		"entity1"."binary",
@@ -1310,7 +1310,7 @@ exports[`Sqlite QUERYABLE ORDER BY by computed column 1`] = `
 	"entity0"."integer",
 	"entity0"."deleted"
 FROM "Table1Manies" AS "entity0"
-LEFT JOIN (
+INNER JOIN (
 	SELECT "entity1"."id",
 		"entity1"."bigint",
 		"entity1"."binary",
@@ -1352,7 +1352,7 @@ exports[`Sqlite QUERYABLE ORDER BY should be ordered by multiple column 1`] = `
 	"entity0"."name",
 	"entity0"."number"
 FROM "Table1One" AS "entity0"
-LEFT JOIN (
+INNER JOIN (
 	SELECT "entity1"."id",
 		"entity1"."bigint",
 		"entity1"."binary",
@@ -1395,7 +1395,7 @@ exports[`Sqlite QUERYABLE ORDER BY should used last defined order 1`] = `
 	"entity0"."integer",
 	"entity0"."deleted"
 FROM "Table1Manies" AS "entity0"
-LEFT JOIN (
+INNER JOIN (
 	SELECT "entity1"."id",
 		"entity1"."bigint",
 		"entity1"."binary",
@@ -1437,7 +1437,7 @@ exports[`Sqlite QUERYABLE ORDER BY could be used in include 1`] = `
 	"entity1"."table2Id",
 	"entity1"."option12"
 FROM "Table1_Table2s" AS "entity1"
-LEFT JOIN "fixture"."Table2s" AS "entity2" ON ("entity1"."table2Id"="entity2"."id")
+INNER JOIN "fixture"."Table2s" AS "entity2" ON ("entity1"."table2Id"="entity2"."id")
 INNER JOIN (
 	SELECT "entity0"."id",
 		"entity0"."bigint",
@@ -1508,7 +1508,7 @@ exports[`Sqlite QUERYABLE ORDER BY could be used in select 1`] = `
 	"entity1"."table2Id",
 	"entity1"."option12"
 FROM "Table1_Table2s" AS "entity1"
-LEFT JOIN "fixture"."Table2s" AS "entity2" ON ("entity1"."table2Id"="entity2"."id")
+INNER JOIN "fixture"."Table2s" AS "entity2" ON ("entity1"."table2Id"="entity2"."id")
 INNER JOIN (
 	SELECT "entity0"."id"
 	FROM "fixture"."Table1s" AS "entity0"
@@ -1535,7 +1535,7 @@ exports[`Sqlite QUERYABLE SOME should work 1`] = `
   {
     "parameters": Map {},
     "query": 
-"SELECT DISTINCT true AS "column0"
+"SELECT true AS "column0"
 FROM "fixture"."Table1s" AS "entity0"
 WHERE ("entity0"."deleted"=false)
 LIMIT 1"
@@ -1580,7 +1580,7 @@ INNER JOIN (
 		SELECT "entity2"."table1Id",
 			true AS "column0"
 		FROM "Table1_Table2s" AS "entity2"
-		LEFT JOIN "fixture"."Table2s" AS "entity3" ON ("entity2"."table2Id" IS "entity3"."id")
+		INNER JOIN "fixture"."Table2s" AS "entity3" ON ("entity2"."table2Id"="entity3"."id")
 		WHERE ("entity3"."t2Number"<20000)
 		GROUP BY "entity2"."table1Id"
 	) AS "entity2" ON ("entity0"."id"="entity2"."table1Id")
@@ -1601,7 +1601,7 @@ LEFT JOIN (
 	SELECT "entity2"."table1Id",
 		true AS "column0"
 	FROM "Table1_Table2s" AS "entity2"
-	LEFT JOIN "fixture"."Table2s" AS "entity3" ON ("entity2"."table2Id" IS "entity3"."id")
+	INNER JOIN "fixture"."Table2s" AS "entity3" ON ("entity2"."table2Id"="entity3"."id")
 	WHERE ("entity3"."t2Number"<20000)
 	GROUP BY "entity2"."table1Id"
 ) AS "entity2" ON ("entity0"."id"="entity2"."table1Id")
@@ -1658,7 +1658,7 @@ exports[`Sqlite QUERYABLE EVERY should work 1`] = `
   {
     "parameters": Map {},
     "query": 
-"SELECT DISTINCT false AS "column0"
+"SELECT false AS "column0"
 FROM "fixture"."Table1s" AS "entity0"
 WHERE (("entity0"."deleted"=false) AND NOT(
 	("entity0"."real"<=20000)
@@ -1705,7 +1705,7 @@ INNER JOIN (
 		SELECT "entity2"."table1Id",
 			false AS "column0"
 		FROM "Table1_Table2s" AS "entity2"
-		LEFT JOIN "fixture"."Table2s" AS "entity3" ON ("entity2"."table2Id" IS "entity3"."id")
+		INNER JOIN "fixture"."Table2s" AS "entity3" ON ("entity2"."table2Id"="entity3"."id")
 		WHERE NOT(
 			("entity3"."t2Number"<20000)
 		)
@@ -1728,7 +1728,7 @@ LEFT JOIN (
 	SELECT "entity2"."table1Id",
 		false AS "column0"
 	FROM "Table1_Table2s" AS "entity2"
-	LEFT JOIN "fixture"."Table2s" AS "entity3" ON ("entity2"."table2Id" IS "entity3"."id")
+	INNER JOIN "fixture"."Table2s" AS "entity3" ON ("entity2"."table2Id"="entity3"."id")
 	WHERE NOT(
 		("entity3"."t2Number"<20000)
 	)
@@ -1772,7 +1772,7 @@ LEFT JOIN (
 	SELECT "entity1"."table1Id",
 		false AS "column0"
 	FROM "Table1_Table3s" AS "entity1"
-	LEFT JOIN "fixture"."Table3s" AS "entity2" ON ("entity1"."table3Id" IS "entity2"."id")
+	INNER JOIN "fixture"."Table3s" AS "entity2" ON ("entity1"."table3Id"="entity2"."id")
 	WHERE NOT(
 		("entity2"."t3Number"<=20000)
 	)
@@ -1790,7 +1790,7 @@ exports[`Sqlite QUERYABLE MAX should work 1`] = `
   {
     "parameters": Map {},
     "query": 
-"SELECT DISTINCT MAX("entity0"."decimalNumber") AS "column0"
+"SELECT MAX("entity0"."decimalNumber") AS "column0"
 FROM "fixture"."Table1s" AS "entity0"
 WHERE ("entity0"."deleted"=false)"
 ,
@@ -1910,7 +1910,7 @@ exports[`Sqlite QUERYABLE MIN should work 1`] = `
   {
     "parameters": Map {},
     "query": 
-"SELECT DISTINCT MIN("entity0"."real") AS "column0"
+"SELECT MIN("entity0"."real") AS "column0"
 FROM "fixture"."Table1s" AS "entity0"
 WHERE ("entity0"."deleted"=false)"
 ,
@@ -2030,7 +2030,7 @@ exports[`Sqlite QUERYABLE AVG should work 1`] = `
   {
     "parameters": Map {},
     "query": 
-"SELECT DISTINCT AVG("entity0"."integer") AS "column0"
+"SELECT AVG("entity0"."integer") AS "column0"
 FROM "fixture"."Table1s" AS "entity0"
 WHERE ("entity0"."deleted"=false)"
 ,
@@ -2150,7 +2150,7 @@ exports[`Sqlite QUERYABLE SUM should work 1`] = `
   {
     "parameters": Map {},
     "query": 
-"SELECT DISTINCT SUM(("entity0"."integer" + "entity0"."decimalNumber")) AS "column0"
+"SELECT SUM(("entity0"."integer" + "entity0"."decimalNumber")) AS "column0"
 FROM "fixture"."Table1s" AS "entity0"
 WHERE ("entity0"."deleted"=false)"
 ,
@@ -2194,8 +2194,8 @@ INNER JOIN (
 		SELECT "entity2"."table1Id",
 			SUM(("entity3"."t2Number"*"entity4"."computed")) AS "column1"
 		FROM "Table1_Table2s" AS "entity2"
-		LEFT JOIN "fixture"."Table2s" AS "entity3" ON ("entity2"."table2Id" IS "entity3"."id")
-		LEFT JOIN (
+		INNER JOIN "fixture"."Table2s" AS "entity3" ON ("entity2"."table2Id"="entity3"."id")
+		INNER JOIN (
 			SELECT "entity4"."id",
 				"entity4"."bigint",
 				"entity4"."binary",
@@ -2219,7 +2219,7 @@ INNER JOIN (
 				"entity4"."modifiedDate"
 			FROM "fixture"."Table1s" AS "entity4"
 			WHERE ("entity4"."deleted"=false)
-		) AS "entity4" ON ("entity2"."table1Id" IS "entity4"."id")
+		) AS "entity4" ON ("entity2"."table1Id"="entity4"."id")
 		GROUP BY "entity2"."table1Id"
 	) AS "entity2" ON ("entity0"."id"="entity2"."table1Id")
 	WHERE ("entity0"."deleted"=false)
@@ -2239,8 +2239,8 @@ LEFT JOIN (
 	SELECT "entity2"."table1Id",
 		SUM(("entity3"."t2Number"*"entity4"."computed")) AS "column1"
 	FROM "Table1_Table2s" AS "entity2"
-	LEFT JOIN "fixture"."Table2s" AS "entity3" ON ("entity2"."table2Id" IS "entity3"."id")
-	LEFT JOIN (
+	INNER JOIN "fixture"."Table2s" AS "entity3" ON ("entity2"."table2Id"="entity3"."id")
+	INNER JOIN (
 		SELECT "entity4"."id",
 			"entity4"."bigint",
 			"entity4"."binary",
@@ -2264,7 +2264,7 @@ LEFT JOIN (
 			"entity4"."modifiedDate"
 		FROM "fixture"."Table1s" AS "entity4"
 		WHERE ("entity4"."deleted"=false)
-	) AS "entity4" ON ("entity2"."table1Id" IS "entity4"."id")
+	) AS "entity4" ON ("entity2"."table1Id"="entity4"."id")
 	GROUP BY "entity2"."table1Id"
 ) AS "entity2" ON ("entity0"."id"="entity2"."table1Id")
 WHERE ("entity0"."deleted"=false)"
@@ -2320,7 +2320,7 @@ exports[`Sqlite QUERYABLE COUNT should work 1`] = `
   {
     "parameters": Map {},
     "query": 
-"SELECT DISTINCT COUNT("entity0".*) AS "column1"
+"SELECT COUNT("entity0".*) AS "column1"
 FROM "Table1_Table2s" AS "entity0"
 LEFT JOIN (
 	SELECT "entity1"."table1Id",
@@ -3284,7 +3284,7 @@ LEFT JOIN (
 			"entity2"."name",
 			"entity2"."number"
 		FROM "Table1One" AS "entity2"
-		LEFT JOIN (
+		INNER JOIN (
 			SELECT "entity3"."id",
 				"entity3"."bigint",
 				"entity3"."binary",
@@ -3518,7 +3518,7 @@ INNER JOIN (
 	SELECT "entity1"."table1Id" AS "column0",
 		"entity1"."table1Id"
 	FROM "Table1_Table2_Ones" AS "entity0"
-	LEFT JOIN "Table1_Table2s" AS "entity1" ON (("entity0"."relTable1Id"="entity1"."table1Id") AND ("entity0"."relTable2Id"="entity1"."table2Id"))
+	INNER JOIN "Table1_Table2s" AS "entity1" ON (("entity0"."relTable1Id"="entity1"."table1Id") AND ("entity0"."relTable2Id"="entity1"."table2Id"))
 	GROUP BY "entity1"."table1Id"
 ) AS "entity0" ON ("entity0"."column0"="entity2"."id")
 WHERE ("entity2"."deleted"=false)"
@@ -3678,7 +3678,7 @@ INNER JOIN (
 		COUNT("entity0".*) AS "column0",
 		SUM("entity3"."number") AS "column1"
 	FROM "Table1_Table2_Ones" AS "entity0"
-	LEFT JOIN "Table1_Table2s" AS "entity1" ON (("entity0"."relTable1Id"="entity1"."table1Id") AND ("entity0"."relTable2Id"="entity1"."table2Id"))
+	INNER JOIN "Table1_Table2s" AS "entity1" ON (("entity0"."relTable1Id"="entity1"."table1Id") AND ("entity0"."relTable2Id"="entity1"."table2Id"))
 	LEFT JOIN (
 		SELECT "entity3"."relTable1Id",
 			"entity3"."relTable2Id",
@@ -3700,7 +3700,7 @@ ORDER BY "entity2"."id" ASC"
 	COUNT("entity0".*) AS "column0",
 	SUM("entity3"."number") AS "column1"
 FROM "Table1_Table2_Ones" AS "entity0"
-LEFT JOIN "Table1_Table2s" AS "entity1" ON (("entity0"."relTable1Id"="entity1"."table1Id") AND ("entity0"."relTable2Id"="entity1"."table2Id"))
+INNER JOIN "Table1_Table2s" AS "entity1" ON (("entity0"."relTable1Id"="entity1"."table1Id") AND ("entity0"."relTable2Id"="entity1"."table2Id"))
 LEFT JOIN (
 	SELECT "entity3"."relTable1Id",
 		"entity3"."relTable2Id",
@@ -3850,7 +3850,7 @@ exports[`Sqlite QUERYABLE GROUP BY groupBy(o => ({col: o.toOneRelation.column.me
 	"entity2"."column1" AS "column1",
 	AVG("entity3"."number") AS "column2"
 FROM "Table1_Table2s" AS "entity0"
-LEFT JOIN (
+INNER JOIN (
 	SELECT "entity1"."id",
 		"entity1"."bigint",
 		"entity1"."binary",
@@ -3875,7 +3875,7 @@ LEFT JOIN (
 	FROM "fixture"."Table1s" AS "entity1"
 	WHERE ("entity1"."deleted"=false)
 ) AS "entity1" ON ("entity0"."table1Id"="entity1"."id")
-LEFT JOIN "fixture"."Table2s" AS "entity2" ON ("entity0"."table2Id"="entity2"."id")
+INNER JOIN "fixture"."Table2s" AS "entity2" ON ("entity0"."table2Id"="entity2"."id")
 LEFT JOIN (
 	SELECT "entity6"."relTable1Id",
 		"entity6"."relTable2Id",
@@ -4001,7 +4001,7 @@ INNER JOIN (
 		"entity0"."number",
 		"entity1"."table1Id"
 	FROM "Table1_Table2_Manies" AS "entity0"
-	LEFT JOIN "Table1_Table2s" AS "entity1" ON (("entity0"."table1Id"="entity1"."table1Id") AND ("entity0"."table2Id"="entity1"."table2Id"))
+	INNER JOIN "Table1_Table2s" AS "entity1" ON (("entity0"."table1Id"="entity1"."table1Id") AND ("entity0"."table2Id"="entity1"."table2Id"))
 ) AS "entity0" ON ("entity0"."table1Id"="entity2"."id")
 WHERE ("entity2"."deleted"=false)
 ORDER BY "entity2"."id" ASC"
@@ -4018,7 +4018,7 @@ ORDER BY "entity2"."id" ASC"
 	"entity0"."number",
 	"entity1"."table1Id"
 FROM "Table1_Table2_Manies" AS "entity0"
-LEFT JOIN "Table1_Table2s" AS "entity1" ON (("entity0"."table1Id"="entity1"."table1Id") AND ("entity0"."table2Id"="entity1"."table2Id"))
+INNER JOIN "Table1_Table2s" AS "entity1" ON (("entity0"."table1Id"="entity1"."table1Id") AND ("entity0"."table2Id"="entity1"."table2Id"))
 ORDER BY "entity1"."table1Id" ASC"
 ,
     "type": 1,
@@ -4037,7 +4037,7 @@ exports[`Sqlite QUERYABLE GROUP BY groupBy.(o => ({col: o.toOneRelation.column.m
 	STRFTIME('%d', "entity1"."dateTime") AS "column0",
 	"entity2"."t2Number"
 FROM "Table1_Table2s" AS "entity0"
-LEFT JOIN (
+INNER JOIN (
 	SELECT "entity1"."id",
 		"entity1"."bigint",
 		"entity1"."binary",
@@ -4062,7 +4062,7 @@ LEFT JOIN (
 	FROM "fixture"."Table1s" AS "entity1"
 	WHERE ("entity1"."deleted"=false)
 ) AS "entity1" ON ("entity0"."table1Id"="entity1"."id")
-LEFT JOIN "fixture"."Table2s" AS "entity2" ON ("entity0"."table2Id"="entity2"."id")
+INNER JOIN "fixture"."Table2s" AS "entity2" ON ("entity0"."table2Id"="entity2"."id")
 ORDER BY STRFTIME('%d', "entity1"."dateTime") ASC, "entity2"."t2Number" ASC, "entity0"."table1Id" ASC, "entity0"."table2Id" ASC"
 ,
     "type": 1,
@@ -4352,7 +4352,7 @@ INNER JOIN (
 		"entity3"."date" AS "column3"
 	FROM "fixture"."Table2s" AS "entity0"
 	LEFT JOIN "Table1_Table2s" AS "entity1" ON ("entity0"."id"="entity1"."table2Id")
-	LEFT JOIN (
+	INNER JOIN (
 		SELECT "entity2"."id",
 			"entity2"."bigint",
 			"entity2"."binary",
@@ -4376,8 +4376,8 @@ INNER JOIN (
 			"entity2"."modifiedDate"
 		FROM "fixture"."Table1s" AS "entity2"
 		WHERE ("entity2"."deleted"=false)
-	) AS "entity2" ON ("entity1"."table1Id" IS "entity2"."id")
-	LEFT JOIN (
+	) AS "entity2" ON ("entity1"."table1Id"="entity2"."id")
+	INNER JOIN (
 		SELECT "entity3"."id",
 			"entity3"."bigint",
 			"entity3"."binary",
@@ -4401,7 +4401,7 @@ INNER JOIN (
 			"entity3"."modifiedDate"
 		FROM "fixture"."Table1s" AS "entity3"
 		WHERE ("entity3"."deleted"=false)
-	) AS "entity3" ON ("entity1"."table1Id" IS "entity3"."id")
+	) AS "entity3" ON ("entity1"."table1Id"="entity3"."id")
 	WHERE ("entity0"."t2Number">1)
 ) AS "entity0" ON (("entity0"."table1Id"="entity4"."table1Id") AND ("entity0"."table2Id"="entity4"."table2Id"))
 ORDER BY "entity4"."table1Id" ASC, "entity4"."table2Id" ASC"
@@ -4421,76 +4421,7 @@ ORDER BY "entity4"."table1Id" ASC, "entity4"."table2Id" ASC"
 	"entity3"."date" AS "column3"
 FROM "fixture"."Table2s" AS "entity0"
 LEFT JOIN "Table1_Table2s" AS "entity1" ON ("entity0"."id"="entity1"."table2Id")
-LEFT JOIN (
-	SELECT "entity2"."id",
-		"entity2"."bigint",
-		"entity2"."binary",
-		"entity2"."boolean",
-		"entity2"."date",
-		"entity2"."plainDate",
-		"entity2"."dateTime",
-		"entity2"."instant",
-		"entity2"."decimal",
-		"entity2"."decimalNumber",
-		"entity2"."decimalDecimal",
-		"entity2"."deleted",
-		"entity2"."identifier",
-		"entity2"."identifierString",
-		"entity2"."integer",
-		"entity2"."real",
-		"entity2"."string",
-		"entity2"."time",
-		"entity2"."plainTime",
-		"entity2"."createdDate",
-		"entity2"."modifiedDate"
-	FROM "fixture"."Table1s" AS "entity2"
-	WHERE ("entity2"."deleted"=false)
-) AS "entity2" ON ("entity1"."table1Id" IS "entity2"."id")
-LEFT JOIN (
-	SELECT "entity3"."id",
-		"entity3"."bigint",
-		"entity3"."binary",
-		"entity3"."boolean",
-		"entity3"."date",
-		"entity3"."plainDate",
-		"entity3"."dateTime",
-		"entity3"."instant",
-		"entity3"."decimal",
-		"entity3"."decimalNumber",
-		"entity3"."decimalDecimal",
-		"entity3"."deleted",
-		"entity3"."identifier",
-		"entity3"."identifierString",
-		"entity3"."integer",
-		"entity3"."real",
-		"entity3"."string",
-		"entity3"."time",
-		"entity3"."plainTime",
-		"entity3"."createdDate",
-		"entity3"."modifiedDate"
-	FROM "fixture"."Table1s" AS "entity3"
-	WHERE ("entity3"."deleted"=false)
-) AS "entity3" ON ("entity1"."table1Id" IS "entity3"."id")
-WHERE ("entity0"."t2Number">1)"
-,
-    "type": 1,
-  },
-]
-`;
-
-exports[`Sqlite QUERYABLE JOIN should support right join 1`] = `
-[
-  {
-    "parameters": Map {},
-    "query": 
-"SELECT "entity0"."id",
-	"entity2"."integer" AS "column0",
-	"entity1"."option13" AS "column1",
-	"entity0"."t3Number" AS "column2",
-	"entity3"."dateTime" AS "column3"
-FROM "fixture"."Table3s" AS "entity0"
-RIGHT JOIN "Table1_Table3s" AS "entity1" ON ("entity0"."id"="entity1"."table3Id")
-LEFT JOIN (
+INNER JOIN (
 	SELECT "entity2"."id",
 		"entity2"."bigint",
 		"entity2"."binary",
@@ -4515,7 +4446,76 @@ LEFT JOIN (
 	FROM "fixture"."Table1s" AS "entity2"
 	WHERE ("entity2"."deleted"=false)
 ) AS "entity2" ON ("entity1"."table1Id"="entity2"."id")
-LEFT JOIN (
+INNER JOIN (
+	SELECT "entity3"."id",
+		"entity3"."bigint",
+		"entity3"."binary",
+		"entity3"."boolean",
+		"entity3"."date",
+		"entity3"."plainDate",
+		"entity3"."dateTime",
+		"entity3"."instant",
+		"entity3"."decimal",
+		"entity3"."decimalNumber",
+		"entity3"."decimalDecimal",
+		"entity3"."deleted",
+		"entity3"."identifier",
+		"entity3"."identifierString",
+		"entity3"."integer",
+		"entity3"."real",
+		"entity3"."string",
+		"entity3"."time",
+		"entity3"."plainTime",
+		"entity3"."createdDate",
+		"entity3"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity3"
+	WHERE ("entity3"."deleted"=false)
+) AS "entity3" ON ("entity1"."table1Id"="entity3"."id")
+WHERE ("entity0"."t2Number">1)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Sqlite QUERYABLE JOIN should support right join 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity2"."integer" AS "column0",
+	"entity1"."option13" AS "column1",
+	"entity0"."t3Number" AS "column2",
+	"entity3"."dateTime" AS "column3"
+FROM "fixture"."Table3s" AS "entity0"
+RIGHT JOIN "Table1_Table3s" AS "entity1" ON ("entity0"."id"="entity1"."table3Id")
+INNER JOIN (
+	SELECT "entity2"."id",
+		"entity2"."bigint",
+		"entity2"."binary",
+		"entity2"."boolean",
+		"entity2"."date",
+		"entity2"."plainDate",
+		"entity2"."dateTime",
+		"entity2"."instant",
+		"entity2"."decimal",
+		"entity2"."decimalNumber",
+		"entity2"."decimalDecimal",
+		"entity2"."deleted",
+		"entity2"."identifier",
+		"entity2"."identifierString",
+		"entity2"."integer",
+		"entity2"."real",
+		"entity2"."string",
+		"entity2"."time",
+		"entity2"."plainTime",
+		"entity2"."createdDate",
+		"entity2"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity2"
+	WHERE ("entity2"."deleted"=false)
+) AS "entity2" ON ("entity1"."table1Id"="entity2"."id")
+INNER JOIN (
 	SELECT "entity3"."id",
 		"entity3"."bigint",
 		"entity3"."binary",
@@ -4559,7 +4559,7 @@ exports[`Sqlite QUERYABLE JOIN should support full join 1`] = `
 	"entity3"."dateTime" AS "column3"
 FROM "fixture"."Table3s" AS "entity0"
 FULL JOIN "Table1_Table3s" AS "entity1" ON ("entity0"."id"="entity1"."table3Id")
-LEFT JOIN (
+INNER JOIN (
 	SELECT "entity2"."id",
 		"entity2"."bigint",
 		"entity2"."binary",
@@ -4583,8 +4583,8 @@ LEFT JOIN (
 		"entity2"."modifiedDate"
 	FROM "fixture"."Table1s" AS "entity2"
 	WHERE ("entity2"."deleted"=false)
-) AS "entity2" ON ("entity1"."table1Id" IS "entity2"."id")
-LEFT JOIN (
+) AS "entity2" ON ("entity1"."table1Id"="entity2"."id")
+INNER JOIN (
 	SELECT "entity3"."id",
 		"entity3"."bigint",
 		"entity3"."binary",
@@ -4608,7 +4608,7 @@ LEFT JOIN (
 		"entity3"."modifiedDate"
 	FROM "fixture"."Table1s" AS "entity3"
 	WHERE ("entity3"."deleted"=false)
-) AS "entity3" ON ("entity1"."table1Id" IS "entity3"."id")
+) AS "entity3" ON ("entity1"."table1Id"="entity3"."id")
 WHERE ("entity2"."integer">1)"
 ,
     "type": 1,
@@ -4694,7 +4694,7 @@ exports[`Sqlite QUERYABLE JOIN should support cross join 1`] = `
 	"entity3"."dateTime" AS "column3"
 FROM "fixture"."Table3s" AS "entity0"
 CROSS JOIN "Table1_Table3s" AS "entity1"
-LEFT JOIN (
+INNER JOIN (
 	SELECT "entity2"."id",
 		"entity2"."bigint",
 		"entity2"."binary",
@@ -4719,7 +4719,7 @@ LEFT JOIN (
 	FROM "fixture"."Table1s" AS "entity2"
 	WHERE ("entity2"."deleted"=false)
 ) AS "entity2" ON ("entity1"."table1Id"="entity2"."id")
-LEFT JOIN (
+INNER JOIN (
 	SELECT "entity3"."id",
 		"entity3"."bigint",
 		"entity3"."binary",
@@ -5783,7 +5783,7 @@ exports[`Sqlite QUERYABLE SUBQUERY should work in where (CONTAINS) 1`] = `
 	"entity0"."modifiedDate"
 FROM "fixture"."Table1s" AS "entity0"
 WHERE (("entity0"."deleted"=false) AND "entity0"."id" IN (
-	SELECT DISTINCT "entity1"."table1Id"
+	SELECT "entity1"."table1Id"
 	FROM "Table1Manies" AS "entity1"
 	WHERE (("entity1"."deleted"=false) AND ("entity1"."integer">5))
 ))"
@@ -6149,7 +6149,7 @@ exports[`Sqlite QUERYABLE ARRAY PARAMETER should work in where (CONTAINS) 1`] = 
 	"entity0"."modifiedDate"
 FROM "fixture"."Table1s" AS "entity0"
 WHERE (("entity0"."deleted"=false) AND "entity0"."id" IN (
-	SELECT DISTINCT "entity1"."table1Id"
+	SELECT "entity1"."table1Id"
 	FROM (
 		SELECT
 			column1 AS "__index", column2 AS "table1Id"
@@ -6610,7 +6610,7 @@ exports[`Sqlite QUERYABLE OTHER test 1 1`] = `
 	"entity0"."number" AS "column2",
 	"entity6"."column4" AS "column5"
 FROM "Table1One" AS "entity0"
-LEFT JOIN (
+INNER JOIN (
 	SELECT "entity1"."id",
 		"entity1"."bigint",
 		"entity1"."binary",
@@ -6635,7 +6635,7 @@ LEFT JOIN (
 	FROM "fixture"."Table1s" AS "entity1"
 	WHERE ("entity1"."deleted"=false)
 ) AS "entity1" ON ("entity0"."table1Id"="entity1"."id")
-LEFT JOIN (
+INNER JOIN (
 	SELECT "entity2"."id",
 		"entity2"."bigint",
 		"entity2"."binary",
@@ -6681,7 +6681,7 @@ LEFT JOIN (
 					"entity4"."id" AS "column3",
 					"entity3"."option12"
 				FROM "Table1_Table2s" AS "entity3"
-				LEFT JOIN "fixture"."Table2s" AS "entity4" ON ("entity3"."table2Id"="entity4"."id")
+				INNER JOIN "fixture"."Table2s" AS "entity4" ON ("entity3"."table2Id"="entity4"."id")
 			) AS "entity3" ON ("entity3"."column3"="entity5"."table2Id")
 		) AS "entity5" ON ("entity5"."table3Id"="entity6"."id")
 		UNION ALL
@@ -6692,8 +6692,8 @@ LEFT JOIN (
 		INNER JOIN "Table1_Table3s" AS "entity8" ON ("entity8"."table3Id"="entity9"."id")
 	) AS "entity6"
 	GROUP BY "entity6"."table1Id"
-) AS "entity6" ON ("entity2"."id" IS "entity6"."table1Id")
-LEFT JOIN (
+) AS "entity6" ON ("entity2"."id"="entity6"."table1Id")
+INNER JOIN (
 	SELECT "entity7"."id",
 		"entity7"."bigint",
 		"entity7"."binary",

@@ -234,7 +234,7 @@ Map {
 	"entity0"."modifiedDate"
 FROM "fixture"."Table1s" AS "entity0"
 WHERE (("entity0"."deleted"=false) AND ("entity0"."id"=?))
-ORDER BY (SELECT NULL)
+ORDER BY "entity0"."id"
 FETCH NEXT 1 ROWS ONLY"
 ,
     "type": 1,
@@ -657,7 +657,7 @@ INNER JOIN (
 	SELECT "entity0"."id"
 	FROM "fixture"."Table1s" AS "entity0"
 	WHERE (("entity0"."deleted"=false) AND ((("entity0"."integer">?) AND ("entity0"."real" IS NOT DISTINCT FROM ?)) AND ((COALESCE("entity0"."real", 0))=?)))
-	ORDER BY (SELECT NULL)
+	ORDER BY "entity0"."id"
 	OFFSET ? ROWS
 	FETCH NEXT ? ROWS ONLY
 ) AS "entity0_1" ON ("entity0"."id"="entity0_1"."id")
@@ -1112,7 +1112,7 @@ Map {
 	"entity0"."modifiedDate"
 FROM "fixture"."Table1s" AS "entity0"
 WHERE (("entity0"."deleted"=false) AND ("entity0"."id"=?))
-ORDER BY (SELECT NULL)
+ORDER BY "entity0"."id"
 FETCH NEXT 1 ROWS ONLY"
 ,
     "type": 1,
@@ -1282,7 +1282,7 @@ INNER JOIN (
 	SELECT "entity0"."id"
 	FROM "fixture"."Table1s" AS "entity0"
 	WHERE (("entity0"."deleted"=false) AND ((("entity0"."integer">?) AND ("entity0"."real" IS NOT DISTINCT FROM ?)) AND ((COALESCE("entity0"."real", 0))=?)))
-	ORDER BY (SELECT NULL)
+	ORDER BY "entity0"."id"
 	OFFSET ? ROWS
 	FETCH NEXT ? ROWS ONLY
 ) AS "entity0_1" ON ("entity0"."id"="entity0_1"."id")

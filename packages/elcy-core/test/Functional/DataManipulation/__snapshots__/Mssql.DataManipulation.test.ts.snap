@@ -105,7 +105,8 @@ Map {
 	[entity0].[modifiedDate]
 FROM [fixture].[Table1s] AS [entity0]
 WHERE (([entity0].[deleted]=0) AND ([entity0].[id]=@param0))
-ORDER BY (SELECT NULL)
+ORDER BY [entity0].[id]
+OFFSET 0 ROWS
 FETCH NEXT 1 ROWS ONLY"
 ,
     "type": 1,
@@ -409,7 +410,7 @@ INNER JOIN (
 	SELECT [entity0].[id]
 	FROM [fixture].[Table1s] AS [entity0]
 	WHERE (([entity0].[deleted]=0) AND ((([entity0].[integer]>@param0) AND ([entity0].[real] IS NOT DISTINCT FROM @param1)) AND ((COALESCE([entity0].[real], 0))=@param1)))
-	ORDER BY (SELECT NULL)
+	ORDER BY [entity0].[id]
 	OFFSET @param2 ROWS
 	FETCH NEXT @param3 ROWS ONLY
 ) AS [entity0_1] ON ([entity0].[id]=[entity0_1].[id])"
@@ -606,7 +607,8 @@ Map {
 	[entity0].[modifiedDate]
 FROM [fixture].[Table1s] AS [entity0]
 WHERE (([entity0].[deleted]=0) AND ([entity0].[id]=@param0))
-ORDER BY (SELECT NULL)
+ORDER BY [entity0].[id]
+OFFSET 0 ROWS
 FETCH NEXT 1 ROWS ONLY"
 ,
     "type": 1,
@@ -720,7 +722,7 @@ INNER JOIN (
 	SELECT [entity0].[id]
 	FROM [fixture].[Table1s] AS [entity0]
 	WHERE (([entity0].[deleted]=0) AND ((([entity0].[integer]>@param0) AND ([entity0].[real] IS NOT DISTINCT FROM @param1)) AND ((COALESCE([entity0].[real], 0))=@param1)))
-	ORDER BY (SELECT NULL)
+	ORDER BY [entity0].[id]
 	OFFSET @param2 ROWS
 	FETCH NEXT @param3 ROWS ONLY
 ) AS [entity0_1] ON ([entity0].[id]=[entity0_1].[id])"
