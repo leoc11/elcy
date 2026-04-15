@@ -239,7 +239,30 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
         return result;
     }
     //#endregion
-    
+
+    protected override getPagingQueryString<TE extends object>(sqlExp: SelectExpression<TE>, param?: IQueryBuilderContext): string {
+        let result = "";
+        if (sqlExp.orders.length <= 0) {
+            if (sqlExp.distinct || sqlExp.isAggregated) {
+                result += `${this.newLine()}ORDER BY ${this.toString(sqlExp.projectedColumns.find(o => true), param)}`;
+            }
+            else {
+                result += `${this.newLine()}ORDER BY ${this.toString(sqlExp.entity.primaryColumns.find(o => true), param)}`;
+            }
+        }
+        if (sqlExp.paging.skip) {
+            result += `${this.newLine()}OFFSET ${this.toString(sqlExp.paging.skip, param)} ROWS`;
+        }
+        if (sqlExp.paging.take) {
+            if (!sqlExp.paging.skip) {
+                result += `${this.newLine()}OFFSET 0 ROWS`;
+            }
+
+            result += `${this.newLine()}FETCH NEXT ${this.toString(sqlExp.paging.take, param)} ROWS ONLY`;
+        }
+        return result;
+    }
+
     public override toParameterValue(input: any, column: IColumnMetaData): any {
         if (isNull(input)) {
             return null;
