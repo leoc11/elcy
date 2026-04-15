@@ -1918,7 +1918,7 @@ export const queryableTest = (db: ITestContext) => {
             });
             it("should support cross join", async () => {
                 const spy = vi.spyOn(db.connection, "query");
-                const join = db.table3s.fullJoin(db.table1Table3s, (o1, o2) => o1.id === o2.table3Id, (o1, o2) => ({
+                const join = db.table3s.crossJoin(db.table1Table3s, (o1, o2) => ({
                     quantity: o2.table1.integer,
                     name: o2.option13,
                     price: o1.t3Number,
