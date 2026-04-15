@@ -4,7 +4,7 @@ import { ClassAccessor, ClassPropertyDecorator } from "../Type";
 import { IEntityMetaData } from "src/MetaData/Interface/IEntityMetaData";
 import { Enumerable } from "@elcy/enumerable";
 import { FunctionHelper } from "src/Helper/FunctionHelper";
-import { IObjectType, PropertySelector } from "src/Common/Type";
+import { IObjectType, PropertySelector, StringKeyOf } from "src/Common/Type";
 import { getEntityMetadata, setRelationMetadata } from "src/MetaData/MetaDataMapper";
 
 export function Relationship<TE extends object>(entity: string, name?: string): ClassPropertyDecorator<TE>;
@@ -23,7 +23,7 @@ export function Relationship<TE extends object, T extends object>(entityOrType: 
                 const parentData: IRelationData<TE, T> = {
                     isMaster: true,
                     metaData: entityMeta,
-                    propertyName: context.name as keyof TE,
+                    propertyName: context.name as StringKeyOf<TE>,
                     name: `${entity?.toLocaleLowerCase()}_${name?.toLocaleLowerCase()}`
                 };
                 const parentRelationMeta = new RelationMetaData(parentData);
@@ -70,7 +70,7 @@ export function Relationship<TE extends object, T extends object>(entityOrType: 
                     isMaster: false,
                     metaData: entityMeta,
                     targetMetaData: targetMetaData,
-                    propertyName: context.name as keyof TE,
+                    propertyName: context.name as StringKeyOf<TE>,
                     name: option.name,
                     relationKeyName: option.relationKeyName,
                     relationMap: relationMap,
