@@ -53,10 +53,17 @@ export enum QueryType {
     /**
      * Data Control Language
      */
-    DCL = 1 << 4
+    DCL = 1 << 4,
+    ADDITIONAL = 1 << 5
 }
 
 export enum ColumnGeneration {
+    None = 0,
+    Insert = 1 << 0,
+    Update = 1 << 1
+}
+
+export enum UpsertStrategy {
     None = 0,
     Insert = 1 << 0,
     Update = 1 << 1
