@@ -1,3 +1,4 @@
+import { UpsertStrategy } from "src/Common/Enum";
 import { ICacheOption } from "../Cache/ICacheOption";
 import { ConcurrencyModel } from "../Common/StringType";
 import { Version } from "../Common/Version";
@@ -18,7 +19,7 @@ export interface IQueryOption {
     // select
     resultCache?: "none" | ISelectCacheOption;
     // insert/update
-    useUpsert?: boolean;
+    upsertStrategy?: UpsertStrategy;
 
     // noTracking?: boolean;
     // batchSize?: number;

@@ -67,6 +67,7 @@ export class SqlTableValueParameterExpression<TE extends object = object> implem
     public schema?: string;
     private _primaryColumns: IColumnExpression<TE>[];
     public alias: string;
+    public asTempTable: boolean;
 
     public hashCode() {
         return hashCode(this.name, this.columns.reduce((r, o) => r + o.hashCode(), 0));

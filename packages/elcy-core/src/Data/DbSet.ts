@@ -1,4 +1,4 @@
-import { ColumnGeneration } from "../Common/Enum";
+import { ColumnGeneration, QueryType } from "../Common/Enum";
 import { DeleteMode } from "../Common/StringType";
 import { FlatObjectLike, IObjectType, ObjectLike, SetterObj, StringKeyOf, ValueType } from "../Common/Type";
 import { Enumerable } from "@elcy/enumerable";
@@ -29,32 +29,32 @@ import { getEntityMetadata } from "src/MetaData/MetaDataMapper";
 import { RawQueryable } from "src/Queryable/RawQueryable";
 import { QueryableChain } from "src/Queryable/Interface/QueryableChain";
 
-export class DbSet<T extends object = any> extends Queryable<T> {
+export class DbSet<TE extends object = any> extends Queryable<TE> {
     public override get dbContext(): DbContext {
         return this._dbContext;
     }
 
     public get metaData() {
         if (!this._metaData) {
-            this._metaData = getEntityMetadata(this.type) as EntityMetaData<T>;
+            this._metaData = getEntityMetadata(this.type) as EntityMetaData<TE>;
         }
         return this._metaData;
     }
-    public get primaryKeys(): Array<IColumnMetaData<T>> {
+    public get primaryKeys(): Array<IColumnMetaData<TE>> {
         return this.metaData.primaryKeys;
     }
     public override get queryOption(): IQueryOption {
         return {};
     }
-    constructor(public override readonly type: IObjectType<T>, dbContext: DbContext) {
+    constructor(public override readonly type: IObjectType<TE>, dbContext: DbContext) {
         super(type);
         this._dbContext = dbContext;
     }
-    protected readonly dictionary: Map<string, EntityEntry<T>> = new Map();
-    public readonly local: Enumerable<T> = Enumerable.from(this.dictionary).map((o) => o[1].entity);
+    protected readonly dictionary: Map<string, EntityEntry<TE>> = new Map();
+    public readonly local: Enumerable<TE> = Enumerable.from(this.dictionary).map((o) => o[1].entity);
     private readonly _dbContext: DbContext;
-    private _metaData: EntityMetaData<T>;
-    public buildQuery(visitor: IQueryVisitor): IQueryExpression<T> {
+    private _metaData: EntityMetaData<TE>;
+    public buildQuery(visitor: IQueryVisitor): IQueryExpression<TE> {
         const result = new SelectExpression(new EntityExpression(this.type, visitor.newAlias()));
         visitor.setDefaultBehaviour(result);
         return result;
@@ -64,11 +64,11 @@ export class DbSet<T extends object = any> extends Queryable<T> {
     }
     // simple delete.
     public override deferredDelete(mode: DeleteMode): DeferredQuery<number>;
-    public override deferredDelete(key: ObjectLike<T>, mode?: DeleteMode): DeferredQuery<number>;
-    public override deferredDelete(predicate?: FunctionExpression<boolean, [T]> | ((item: QueryableChain<T>) => boolean), mode?: DeleteMode): DeferredQuery<number>;
-    public override deferredDelete(modeOrKeyOrPredicate?: ObjectLike<T> | FunctionExpression<boolean, [T]> | ((item: QueryableChain<T>) => boolean) | DeleteMode, mode?: DeleteMode): DeferredQuery<number> {
+    public override deferredDelete(key: ObjectLike<TE>, mode?: DeleteMode): DeferredQuery<number>;
+    public override deferredDelete(predicate?: FunctionExpression<boolean, [TE]> | ((item: QueryableChain<TE>) => boolean), mode?: DeleteMode): DeferredQuery<number>;
+    public override deferredDelete(modeOrKeyOrPredicate?: ObjectLike<TE> | FunctionExpression<boolean, [TE]> | ((item: QueryableChain<TE>) => boolean) | DeleteMode, mode?: DeleteMode): DeferredQuery<number> {
         if (modeOrKeyOrPredicate instanceof Function || modeOrKeyOrPredicate instanceof FunctionExpression || typeof modeOrKeyOrPredicate === "string") {
-            return super.deferredDelete(modeOrKeyOrPredicate as FunctionExpression<boolean, [T]>, mode);
+            return super.deferredDelete(modeOrKeyOrPredicate as FunctionExpression<boolean, [TE]>, mode);
         }
         else {
             const key = modeOrKeyOrPredicate;
@@ -92,7 +92,7 @@ export class DbSet<T extends object = any> extends Queryable<T> {
             return (new WhereQueryable(this, new FunctionExpression(pkFilter, [paramExp]))).deferredDelete(null, mode);
         }
     }
-    public deferredInsert(...items: Array<FlatObjectLike<T>>) {
+    public deferredInsert(...items: Array<FlatObjectLike<TE>>) {
         if (!getEntityMetadata(this.type)) {
             throw new Error(`Only entity supported`);
         }
@@ -100,9 +100,9 @@ export class DbSet<T extends object = any> extends Queryable<T> {
         const visitor = this.dbContext.queryVisitor;
         const entityExp = new EntityExpression(this.type, visitor.newAlias());
 
-        const valueExp: Array<SetterObj<T>> = [];
+        const valueExp: Array<SetterObj<TE>> = [];
         for (const item of items) {
-            const itemExp: SetterObj<T> = {};
+            const itemExp: SetterObj<TE> = {};
             for (const prop in item) {
                 const propValue = item[prop];
                 if (propValue !== undefined && !(propValue instanceof Function)) {
@@ -120,14 +120,25 @@ export class DbSet<T extends object = any> extends Queryable<T> {
             Diagnostic.trace(this, `build params time: ${timer.time()}ms`);
         }
 
-        const query = new DeferredQuery(this.dbContext, insertExp, params, (resultMap) => Enumerable.from(resultMap).sum((o) => o[1].effectedRows), this.queryOption);
+        const query = new DeferredQuery(this.dbContext, insertExp, params, (resultMap) => {
+            let effectedRows = 0;
+            for (const [command, result] of resultMap) {
+                if (command.type & QueryType.ADDITIONAL) {
+                    continue;
+                }
+                if (command.type & QueryType.DML) {
+                    effectedRows += result.effectedRows;
+                }
+            }
+            return effectedRows;
+        }, this.queryOption);
         this.dbContext.deferredQueries.push(query);
         return query;
     }
     // simple update.
-    public override deferredUpdate(setter: { [TK in keyof T]?: (T[TK] & ValueType) | ((item: QueryableChain<T>) => T[TK] & ValueType) }) {
+    public override deferredUpdate(setter: { [TK in keyof TE]?: (TE[TK] & ValueType) | ((item: QueryableChain<TE>) => TE[TK] & ValueType) }) {
         let pkFilter: IExpression<boolean> = null;
-        const setterObj: { [TK in keyof T]?: (T[TK] & ValueType) | ((item: QueryableChain<T>) => T[TK] & ValueType) } = {};
+        const setterObj: { [TK in keyof TE]?: (TE[TK] & ValueType) | ((item: QueryableChain<TE>) => TE[TK] & ValueType) } = {};
         const paramExp = new ParameterExpression("o", this.type);
         for (const prop in setter) {
             const primaryCol = this.metaData.primaryKeys.find((o) => o.propertyName === prop);
@@ -141,7 +152,7 @@ export class DbSet<T extends object = any> extends Queryable<T> {
                     continue;
                 }
 
-                const valExp = new ValueExpression(val as T[keyof T]);
+                const valExp = new ValueExpression(val as TE[keyof TE]);
                 const logicalExp = new StrictEqualExpression(new MemberAccessExpression(paramExp, primaryCol.propertyName), valExp);
                 pkFilter = pkFilter ? new AndExpression(pkFilter, logicalExp) : logicalExp;
             }
@@ -157,7 +168,7 @@ export class DbSet<T extends object = any> extends Queryable<T> {
 
         return super.deferredUpdate(setter);
     }
-    public deferredUpsert(item: FlatObjectLike<T>) {
+    public deferredUpsert(item: FlatObjectLike<TE>) {
         if (!getEntityMetadata(this.type)) {
             throw new Error(`Only entity supported`);
         }
@@ -165,11 +176,13 @@ export class DbSet<T extends object = any> extends Queryable<T> {
         const visitor = this.dbContext.queryVisitor;
         const entityExp = new EntityExpression(this.type, visitor.newAlias());
 
-        const setterExp: SetterObj<T, Extract<T[keyof T], ValueType>> = {};
+        const valueExp: SetterObj<TE> = {};
+        const setterExp: SetterObj<TE> = {};
         for (const prop in item) {
-            setterExp[prop] = new ValueExpression(item[prop]);
+            valueExp[prop] = new ValueExpression(item[prop]);
+            setterExp[prop] = null;
         }
-        const upsertExp = new UpsertExpression(entityExp, setterExp);
+        const upsertExp = new UpsertExpression(entityExp, [valueExp], setterExp);
 
         const timer = Diagnostic.timer();
         const flatParams = this.flatQueryParameter({ index: 0 });
@@ -182,10 +195,10 @@ export class DbSet<T extends object = any> extends Queryable<T> {
         this.dbContext.deferredQueries.push(query);
         return query;
     }
-    public fromSql(strings: TemplateStringsArray, ...values: ValueType[]): Queryable<T> {
+    public fromSql(strings: TemplateStringsArray, ...values: ValueType[]): Queryable<TE> {
         return new RawQueryable(strings, values, this);
     }
-    public entry(entity: T | FlatObjectLike<T>) {
+    public entry(entity: TE | FlatObjectLike<TE>) {
         const key = this.getKey(entity);
         let entry = this.dictionary.get(key);
         if (entry) {
@@ -196,20 +209,20 @@ export class DbSet<T extends object = any> extends Queryable<T> {
         else {
             if (!(entity instanceof this.type)) {
                 const entityType = new this.type();
-                entry = new EntityEntry<T>(this, entityType, key);
+                entry = new EntityEntry<TE>(this, entityType, key);
                 entry.setOriginalValues(entity);
             }
             else {
-                entry = new EntityEntry<T>(this, entity, key);
+                entry = new EntityEntry<TE>(this, entity, key);
             }
             this.dictionary.set(key, entry);
         }
         return entry;
     }
-    public override async find(predicate?: (item: QueryableChain<T>) => boolean): Promise<T>;
-    public override async find(id: ValueType | FlatObjectLike<T>, forceReload?: boolean): Promise<T>;
-    public override async find(idOrPredicate?: ValueType | FlatObjectLike<T> | ((item: QueryableChain<T>) => boolean), forceReload?: boolean) {
-        let entity: T;
+    public override async find(predicate?: (item: QueryableChain<TE>) => boolean): Promise<TE>;
+    public override async find(id: ValueType | FlatObjectLike<TE>, forceReload?: boolean): Promise<TE>;
+    public override async find(idOrPredicate?: ValueType | FlatObjectLike<TE> | ((item: QueryableChain<TE>) => boolean), forceReload?: boolean) {
+        let entity: TE;
         if (!idOrPredicate) {
             entity = await super.find();
         }
@@ -225,12 +238,12 @@ export class DbSet<T extends object = any> extends Queryable<T> {
 
         return entity;
     }
-    public findLocal(id: ValueType | FlatObjectLike<T>): T {
+    public findLocal(id: ValueType | FlatObjectLike<TE>): TE {
         const key = this.getKey(id);
         const entry = this.dictionary.get(key);
         return entry ? entry.entity : undefined;
     }
-    public getKey(id: ValueType | FlatObjectLike<T>): string {
+    public getKey(id: ValueType | FlatObjectLike<TE>): string {
         if (isNull(id)) {
             throw new Error("Parameter cannot be null");
         }
@@ -241,7 +254,7 @@ export class DbSet<T extends object = any> extends Queryable<T> {
         let keyString = "";
         let useReference = false;
         for (const o of this.primaryKeys) {
-            const val = id[o.propertyName as keyof FlatObjectLike<T>];
+            const val = id[o.propertyName as keyof FlatObjectLike<TE>];
             if (isNull(val)) {
                 if (o.generation & ColumnGeneration.Insert) {
                     useReference = true;
@@ -266,40 +279,40 @@ export class DbSet<T extends object = any> extends Queryable<T> {
         return hashCode(this.type.name);
     }
 
-    public async insert(...items: Array<FlatObjectLike<T>>) {
+    public async insert(...items: Array<FlatObjectLike<TE>>) {
         const query = this.deferredInsert(...items);
         return await query.execute();
     }
-    public new(objectValue: FlatObjectLike<T>): T;
-    public new(primaryValue: ValueType): T;
-    public new(primaryValue: ValueType | FlatObjectLike<T>) {
+    public new(objectValue: FlatObjectLike<TE>): TE;
+    public new(primaryValue: ValueType): TE;
+    public new(primaryValue: ValueType | FlatObjectLike<TE>) {
         const entity = new this.type();
         if (isValue(primaryValue)) {
             if (this.primaryKeys.length !== 1) {
                 throw new Error(`${this.type.name} has multiple primary keys`);
             }
 
-            entity[this.primaryKeys.find(() => true).propertyName] = primaryValue as T[StringKeyOf<T>];
+            entity[this.primaryKeys.find(() => true).propertyName] = primaryValue as TE[StringKeyOf<TE>];
         }
         else {
-            if (this.primaryKeys.some((o) => !(o.generation & ColumnGeneration.Insert) && !o.defaultExp && !primaryValue[o.propertyName as keyof FlatObjectLike<T>])) {
+            if (this.primaryKeys.some((o) => !(o.generation & ColumnGeneration.Insert) && !o.defaultExp && !primaryValue[o.propertyName as keyof FlatObjectLike<TE>])) {
                 throw new Error(`Primary keys is required`);
             }
 
             for (const prop in primaryValue) {
-                entity[prop as StringKeyOf<T>] = primaryValue[prop];
+                entity[prop as StringKeyOf<TE>] = primaryValue[prop];
             }
         }
         this.dbContext.add(entity);
         return entity;
     }
-    public updateEntryKey(entry: EntityEntry<T>) {
+    public updateEntryKey(entry: EntityEntry<TE>) {
         this.dictionary.delete(entry.key);
         entry.key = this.getKey(entry.entity);
         this.dictionary.set(entry.key, entry);
     }
 
-    public async upsert(item: FlatObjectLike<T>) {
+    public async upsert(item: FlatObjectLike<TE>) {
         const query = this.deferredUpsert(item);
         return await query.execute();
     }

@@ -1,7 +1,7 @@
-import { Enumerable, IEnumerable } from "@elcy/enumerable";
+import { Enumerable, IEnumerable, isNull } from "@elcy/enumerable";
 import { IQuery } from "src/Query/IQuery";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
-import { GenericType } from "../../Common/Type";
+import { GenericType, StringKeyOf } from "../../Common/Type";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
 import { TimeSpan } from "../../Data/TimeSpan";
 import { Uuid } from "../../Data/Uuid";
@@ -23,6 +23,7 @@ import { SqlTableValueParameterExpression } from "src/Queryable/QueryExpression/
 import { BatchedQuery } from "src/Query/BatchedQuery";
 import { ProjectionEntityExpression } from "src/Queryable/QueryExpression/ProjectionEntityExpression";
 import { AndExpression } from "src/ExpressionBuilder/Expression/AndExpression";
+import { UpsertExpression } from "src/Queryable/QueryExpression/UpsertExpression";
 
 export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
     public queryLimit: IQueryLimit = {
@@ -138,7 +139,8 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
                     continue;
                 }
 
-                result.push(...this.createTempTableQuery(key, valueExp.value as unknown[], context));
+                key.asTempTable = true;
+                result.push(...this.getTempTableQuery(key, valueExp.value as unknown[], context));
             }
         }
 
@@ -255,7 +257,8 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
                     continue;
                 }
 
-                result.push(...this.createTempTableQuery(key, valueExp.value as unknown[], context));
+                key.asTempTable = true;
+                result.push(...this.getTempTableQuery(key, valueExp.value as unknown[], context));
             }
         }
 
@@ -320,6 +323,65 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
 
         const includedDeletes = deleteExp.includes.flatMap((o) => this.getDeleteQuery(o.child, context.option, context.parameters));
         result.push(...includedDeletes);
+        return result;
+    }
+    protected override getUpsertQuery<TE extends object>(upsertExp: UpsertExpression<TE>, option: IQueryOption, parameters: ISqlParameterValueMap): IQuery[] {
+        if (upsertExp.values.length <= 0) {
+            return [];
+        }
+
+        const context = this.createContext(upsertExp, parameters, option);
+        const colString = Enumerable.from(upsertExp.insertColumns).map((o) => this.enclose(o.columnName)).reduce((acc, item) => acc ? acc + "," + item : item, "");
+        const insertQuery = `INSERT INTO ${this.entityName(upsertExp.entity)}${upsertExp.entity.alias ? ` AS ${this.enclose(upsertExp.entity.alias)}` : ""}(${colString}) VALUES`;
+        let returning = "";
+        if (upsertExp.returnings.length) {
+            returning = `${this.newLine()}RETURNING ${upsertExp.returnings.map(o => {
+                let colStr = this.getColumnQueryString(o, context);
+                // NOTE: computed column should always has alias
+                if (o.alias) {
+                    colStr += " AS " + this.enclose(o.alias);
+                }
+
+                return colStr;
+            }).join(",")}`;
+        }
+
+        let rowValues: string[] = [];
+        // bulk insert
+        for (const itemExp of upsertExp.values) {
+            const values: string[] = [];
+            for (const col of upsertExp.insertColumns) {
+                const valueExp = itemExp[col.propertyName] as SqlParameterExpression;
+                if (valueExp) {
+                    const paramExp = parameters.get(valueExp);
+                    if (paramExp) {
+                        context.parameters.set(valueExp, paramExp);
+                    }
+                    values.push(this.toString(valueExp, context));
+                }
+                else {
+                    values.push("DEFAULT");
+                }
+            }
+
+            rowValues.push(`(${values.join(",")})`);
+        }
+
+        const pkString = upsertExp.entity.primaryColumns.map(o => o.columnName).join(", ");
+        const setQuery = Object.keys(upsertExp.setter).map((prop: StringKeyOf<TE>) => {
+            const column = upsertExp.entity.columns.find((c) => c.propertyName === prop);
+            const valExp = upsertExp.setter[prop];
+            const valQuery = isNull(valExp) ? `EXCLUDED.${this.enclose(column.columnName)}` : this.toOperandString(valExp, context);
+            return `${this.enclose(column.columnName)} = ${valQuery}`;
+        }).join(`,${this.newLine(1, false)}`);
+        let update = `ON CONFLICT (${pkString}) DO UPDATE` +
+            this.newLine() + `SET ${setQuery}`;
+        const result: IQuery[] = [{
+            query: `${insertQuery}${this.newLine(1, false)}${rowValues.join(`,${this.newLine(1, false)}`)}${update}${returning}`,
+            type: returning ? QueryType.DML | QueryType.DQL : QueryType.DML,
+            parameters: this.getParameter(context)
+        }];
+
         return result;
     }
     protected override entityName<T extends object>(entityExp: IEntityExpression<T>): string {

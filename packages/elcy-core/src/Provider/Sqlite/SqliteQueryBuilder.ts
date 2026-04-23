@@ -1,7 +1,7 @@
-import { Enumerable } from "@elcy/enumerable";
+import { Enumerable, isNull } from "@elcy/enumerable";
 import { QueryType } from "../../Common/Enum";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
-import { GenericType, ValueType } from "../../Common/Type";
+import { GenericType, StringKeyOf, ValueType } from "../../Common/Type";
 import { Version } from "../../Common/Version";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
 import { TimeSpan } from "../../Data/TimeSpan";
@@ -41,78 +41,6 @@ export class SqliteQueryBuilder extends RelationalQueryBuilder {
         [Boolean, () => ({ columnType: "integer" })],
         [Uuid, () => ({ columnType: "text" })]
     ]);
-    public override getUpsertQuery<TE extends object>(upsertExp: UpsertExpression<TE>, option: IQueryOption, parameters: ISqlParameterValueMap): IQuery[] {
-        const param: IQueryBuilderContext = {
-            option: option,
-            parameters: parameters,
-            queryExpression: upsertExp
-        };
-
-        if (option?.version && option.version < new Version(3, 24)) {
-            return this.getUpsertQueryOlder(upsertExp, option, parameters);
-        }
-
-        const colString = Enumerable.from(upsertExp.insertColumns).map((o) => this.enclose(o.columnName)).reduce((acc, item) => acc ? acc + "," + item : item, "");
-        const valueString = upsertExp.insertColumns.map((o) => {
-            const valueExp = upsertExp.setter[o.propertyName];
-            return valueExp ? this.toString(valueExp, param) : "DEFAULT";
-        }).join(",");
-        const primaryColString = upsertExp.entity.primaryColumns.map((o) => this.enclose(o.columnName)).join(",");
-        const updateString = Enumerable.from(upsertExp.updateColumns).map((column) => {
-            const valueExp = upsertExp.setter[column.propertyName];
-            if (!valueExp) {
-                return null;
-            }
-            return `${this.enclose(column.columnName)} = EXCLUDED.${this.enclose(column.columnName)}`;
-        }).filter((o) => !!o).toArray().join(`,${this.newLine(1)}`);
-
-        const queryCommand: IQuery = {
-            query: `INSERT INTO ${this.getEntityQueryString(upsertExp.entity, param)}(${colString})` + this.newLine()
-                + `VALUES (${valueString}) ON CONFLICT(${primaryColString}) DO UPDATE SET ${updateString}`,
-            parameters: this.getParameter(param),
-            type: QueryType.DML
-        };
-        return [queryCommand];
-    }
-    protected getUpsertQueryOlder<TE extends object>(upsertExp: UpsertExpression<TE>, option: IQueryOption, parameters: ISqlParameterValueMap): IQuery[] {
-        const param: IQueryBuilderContext = {
-            option: option,
-            parameters: parameters,
-            queryExpression: upsertExp
-        };
-
-        const colString = Enumerable.from(upsertExp.insertColumns).map((o) => this.enclose(o.columnName)).reduce((acc, item) => acc ? acc + "," + item : item, "");
-        const insertQuery = `INSERT OR IGNORE INTO ${this.getEntityQueryString(upsertExp.entity, param)}(${colString})` + this.newLine() +
-            `VALUES (${upsertExp.insertColumns.map((o) => {
-                const valueExp = upsertExp.setter[o.propertyName];
-                return valueExp ? this.toString(valueExp, param) : "DEFAULT";
-            }).join(",")})`;
-
-        const queryCommand: IQuery = {
-            query: insertQuery,
-            parameters: this.getParameter(param),
-            type: QueryType.DML
-        };
-
-        const result: IQuery[] = [queryCommand];
-
-        const updateString = Enumerable.from(upsertExp.updateColumns).map((column) => {
-            const valueExp = upsertExp.setter[column.propertyName];
-            if (!valueExp) {
-                return null;
-            }
-
-            return `${this.enclose(column.columnName)} = ${this.toOperandString(valueExp, param)}`;
-        }).filter((o) => !!o).toArray().join(`,${this.newLine(1)}`);
-
-        const updateCommand: IQuery = {
-            query: `UPDATE ${this.getEntityQueryString(upsertExp.entity, param)} SET ${updateString} WHERE ${this.toLogicalString(upsertExp.where, param)}`,
-            parameters: queryCommand.parameters,
-            type: QueryType.DML
-        };
-        result.push(updateCommand);
-        return result;
-    }
     protected override getPagingQueryString(select: SelectExpression, param?: IQueryBuilderContext): string {
         let result = "";
         if (select.paging.take) {
@@ -130,7 +58,7 @@ export class SqliteQueryBuilder extends RelationalQueryBuilder {
 
         return super.entityName(entityExp);
     }
-    protected override createTableValueConstructorQuery<TE extends object>(entityExp: SqlTableValueParameterExpression<TE>, values: TE[], param?: IQueryBuilderContext): string {
+    protected override toTableValueConstructorQuery<TE extends object>(entityExp: SqlTableValueParameterExpression<TE>, values: TE[], param?: IQueryBuilderContext): string {
         const columns = entityExp.columns.map((o, i) => `column${i + 1} AS ${this.enclose(o.columnName)}`).join(", ");
         let i = 0;
         const valueLiterals = values.map(o => {
@@ -170,7 +98,8 @@ export class SqliteQueryBuilder extends RelationalQueryBuilder {
                     continue;
                 }
 
-                result.push(...this.createTempTableQuery(key, valueExp.value as unknown[], context));
+                key.asTempTable = true;
+                result.push(...this.getTempTableQuery(key, valueExp.value as unknown[], context));
             }
         }
 
@@ -244,6 +173,139 @@ export class SqliteQueryBuilder extends RelationalQueryBuilder {
 
         const includedUpdates = updateExp.includes.flatMap((o) => this.getUpdateQuery(o.child, context.option, context.parameters));
         result.push(...includedUpdates);
+        return result;
+    }
+    protected override getUpsertQuery<TE extends object>(upsertExp: UpsertExpression<TE>, option: IQueryOption, parameters: ISqlParameterValueMap): IQuery[] {
+        if (upsertExp.values.length <= 0) {
+            return [];
+        }
+
+        if (option?.version && option.version < new Version(3, 24)) {
+            return this.getUpsertQueryV2(upsertExp, option, parameters);
+        }
+
+        const context = this.createContext(upsertExp, parameters, option);
+        const colString = Enumerable.from(upsertExp.insertColumns).map((o) => this.enclose(o.columnName)).reduce((acc, item) => acc ? acc + "," + item : item, "");
+        const insertQuery = `INSERT INTO ${this.entityName(upsertExp.entity)}${upsertExp.entity.alias ? ` AS ${this.enclose(upsertExp.entity.alias)}` : ""}(${colString}) VALUES`;
+        let returning = "";
+        if (upsertExp.returnings.length) {
+            returning = `${this.newLine()}RETURNING ${upsertExp.returnings.map(o => {
+                let colStr = this.getColumnQueryString(o, context);
+                // NOTE: computed column should always has alias
+                if (o.alias) {
+                    colStr += " AS " + this.enclose(o.alias);
+                }
+
+                return colStr;
+            }).join(",")}`;
+        }
+
+        let rowValues: string[] = [];
+        // bulk insert
+        for (const itemExp of upsertExp.values) {
+            const values: string[] = [];
+            for (const col of upsertExp.insertColumns) {
+                const valueExp = itemExp[col.propertyName] as SqlParameterExpression;
+                if (valueExp) {
+                    const paramExp = parameters.get(valueExp);
+                    if (paramExp) {
+                        context.parameters.set(valueExp, paramExp);
+                    }
+                    values.push(this.toString(valueExp, context));
+                }
+                else {
+                    values.push("DEFAULT");
+                }
+            }
+
+            rowValues.push(`(${values.join(",")})`);
+        }
+
+        const pkString = upsertExp.entity.primaryColumns.map(o => o.columnName).join(", ");
+        const setQuery = Object.keys(upsertExp.setter).map((prop: StringKeyOf<TE>) => {
+            const column = upsertExp.entity.columns.find((c) => c.propertyName === prop);
+            const valExp = upsertExp.setter[prop];
+            const valQuery = isNull(valExp) ? `EXCLUDED.${this.enclose(column.columnName)}` : this.toOperandString(valExp, context);
+            return `${this.enclose(column.columnName)} = ${valQuery}`;
+        }).join(`,${this.newLine(1, false)}`);
+        let update = `ON CONFLICT (${pkString}) DO UPDATE` +
+            this.newLine() + `SET ${setQuery}`;
+        const result: IQuery[] = [{
+            query: `${insertQuery}${this.newLine(1, false)}${rowValues.join(`,${this.newLine(1, false)}`)}${update}${returning}`,
+            type: returning ? QueryType.DML | QueryType.DQL : QueryType.DML,
+            parameters: this.getParameter(context)
+        }];
+
+        return result;
+    }
+    protected getUpsertQueryV2<TE extends object>(upsertExp: UpsertExpression<TE>, option: IQueryOption, parameters: ISqlParameterValueMap): IQuery[] {
+        const context = this.createContext(upsertExp, parameters, option);
+        const colString = Enumerable.from(upsertExp.insertColumns).map((o) => this.enclose(o.columnName)).reduce((acc, item) => acc ? acc + "," + item : item, "");
+        const insertQuery = `INSERT OR IGNORE INTO ${this.entityName(upsertExp.entity)}${upsertExp.entity.alias ? ` AS ${this.enclose(upsertExp.entity.alias)}` : ""}(${colString})${this.newLine()}VALUES`;
+        let returning = "";
+        if (upsertExp.returnings.length) {
+            returning = `${this.newLine()}RETURNING ${upsertExp.returnings.map(o => {
+                let colStr = this.getColumnQueryString(o, context);
+                // NOTE: computed column should always has alias
+                if (o.alias) {
+                    colStr += " AS " + this.enclose(o.alias);
+                }
+
+                return colStr;
+            }).join(",")}`;
+        }
+
+        const result: IQuery[] = [];
+        // bulk insert
+        for (const itemExp of upsertExp.values) {
+            const context = this.createContext(upsertExp, parameters, option);
+            const values: string[] = [];
+            for (const col of upsertExp.insertColumns) {
+                const valueExp = itemExp[col.propertyName] as SqlParameterExpression;
+                if (valueExp) {
+                    const paramExp = parameters.get(valueExp);
+                    if (paramExp) {
+                        context.parameters.set(valueExp, paramExp);
+                    }
+                    values.push(this.toString(valueExp, context));
+                }
+                else {
+                    values.push("DEFAULT");
+                }
+            }
+
+            // insert
+            const queryParameters = this.getParameter(context);
+            result.push({
+                query: `${insertQuery} (${values.join(",")})${returning}`,
+                type: QueryType.DML,
+                parameters: queryParameters
+            });
+
+            const setQuery = Object.keys(upsertExp.setter).map((prop: StringKeyOf<TE>) => {
+                const column = upsertExp.entity.columns.find((c) => c.propertyName === prop);
+                const valExp = upsertExp.setter[prop] ?? itemExp[prop];
+                if (!valExp) {
+                    return null;
+                }
+
+                return `${this.enclose(column.columnName)} = ${this.toOperandString(valExp, context)}`;
+            }).filter((o) => !!o).join(`,${this.newLine(1, false)}`);
+            const pkFilter = Enumerable.from(upsertExp.entity.primaryColumns).map((column) => {
+                const valueExp = itemExp[column.propertyName];
+                return `${this.enclose(column.columnName)}=${this.toOperandString(valueExp, context)}`;
+            }).filter((o) => !!o).join(` AND `);
+
+            // update
+            result.push({
+                query: `UPDATE ${this.entityName(upsertExp.entity)}${upsertExp.entity.alias ? ` AS ${this.enclose(upsertExp.entity.alias)}` : ""}` +
+                    this.newLine() + `SET ${setQuery}` +
+                    this.newLine() + `WHERE ${pkFilter}${returning}`,
+                type: returning ? QueryType.DML & QueryType.DQL : QueryType.DML,
+                parameters: queryParameters,
+            });
+        }
+
         return result;
     }
 }

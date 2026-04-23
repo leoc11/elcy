@@ -22,7 +22,7 @@ import { ValueExpression } from "src/ExpressionBuilder/Expression/ValueExpressio
 import { IExpression } from "src/ExpressionBuilder/Expression/IExpression";
 import { AndExpression } from "src/ExpressionBuilder/Expression/AndExpression";
 import { ParameterExpression } from "src/ExpressionBuilder/Expression/ParameterExpression";
-import { isNotNull } from "src/Helper/Util";
+import { isNotNull, isNull } from "src/Helper/Util";
 import { SqlTableValueParameterExpression } from "src/Queryable/QueryExpression/SqlTableValueParameterExpression";
 import { ColumnExpression } from "src/Queryable/QueryExpression/ColumnExpression";
 import { IMysqlQueryBuilderContext } from "./IMysqlQueryBuilderContext";
@@ -31,6 +31,7 @@ import { UpdateExpression } from "src/Queryable/QueryExpression/UpdateExpression
 import { JoinRelation } from "src/Queryable/Interface/JoinRelation";
 import { ProjectionEntityExpression } from "src/Queryable/QueryExpression/ProjectionEntityExpression";
 import { DeleteExpression } from "src/Queryable/QueryExpression/DeleteExpression";
+import { UpsertExpression } from "src/Queryable/QueryExpression/UpsertExpression";
 
 export class MysqlQueryBuilder extends RelationalQueryBuilder {
     //#region column type map
@@ -123,9 +124,8 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
                     const valueExp = itemExp[col.propertyName] as SqlParameterExpression | ValueExpression;
                     if (valueExp) {
                         values.push(this.toString(valueExp, context));
-                        const paramValue = context.parameters.get(valueExp as SqlParameterExpression);
-                        if (pkObj) {
-                            pkObj[col.propertyName] = (paramValue ? paramValue.value : (valueExp as ValueExpression).value) as TE[StringKeyOf<TE>];
+                        if (pkObj && col.isPrimary) {
+                            pkObj[col.propertyName] = this.extractValue(valueExp, context) as TE[StringKeyOf<TE>];
                         }
                     }
                     else {
@@ -142,7 +142,7 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
             });
             this.indent--;
 
-            if (paramValue) {
+            if (insertExp.returnings.length && paramValue) {
                 const selectExp = new SelectExpression(insertExp.entity);
                 selectExp.selects = insertExp.returnings.slice(0);
                 const tvpExp = new SqlTableValueParameterExpression(new ParameterExpression<TE[]>("inserted", Array), {} as any);
@@ -178,7 +178,8 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
                     continue;
                 }
 
-                result.push(...this.createTempTableQuery(key, valueExp.value as unknown[], context));
+                key.asTempTable = true;
+                result.push(...this.getTempTableQuery(key, valueExp.value as unknown[], context));
             }
         }
 
@@ -197,7 +198,7 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
             const setQuery = selectExp.selects
                 .map((o) => `${this.enclose(o.columnName)} = ${this.getColumnQueryString(o, context)}`)
                 .join(", ");
-            
+
             const updateQuery = `UPDATE ${this.entityName(updateExp.entity)} AS ${this.enclose(updateExp.entity.alias)}` +
                 this.getJoinQueryString([new JoinRelation(updateExp.select, selectExp, relation, "INNER")], context) +
                 this.newLine() + `SET ${setQuery}`;
@@ -260,7 +261,8 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
                     continue;
                 }
 
-                result.push(...this.createTempTableQuery(key, valueExp.value as unknown[], context));
+                key.asTempTable = true;
+                result.push(...this.getTempTableQuery(key, valueExp.value as unknown[], context));
             }
         }
 
@@ -280,7 +282,102 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
         result.push(...includedDeletes);
         return result;
     }
-    protected override createTableValueConstructorQuery<TE extends object>(entityExp: SqlTableValueParameterExpression<TE>, values: TE[], param?: IQueryBuilderContext): string {
+    protected override getUpsertQuery<TE extends object>(upsertExp: UpsertExpression<TE>, option: IQueryOption, parameters: ISqlParameterValueMap): IQuery[] {
+        if (upsertExp.values.length <= 0) {
+            return [];
+        }
+
+        const context = this.createContext(upsertExp, parameters, option);
+        const colString = Enumerable.from(upsertExp.insertColumns).map((o) => this.enclose(o.columnName)).reduce((acc, item) => acc ? acc + "," + item : item, "");
+        const insertQuery = `INSERT INTO ${this.entityName(upsertExp.entity)}(${colString}) VALUES`;
+        let returning = "";
+        if (upsertExp.returnings.length) {
+            returning = `${this.newLine()}RETURNING ${upsertExp.returnings.map(o => {
+                let colStr = this.getColumnQueryString(o, context);
+                // NOTE: computed column should always has alias
+                if (o.alias) {
+                    colStr += " AS " + this.enclose(o.alias);
+                }
+
+                return colStr;
+            }).join(",")}`;
+        }
+
+        let paramValue: IQueryParameterValue<Partial<TE>[]>;
+        if (upsertExp.returnings.length) {
+            paramValue = { value: [] };
+        }
+
+        let rowValues: string[] = [];
+        // bulk insert
+        for (const itemExp of upsertExp.values) {
+            const values: string[] = [];
+            let pkObj: Partial<TE>;
+            if (paramValue) {
+                pkObj = {};
+                paramValue.value.push(pkObj);
+            }
+
+            for (const col of upsertExp.insertColumns) {
+                const valueExp = itemExp[col.propertyName] as SqlParameterExpression;
+                if (valueExp) {
+                    const paramExp = parameters.get(valueExp);
+                    if (paramExp) {
+                        context.parameters.set(valueExp, paramExp);
+                        if (pkObj && col.isPrimary) {
+                            pkObj[col.propertyName] = this.extractValue(valueExp, context) as TE[StringKeyOf<TE>];
+                        }
+                    }
+                    values.push(this.toString(valueExp, context));
+                }
+                else {
+                    values.push("DEFAULT");
+                }
+            }
+
+            rowValues.push(`(${values.join(",")})`);
+        }
+
+        const valueAlias = upsertExp.entity.alias ?? "EXCLUDED";
+        const setQuery = Object.keys(upsertExp.setter).map((prop: StringKeyOf<TE>) => {
+            const column = upsertExp.entity.columns.find((c) => c.propertyName === prop);
+            const valExp = upsertExp.setter[prop];
+            const valQuery = isNull(valExp) ? `${this.enclose(valueAlias)}.${this.enclose(column.columnName)}` : this.toOperandString(valExp, context);
+            return `${this.enclose(column.columnName)} = ${valQuery}`;
+        }).join(`,${this.newLine(1, false)}`);
+        let update = `ON DUPLICATE KEY UPDATE` +
+            this.newLine(1, false) + `${setQuery}`;
+        const result: IQuery[] = [{
+            query: `${insertQuery}${this.newLine(1, false)}${rowValues.join(`,${this.newLine(1, false)}`)} AS ${this.enclose(valueAlias)}${update}${returning}`,
+            type: QueryType.DML,
+            parameters: this.getParameter(context)
+        }];
+
+        if (upsertExp.returnings.length && paramValue) {
+            const selectExp = new SelectExpression(upsertExp.entity);
+            selectExp.selects = upsertExp.returnings.slice(0);
+            const tvpExp = new SqlTableValueParameterExpression(new ParameterExpression<TE[]>("inserted", Array), {} as any);
+            let relation: IExpression<boolean>;
+            for (const column of selectExp.entity.primaryColumns) {
+                const newValueColumn = new ColumnExpression(tvpExp, column.type, column.propertyName, column.columnName, false, true, column.columnMeta.columnType);
+                tvpExp.columns.push(newValueColumn);
+                const rel = new StrictEqualExpression(column, newValueColumn);
+                relation = relation ? new AndExpression(relation, rel) : rel;
+            }
+
+            selectExp.paramExps.push(tvpExp);
+            const valueSelectExp = new SelectExpression(tvpExp);
+            valueSelectExp.selects = tvpExp.columns;
+            valueSelectExp.isSubSelect = true;
+            selectExp.addJoin(valueSelectExp, relation, "INNER");
+
+            const selectParameterMap: ISqlParameterValueMap = new Map([[tvpExp, paramValue]]);
+            result.push(...this.getSelectQuery(selectExp, option, selectParameterMap));
+        }
+
+        return result;
+    }
+    protected override toTableValueConstructorQuery<TE extends object>(entityExp: SqlTableValueParameterExpression<TE>, values: TE[], param?: IQueryBuilderContext): string {
         const valueLiterals = values.map(o => {
             const valueQueries = entityExp.columns.map(p => {
                 return `${this.valueString(o[p.propertyName] as ValueType)} AS ${this.enclose(p.columnName)}`;
@@ -289,20 +386,20 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
         }).join(`${this.newLine(1, false)}UNION ALL${this.newLine(1, false)}`)
         return `(${this.newLine(1)}${valueLiterals}${this.newLine(-1)}) AS ${this.enclose(entityExp.alias)}`;
     }
-    protected override createTempTableQuery<TE extends object>(entityExp: SqlTableValueParameterExpression<TE>, values: TE[], param: IQueryBuilderContext): IQuery[] {
+    protected override getTempTableQuery<TE extends object>(tvpExp: SqlTableValueParameterExpression<TE>, values: TE[], param: IQueryBuilderContext): IQuery[] {
         const result: IQuery[] = [];
         result.push({
-            query: `DROP TEMPORARY TABLE IF EXISTS ${this.entityName(entityExp)}`,
+            query: `DROP TEMPORARY TABLE IF EXISTS ${this.entityName(tvpExp)}`,
             type: QueryType.DDL
         });
-        const columnDefinition = entityExp.columns.map((c) => {
+        const columnDefinition = tvpExp.columns.map((c) => {
             const colTypeFactory = this.valueTypeMap.get(c.type);
             const maxValue = Enumerable.from(values).map((o) => (o[c.propertyName] as string)?.length).max();
             const colType = colTypeFactory(maxValue);
             return `${this.enclose(c.columnName)} ${this.columnTypeString(colType)}`;
         }).join("," + this.newLine(1, false));
 
-        const query = `CREATE TEMPORARY TABLE ${this.entityName(entityExp)}` +
+        const query = `CREATE TEMPORARY TABLE ${this.entityName(tvpExp)}` +
             `${this.newLine()}(` +
             `${this.newLine(1, false)}${columnDefinition}` +
             `${this.newLine()})`;
@@ -312,8 +409,8 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
             type: QueryType.DDL
         });
 
-        const columns = entityExp.columns;
-        const insertQuery = new InsertExpression(entityExp, [], columns);
+        const columns = tvpExp.columns;
+        const insertQuery = new InsertExpression(tvpExp, [], columns);
         for (const item of values) {
             const itemExp: { [key: string]: IExpression } = {};
             for (const col of columns) {
