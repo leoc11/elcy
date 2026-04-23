@@ -2,7 +2,7 @@ import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpr
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
 import { IQueryOption } from "./IQueryOption";
-import { IQueryVisitParameter } from "./IQueryVisitParameter";
+import { IQueryVisitContext } from "./IQueryVisitContext";
 import { NamingStrategy } from "./NamingStrategy";
 import { QueryTranslator } from "./QueryTranslator";
 
@@ -16,6 +16,6 @@ export interface IQueryVisitor {
     newAlias(type?: "entity" | "column" | "param"): string;
     setDefaultBehaviour<T extends object>(selectExp: SelectExpression<T>): void;
     setParameter(flatParameterStacks: { [key: string]: any }): void;
-    visit<T>(exp: IExpression<T>, param: IQueryVisitParameter): IExpression<T>;
-    visitFunction<T, TArgs extends readonly unknown[]>(exp: FunctionExpression<T, TArgs>, parameters: { [K in keyof TArgs]: IExpression<TArgs[K]>; }, param: IQueryVisitParameter): IExpression<T>;
+    visit<T>(exp: IExpression<T>, context: IQueryVisitContext): IExpression<T>;
+    visitFunction<T, TArgs extends readonly unknown[]>(exp: FunctionExpression<T, TArgs>, parameters: { [K in keyof TArgs]: IExpression<TArgs[K]>; }, context: IQueryVisitContext): IExpression<T>;
 }

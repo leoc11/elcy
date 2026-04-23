@@ -6,7 +6,7 @@ import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { hashCode, hashCodeAdd } from "../Helper/Util";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
-import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
+import { IQueryVisitContext } from "../Query/IQueryVisitContext";
 import { Queryable } from "./Queryable";
 import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
@@ -41,8 +41,8 @@ export class SelectQueryable<S, T> extends Queryable<T> {
             params.unshift(new ValueExpression(this.type));
         }
         const methodExpression = new MethodCallExpression(objectOperand, "map", params);
-        const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
-        const result = queryVisitor.visit(methodExpression, visitParam) as SelectExpression<object, T>;
+        const context: IQueryVisitContext = { selectExpression: objectOperand, scope: "queryable" };
+        const result = queryVisitor.visit(methodExpression, context) as SelectExpression<object, T>;
         result.parentRelation = null;
         return result;
     }

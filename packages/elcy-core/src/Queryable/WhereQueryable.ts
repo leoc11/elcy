@@ -3,7 +3,7 @@ import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCall
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { hashCode, hashCodeAdd } from "../Helper/Util";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
-import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
+import { IQueryVisitContext } from "../Query/IQueryVisitContext";
 import { Queryable } from "./Queryable";
 import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
@@ -32,8 +32,8 @@ export class WhereQueryable<T> extends Queryable<T> {
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<object, T>;
         const methodExpression = new MethodCallExpression(objectOperand, "filter", [this.predicate.clone()]);
-        const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
-        return queryVisitor.visit(methodExpression, visitParam) as IQueryExpression<T>;
+        const context: IQueryVisitContext = { selectExpression: objectOperand, scope: "queryable" };
+        return queryVisitor.visit(methodExpression, context) as IQueryExpression<T>;
     }
     public hashCode() {
         return hashCodeAdd(hashCode("FILTER", this.parent.hashCode()), this.predicate.hashCode());

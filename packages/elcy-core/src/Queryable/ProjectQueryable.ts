@@ -4,7 +4,7 @@ import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCall
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { hashCode, hashCodeAdd } from "../Helper/Util";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
-import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
+import { IQueryVisitContext } from "../Query/IQueryVisitContext";
 import { Queryable } from "./Queryable";
 import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
@@ -35,8 +35,8 @@ export class ProjectQueryable<T> extends Queryable<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<object, T>;
         const selectors = this.selectors.map((o) => o.clone());
         const methodExpression = new MethodCallExpression(objectOperand, "project" as MethodKey<T[]>, selectors);
-        const visitParam: IQueryVisitParameter = { selectExpression: objectOperand as SelectExpression, scope: "queryable" };
-        return queryVisitor.visit(methodExpression, visitParam) as any;
+        const context: IQueryVisitContext = { selectExpression: objectOperand as SelectExpression, scope: "queryable" };
+        return queryVisitor.visit(methodExpression, context) as any;
     }
     public hashCode(): number {
         return hashCodeAdd(hashCode("PROJECT", this.parent.hashCode()), this.selectors.reduce((r, o) => r + o.hashCode(), 0));

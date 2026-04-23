@@ -5,7 +5,7 @@ import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
-import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
+import { IQueryVisitContext } from "../Query/IQueryVisitContext";
 import { Queryable } from "./Queryable";
 import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
@@ -71,8 +71,8 @@ export abstract class JoinQueryable<T = unknown, T2 = unknown, R = unknown> exte
         }
         params.push(this.resultSelector.clone());
         const methodExpression = new MethodCallExpression(objectOperand, type as any, params);
-        const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
-        return queryVisitor.visit(methodExpression, visitParam) as any;
+        const context: IQueryVisitContext = { selectExpression: objectOperand, scope: "queryable" };
+        return queryVisitor.visit(methodExpression, context) as any;
     }
     public override flatQueryParameter(param?: { index: number }) {
         const flatParam = this.parent.flatQueryParameter(param);

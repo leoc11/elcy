@@ -5,7 +5,7 @@ import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCall
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { hashCode, hashCodeAdd } from "../Helper/Util";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
-import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
+import { IQueryVisitContext } from "../Query/IQueryVisitContext";
 import { Queryable } from "./Queryable";
 import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
@@ -36,11 +36,11 @@ export class SelectManyQueryable<S, T> extends Queryable<T> {
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<S & object>;
         const methodExpression = new MethodCallExpression(objectOperand, "flatMap", [this.selector.clone()]);
-        const visitParam: IQueryVisitParameter = {
+        const context: IQueryVisitContext = {
             selectExpression: objectOperand,
             scope: "queryable"
         };
-        const result = queryVisitor.visit(methodExpression, visitParam) as SelectExpression;
+        const result = queryVisitor.visit(methodExpression, context) as SelectExpression;
         result.parentRelation = null;
         return result;
     }

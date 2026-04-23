@@ -2,7 +2,7 @@ import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCall
 import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
 import { hashCode } from "../Helper/Util";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
-import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
+import { IQueryVisitContext } from "../Query/IQueryVisitContext";
 import { Queryable } from "./Queryable";
 import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
@@ -22,8 +22,8 @@ export class SliceQueryable<T> extends Queryable<T> {
             parameterExps.push(new ParameterExpression<number>("take", Number));
         }
         const methodExpression = new MethodCallExpression(objectOperand, "slice", parameterExps);
-        const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
-        return queryVisitor.visit(methodExpression, visitParam) as IQueryExpression<T>;
+        const context: IQueryVisitContext = { selectExpression: objectOperand, scope: "queryable" };
+        return queryVisitor.visit(methodExpression, context) as IQueryExpression<T>;
     }
     public hashCode() {
         return hashCode("SLICE", this.parent.hashCode());

@@ -1,5 +1,5 @@
 import type { IQueryVisitor } from "../Query/IQueryVisitor";
-import type { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
+import type { IQueryVisitContext } from "../Query/IQueryVisitContext";
 import type { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import type { SelectExpression } from "./QueryExpression/SelectExpression";
 import type { MethodKey } from "src/Common/Type";
@@ -29,8 +29,8 @@ export class IntersectQueryable<T> extends Queryable<T> {
         const objectOperand = parentOperands[0];
         const childOperands = parentOperands.slice(1);
         const methodExpression = new MethodCallExpression(parentOperands[0], "intersect" as MethodKey<T[]>, childOperands);
-        const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
-        const resut = queryVisitor.visit(methodExpression, visitParam) as IQueryExpression<T>;
+        const context: IQueryVisitContext = { selectExpression: objectOperand, scope: "queryable" };
+        const resut = queryVisitor.visit(methodExpression, context) as IQueryExpression<T>;
         return resut;
     }
     public override flatQueryParameter(param?: { index: number }) {

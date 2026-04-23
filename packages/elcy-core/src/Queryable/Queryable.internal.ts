@@ -22,7 +22,7 @@ import { DeferredQuery } from "../Query/DeferredQuery";
 import { IQueryOption } from "../Query/IQueryOption";
 import { ISqlParameterValueMap } from "../Query/IQueryParameter";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
-import { IQueryVisitParameter } from "../Query/IQueryVisitParameter";
+import { IQueryVisitContext } from "../Query/IQueryVisitContext";
 import { DeleteExpression } from "./QueryExpression/DeleteExpression";
 import { EntityExpression } from "./QueryExpression/EntityExpression";
 import { InsertIntoExpression } from "./QueryExpression/InsertIntoExpression";
@@ -122,9 +122,9 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
                 metParams.push(ExpressionBuilder.parse(predicate, [this.type], this.parameters));
             }
             const methodExpression = new MethodCallExpression(commandQuery, "every", metParams);
-            const param: IQueryVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
-            visitor.visit(methodExpression, param);
-            commandQuery = param.selectExpression as SelectExpression<object, T>;
+            const context: IQueryVisitContext = { selectExpression: commandQuery, scope: "queryable" };
+            visitor.visit(methodExpression, context);
+            commandQuery = context.selectExpression as SelectExpression<object, T>;
             if (Diagnostic.enabled) {
                 Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
             }
@@ -178,9 +178,9 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
             let commandQuery = this.buildQuery(visitor) as SelectExpression<object, T>;
             commandQuery.includes = [];
             const methodExpression = new MethodCallExpression(commandQuery, "some", []);
-            const param: IQueryVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
-            visitor.visit(methodExpression, param);
-            commandQuery = param.selectExpression as SelectExpression<object, T>;
+            const context: IQueryVisitContext = { selectExpression: commandQuery, scope: "queryable" };
+            visitor.visit(methodExpression, context);
+            commandQuery = context.selectExpression as SelectExpression<object, T>;
             if (Diagnostic.enabled) {
                 Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
             }
@@ -245,9 +245,9 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
             let commandQuery = this.buildQuery(visitor) as SelectExpression<object, T>;
             commandQuery.includes = [];
             const methodExpression = new MethodCallExpression(commandQuery, "includes", [new ValueExpression(item)]);
-            const param: IQueryVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
-            visitor.visit(methodExpression, param);
-            commandQuery = param.selectExpression as SelectExpression<object, T>;
+            const context: IQueryVisitContext = { selectExpression: commandQuery, scope: "queryable" };
+            visitor.visit(methodExpression, context);
+            commandQuery = context.selectExpression as SelectExpression<object, T>;
             if (Diagnostic.enabled) {
                 Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
             }
@@ -297,9 +297,9 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
             let commandQuery = this.buildQuery(visitor) as SelectExpression<object, T>;
             commandQuery.includes = [];
             const methodExpression = new MethodCallExpression(commandQuery, "count" as MethodKey<T[]>, []);
-            const param: IQueryVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
-            visitor.visit(methodExpression, param);
-            commandQuery = param.selectExpression as SelectExpression<object, T>;
+            const context: IQueryVisitContext = { selectExpression: commandQuery, scope: "queryable" };
+            visitor.visit(methodExpression, context);
+            commandQuery = context.selectExpression as SelectExpression<object, T>;
             if (Diagnostic.enabled) {
                 Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
             }
@@ -529,9 +529,9 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
                     metParams.push(ExpressionBuilder.parse(predicate, [this.type], this.parameters));
                 }
                 const methodExpression = new MethodCallExpression(commandQuery, "find", metParams);
-                const param: IQueryVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
-                visitor.visit(methodExpression, param);
-                commandQuery = param.selectExpression as SelectExpression<object, T>;
+                const context: IQueryVisitContext = { selectExpression: commandQuery, scope: "queryable" };
+                visitor.visit(methodExpression, context);
+                commandQuery = context.selectExpression as SelectExpression<object, T>;
                 if (Diagnostic.enabled) {
                     Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
                 }
@@ -649,9 +649,9 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
             let commandQuery = this.buildQuery(visitor) as SelectExpression<object, T>;
             commandQuery.includes = [];
             const methodExpression = new MethodCallExpression(commandQuery, "max" as MethodKey<T[]>, []);
-            const param: IQueryVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
-            visitor.visit(methodExpression, param);
-            commandQuery = param.selectExpression as SelectExpression<object, T>;
+            const context: IQueryVisitContext = { selectExpression: commandQuery, scope: "queryable" };
+            visitor.visit(methodExpression, context);
+            commandQuery = context.selectExpression as SelectExpression<object, T>;
             if (Diagnostic.enabled) {
                 Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
             }
@@ -707,9 +707,9 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
             let commandQuery = this.buildQuery(visitor) as SelectExpression<object, T>;
             commandQuery.includes = [];
             const methodExpression = new MethodCallExpression(commandQuery, "min" as MethodKey<T[]>, []);
-            const param: IQueryVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
-            visitor.visit(methodExpression, param);
-            commandQuery = param.selectExpression as SelectExpression<object, T>;
+            const context: IQueryVisitContext = { selectExpression: commandQuery, scope: "queryable" };
+            visitor.visit(methodExpression, context);
+            commandQuery = context.selectExpression as SelectExpression<object, T>;
             if (Diagnostic.enabled) {
                 Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
             }
@@ -763,9 +763,9 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
             let commandQuery = this.buildQuery(visitor) as SelectExpression<object, T>;
             commandQuery.includes = [];
             const methodExpression = new MethodCallExpression(commandQuery, "sum" as MethodKey<T[]>, []);
-            const param: IQueryVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
-            visitor.visit(methodExpression, param);
-            commandQuery = param.selectExpression as SelectExpression<object, T>;
+            const context: IQueryVisitContext = { selectExpression: commandQuery, scope: "queryable" };
+            visitor.visit(methodExpression, context);
+            commandQuery = context.selectExpression as SelectExpression<object, T>;
             if (Diagnostic.enabled) {
                 Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
             }
@@ -822,9 +822,9 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
             let commandQuery = this.buildQuery(visitor) as SelectExpression<object, T>;
             commandQuery.includes = [];
             const methodExpression = new MethodCallExpression(commandQuery, "avg" as MethodKey<T[]>, []);
-            const param: IQueryVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
-            visitor.visit(methodExpression, param);
-            commandQuery = param.selectExpression as SelectExpression<object, T>;
+            const context: IQueryVisitContext = { selectExpression: commandQuery, scope: "queryable" };
+            visitor.visit(methodExpression, context);
+            commandQuery = context.selectExpression as SelectExpression<object, T>;
             if (Diagnostic.enabled) {
                 Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
             }
@@ -875,9 +875,9 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
             let commandQuery = this.buildQuery(visitor) as SelectExpression<object, T>;
             commandQuery.includes = [];
             const methodExpression = new MethodCallExpression(commandQuery, "join", [new ValueExpression(separator)], String);
-            const param: IQueryVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
-            visitor.visit(methodExpression, param);
-            commandQuery = param.selectExpression as SelectExpression<object, T>;
+            const context: IQueryVisitContext = { selectExpression: commandQuery, scope: "queryable" };
+            visitor.visit(methodExpression, context);
+            commandQuery = context.selectExpression as SelectExpression<object, T>;
             if (Diagnostic.enabled) {
                 Diagnostic.trace(this, `build query expression time: ${timer.lap()}ms`);
             }
@@ -1008,9 +1008,9 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
             const selectorExp = new FunctionExpression(selector, [paramExp]);
 
             const methodExpression = new MethodCallExpression(commandQuery, "map", [selectorExp]);
-            const param: IQueryVisitParameter = { selectExpression: commandQuery, scope: "queryable" };
-            visitor.visit(methodExpression, param);
-            commandQuery = param.selectExpression as SelectExpression<object, T>;
+            const context: IQueryVisitContext = { selectExpression: commandQuery, scope: "queryable" };
+            visitor.visit(methodExpression, context);
+            commandQuery = context.selectExpression as SelectExpression<object, T>;
             if (Diagnostic.enabled) {
                 Diagnostic.trace(this, `build query expression. time: ${timer.lap()}ms`);
             }
