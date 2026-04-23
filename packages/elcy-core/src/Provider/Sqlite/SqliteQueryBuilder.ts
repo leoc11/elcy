@@ -41,13 +41,13 @@ export class SqliteQueryBuilder extends RelationalQueryBuilder {
         [Boolean, () => ({ columnType: "integer" })],
         [Uuid, () => ({ columnType: "text" })]
     ]);
-    protected override getPagingQueryString(select: SelectExpression, param?: IQueryBuilderContext): string {
+    protected override getPagingQueryString(select: SelectExpression, context?: IQueryBuilderContext): string {
         let result = "";
         if (select.paging.take) {
-            result += `${this.newLine()}LIMIT ${this.toString(select.paging.take, param)}`;
+            result += `${this.newLine()}LIMIT ${this.toString(select.paging.take, context)}`;
         }
         if (select.paging.skip) {
-            result += `${this.newLine()}OFFSET ${this.toString(select.paging.skip, param)}`;
+            result += `${this.newLine()}OFFSET ${this.toString(select.paging.skip, context)}`;
         }
         return result;
     }
@@ -58,7 +58,7 @@ export class SqliteQueryBuilder extends RelationalQueryBuilder {
 
         return super.entityName(entityExp);
     }
-    protected override toTableValueConstructorQuery<TE extends object>(entityExp: SqlTableValueParameterExpression<TE>, values: TE[], param?: IQueryBuilderContext): string {
+    protected override toTableValueConstructorQuery<TE extends object>(entityExp: SqlTableValueParameterExpression<TE>, values: TE[], context?: IQueryBuilderContext): string {
         const columns = entityExp.columns.map((o, i) => `column${i + 1} AS ${this.enclose(o.columnName)}`).join(", ");
         let i = 0;
         const valueLiterals = values.map(o => {
@@ -70,12 +70,12 @@ export class SqliteQueryBuilder extends RelationalQueryBuilder {
         }).join(`,${this.newLine(2, false)}`)
         return `(${this.newLine(1)}SELECT${this.newLine(1)}${columns}${this.newLine(-1)}FROM (${this.newLine(1)}VALUES${this.newLine()}${valueLiterals}${this.newLine(-1)})${this.newLine(-1)}) AS ${this.enclose(entityExp.alias)}`;
     }
-    protected override toSqlParameterString(expression: SqlParameterExpression, param?: IQueryBuilderContext): string {
-        const paramValue = param.parameters.get(expression);
+    protected override toSqlParameterString(expression: SqlParameterExpression, context?: IQueryBuilderContext): string {
+        const paramValue = context.parameters.get(expression);
         if (!paramValue) {
             throw new Error(`Sql Parameter ${expression.toString()} no supported`);
         }
-        if (param?.option?.supportTVP == true && expression instanceof SqlTableValueParameterExpression) {
+        if (context?.option?.supportTVP == true && expression instanceof SqlTableValueParameterExpression) {
             this.indent++;
             const column = expression.columns
                 .map((col) => `JSON_EXTRACT(value, '$.${col.propertyName}') AS ${this.enclose(col.columnName)}`)

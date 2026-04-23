@@ -377,7 +377,7 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
 
         return result;
     }
-    protected override toTableValueConstructorQuery<TE extends object>(entityExp: SqlTableValueParameterExpression<TE>, values: TE[], param?: IQueryBuilderContext): string {
+    protected override toTableValueConstructorQuery<TE extends object>(entityExp: SqlTableValueParameterExpression<TE>, values: TE[], context?: IQueryBuilderContext): string {
         const valueLiterals = values.map(o => {
             const valueQueries = entityExp.columns.map(p => {
                 return `${this.valueString(o[p.propertyName] as ValueType)} AS ${this.enclose(p.columnName)}`;
@@ -386,7 +386,7 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
         }).join(`${this.newLine(1, false)}UNION ALL${this.newLine(1, false)}`)
         return `(${this.newLine(1)}${valueLiterals}${this.newLine(-1)}) AS ${this.enclose(entityExp.alias)}`;
     }
-    protected override getTempTableQuery<TE extends object>(tvpExp: SqlTableValueParameterExpression<TE>, values: TE[], param: IQueryBuilderContext): IQuery[] {
+    protected override getTempTableQuery<TE extends object>(tvpExp: SqlTableValueParameterExpression<TE>, values: TE[], context: IQueryBuilderContext): IQuery[] {
         const result: IQuery[] = [];
         result.push({
             query: `DROP TEMPORARY TABLE IF EXISTS ${this.entityName(tvpExp)}`,
@@ -429,7 +429,7 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
             insertQuery.values.push(itemExp as SetterObj<TE>);
         }
 
-        result.push(...this.getInsertQuery(insertQuery, param.option, param.parameters));
+        result.push(...this.getInsertQuery(insertQuery, context.option, context.parameters));
 
         return result;
     }

@@ -328,29 +328,29 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
 
     //#endregion
 
-    protected override getPagingQueryString<TE extends object>(sqlExp: SelectExpression<TE>, param?: IQueryBuilderContext): string {
+    protected override getPagingQueryString<TE extends object>(sqlExp: SelectExpression<TE>, context?: IQueryBuilderContext): string {
         let result = "";
         if (sqlExp.orders.length <= 0) {
             if (sqlExp.distinct || sqlExp.isAggregated) {
-                result += `${this.newLine()}ORDER BY ${this.toString(sqlExp.projectedColumns.find(o => true), param)}`;
+                result += `${this.newLine()}ORDER BY ${this.toString(sqlExp.projectedColumns.find(o => true), context)}`;
             }
             else {
                 let column = sqlExp.entity.primaryColumns[0];
                 if (!column) {
                     column = sqlExp.entity.columns[0];
                 }
-                result += `${this.newLine()}ORDER BY ${this.toString(column, param)}`;
+                result += `${this.newLine()}ORDER BY ${this.toString(column, context)}`;
             }
         }
         if (sqlExp.paging.skip) {
-            result += `${this.newLine()}OFFSET ${this.toString(sqlExp.paging.skip, param)} ROWS`;
+            result += `${this.newLine()}OFFSET ${this.toString(sqlExp.paging.skip, context)} ROWS`;
         }
         if (sqlExp.paging.take) {
             if (!sqlExp.paging.skip) {
                 result += `${this.newLine()}OFFSET 0 ROWS`;
             }
 
-            result += `${this.newLine()}FETCH NEXT ${this.toString(sqlExp.paging.take, param)} ROWS ONLY`;
+            result += `${this.newLine()}FETCH NEXT ${this.toString(sqlExp.paging.take, context)} ROWS ONLY`;
         }
         return result;
     }
@@ -373,13 +373,13 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
     protected override booleanString(value: boolean) {
         return value ? "1" : "0";
     }
-    protected override getParameter(param: IQueryBuilderContext) {
+    protected override getParameter(context: IQueryBuilderContext) {
         const paramObj = new Map<string, any>();
-        let qparams = this.getQueryParameters(param);
-        if (!param.option?.supportTVP) {
+        let qparams = this.getQueryParameters(context);
+        if (!context.option?.supportTVP) {
             qparams = qparams.filter(o => !(o instanceof SqlTableValueParameterExpression));
         }
-        for (const [k, p] of param.parameters) {
+        for (const [k, p] of context.parameters) {
             if (!qparams.includes(k)) {
                 continue;
             }
@@ -393,12 +393,12 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
 
         return paramObj;
     }
-    protected override toSqlParameterString(expression: SqlParameterExpression, param?: IQueryBuilderContext): string {
-        const paramValue = param.parameters.get(expression);
+    protected override toSqlParameterString(expression: SqlParameterExpression, context?: IQueryBuilderContext): string {
+        const paramValue = context.parameters.get(expression);
         if (!paramValue) {
             throw new Error(`Sql Parameter ${expression.toString()} no supported`);
         }
-        if (param?.option?.supportTVP == true && expression instanceof SqlTableValueParameterExpression) {
+        if (context?.option?.supportTVP == true && expression instanceof SqlTableValueParameterExpression) {
             const column = expression.columns.map((col, i) => {
                 const itemType = expression.itemSchema?.[col.propertyName];
                 let columnType: string;
@@ -422,7 +422,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
 
         return "@" + paramValue.name;
     }
-    protected override getTempTableQuery<TE extends object>(tvpExp: SqlTableValueParameterExpression<TE>, values: TE[], param: IQueryBuilderContext): IQuery[] {
+    protected override getTempTableQuery<TE extends object>(tvpExp: SqlTableValueParameterExpression<TE>, values: TE[], context: IQueryBuilderContext): IQuery[] {
         const result: IQuery[] = [];
         result.push({
             query: `DROP TABLE IF EXISTS ${this.entityName(tvpExp)}`,
@@ -470,7 +470,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
             insertQuery.values.push(itemExp as SetterObj<TE>);
         }
 
-        result.push(...this.getInsertQuery(insertQuery, param.option, param.parameters));
+        result.push(...this.getInsertQuery(insertQuery, context.option, context.parameters));
         for (const query of result) {
             query.type |= QueryType.ADDITIONAL;
         }
@@ -484,7 +484,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
 
         return super.entityName(entityExp);
     }
-    public override toOperandString(expression: IExpression, param?: IQueryBuilderContext): string {
+    public override toOperandString(expression: IExpression, context?: IQueryBuilderContext): string {
         if (expression.type === Boolean && !(expression instanceof ValueExpression) && !isColumnExp(expression)) {
             switch (true) {
                 case expression instanceof AndExpression:
@@ -505,6 +505,6 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
             }
         }
 
-        return this.toString(expression, param);
+        return this.toString(expression, context);
     }
 }

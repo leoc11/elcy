@@ -189,14 +189,14 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
     public resolveTranslator<T = any>(object: T, memberName?: StringKeyOf<T>) {
         return this.translator.resolve(object, memberName);
     }
-    public toLogicalString(expression: IExpression<boolean>, param?: IQueryBuilderContext) {
+    public toLogicalString(expression: IExpression<boolean>, context?: IQueryBuilderContext) {
         if (isColumnExp(expression)) {
             expression = new EqualExpression(expression, new ValueExpression(true));
         }
-        return this.toString(expression, param);
+        return this.toString(expression, context);
     }
-    public toOperandString(expression: IExpression, param?: IQueryBuilderContext): string {
-        return this.toString(expression, param);
+    public toOperandString(expression: IExpression, context?: IQueryBuilderContext): string {
+        return this.toString(expression, context);
     }
     public toParameterValue(input: any, column: IColumnMetaData): any {
         if (!isNotNull(input)) {
@@ -383,41 +383,41 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
 
         return [];
     }
-    public toString<T = any>(expression: IExpression<T>, param?: IQueryBuilderContext): string {
+    public toString<T = any>(expression: IExpression<T>, context?: IQueryBuilderContext): string {
         switch (true) {
             case expression instanceof MemberAccessExpression:
-                return this.toMemberAccessString(expression, param);
+                return this.toMemberAccessString(expression, context);
             case expression instanceof MethodCallExpression:
-                return this.toMethodCallString(expression, param);
+                return this.toMethodCallString(expression, context);
             case expression instanceof FunctionCallExpression:
-                return this.toFunctionCallString(expression, param);
+                return this.toFunctionCallString(expression, context);
             case expression instanceof SqlParameterExpression:
-                return this.toSqlParameterString(expression, param);
+                return this.toSqlParameterString(expression, context);
             case expression instanceof ArrayValueExpression:
-                return this.toArrayString(expression, param);
+                return this.toArrayString(expression, context);
             case expression instanceof ValueExpression:
-                return this.toValueString(expression, param);
+                return this.toValueString(expression, context);
             case expression instanceof InstantiationExpression:
-                return this.toInstantiationString(expression, param);
+                return this.toInstantiationString(expression, context);
             case expression instanceof RawSqlExpression:
-                return this.toRawSqlString(expression, param);
+                return this.toRawSqlString(expression, context);
             case expression instanceof SelectExpression:
-                return this.toSelectString(expression, param);
+                return this.toSelectString(expression, context);
             default: {
                 if (isColumnExp(expression)) {
-                    return this.getColumnQueryString(expression, param);
+                    return this.getColumnQueryString(expression, context);
                 }
                 else if (isEntityExp(expression)) {
                     return this.toEntityString(expression);
                 }
                 else if (expression instanceof TernaryExpression) {
-                    return this.toOperatorString(expression as any, param);
+                    return this.toOperatorString(expression as any, context);
                 }
                 else if ((expression as IBinaryOperatorExpression).rightOperand) {
-                    return `(${this.toOperatorString(expression as any, param)})`;
+                    return `(${this.toOperatorString(expression as any, context)})`;
                 }
                 else if ((expression as IUnaryOperatorExpression).operand) {
-                    return this.toOperatorString(expression as any, param);
+                    return this.toOperatorString(expression as any, context);
                 }
             }
         }
@@ -484,26 +484,26 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
     //#endregion
 
     //#region refactor
-    public extractValue<T>(exp: IExpression<T>, param?: IQueryBuilderContext): T | undefined {
+    public extractValue<T>(exp: IExpression<T>, context?: IQueryBuilderContext): T | undefined {
         if (exp instanceof ValueExpression) {
             return exp.value;
         }
         else if (exp instanceof SqlParameterExpression) {
-            const takeParam = param.parameters.get(exp);
+            const takeParam = context.parameters.get(exp);
             if (takeParam) {
                 return takeParam.value as T;
             }
         }
         return undefined;
     }
-    protected getColumnQueryString<TE extends object>(column: IColumnExpression<TE>, param?: IQueryBuilderContext) {
-        if (param && param.queryExpression) {
-            if (param.queryExpression instanceof SelectExpression) {
-                const commandExp = param.queryExpression;
+    protected getColumnQueryString<TE extends object>(column: IColumnExpression<TE>, context?: IQueryBuilderContext) {
+        if (context && context.queryExpression) {
+            if (context.queryExpression instanceof SelectExpression) {
+                const commandExp = context.queryExpression;
 
                 if (column.entity.alias === commandExp.entity.alias || (commandExp instanceof GroupByExpression && isEntityExp(commandExp.key) && commandExp.key.alias === column.entity.alias)) {
-                    if (column instanceof ComputedColumnExpression && (param.state !== "column-declared" || !commandExp.resolvedSelects.includes(column))) {
-                        return this.toOperandString(column.expression, param);
+                    if (column instanceof ComputedColumnExpression && (context.state !== "column-declared" || !commandExp.resolvedSelects.includes(column))) {
+                        return this.toOperandString(column.expression, context);
                     }
                     return this.toString(column.entity) + "." + this.enclose(column.columnName);
                 }
@@ -522,22 +522,22 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                     return this.toString(childSelect.entity) + "." + this.enclose(useAlias ? column.dataPropertyName : column.columnName);
                 }
             }
-            else if (param.queryExpression instanceof InsertExpression) {
-                const commandExp = param.queryExpression;
+            else if (context.queryExpression instanceof InsertExpression) {
+                const commandExp = context.queryExpression;
 
                 if (column.entity.alias === commandExp.entity.alias) {
-                    if (column instanceof ComputedColumnExpression && (param.state !== "column-declared" || !commandExp.columns.includes(column))) {
-                        return this.toOperandString(column.expression, param);
+                    if (column instanceof ComputedColumnExpression && (context.state !== "column-declared" || !commandExp.columns.includes(column))) {
+                        return this.toOperandString(column.expression, context);
                     }
                     return this.toString(column.entity) + "." + this.enclose(column.columnName);
                 }
             }
-            else if (param.queryExpression instanceof UpdateExpression) {
-                const commandExp = param.queryExpression;
+            else if (context.queryExpression instanceof UpdateExpression) {
+                const commandExp = context.queryExpression;
 
                 if (column.entity.alias === commandExp.entity.alias) {
-                    if (column instanceof ComputedColumnExpression && (param.state !== "column-declared" || !commandExp.entity.columns.includes(column))) {
-                        return this.toOperandString(column.expression, param);
+                    if (column instanceof ComputedColumnExpression && (context.state !== "column-declared" || !commandExp.entity.columns.includes(column))) {
+                        return this.toOperandString(column.expression, context);
                     }
                     return this.toString(column.entity) + "." + this.enclose(column.columnName);
                 }
@@ -547,53 +547,53 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
 
         return this.enclose(column.dataPropertyName);
     }
-    protected getEntityQueryString<TE extends object>(entity: IEntityExpression<TE>, param?: IQueryBuilderContext): string {
+    protected getEntityQueryString<TE extends object>(entity: IEntityExpression<TE>, context?: IQueryBuilderContext): string {
         let entityQ = "";
         if (entity instanceof UnionExpression) {
             entityQ = `(${this.newLine(1)}` +
-                entity.subSelects.map(o => this.toSelectString(o, param)).join(`${this.newLine()}UNION${this.newLine()}`) +
+                entity.subSelects.map(o => this.toSelectString(o, context)).join(`${this.newLine()}UNION${this.newLine()}`) +
                 `${this.newLine(-1)})`;
         }
         else if (entity instanceof IntersectExpression) {
             entityQ = `(${this.newLine(1)}` +
-                entity.subSelects.map(o => this.toSelectString(o, param)).join(`${this.newLine()}INTERSECT${this.newLine()}`) +
+                entity.subSelects.map(o => this.toSelectString(o, context)).join(`${this.newLine()}INTERSECT${this.newLine()}`) +
                 `${this.newLine(-1)})`;
         }
         else if (entity instanceof ExceptExpression) {
             entityQ = `(${this.newLine(1)}` +
-                entity.subSelects.map(o => this.toSelectString(o, param)).join(`${this.newLine()}EXCEPT${this.newLine()}`) +
+                entity.subSelects.map(o => this.toSelectString(o, context)).join(`${this.newLine()}EXCEPT${this.newLine()}`) +
                 `${this.newLine(-1)})`;
         }
         else if (entity instanceof ConcatExpression) {
             entityQ = `(${this.newLine(1)}` +
-                entity.subSelects.map(o => this.toSelectString(o, param)).join(`${this.newLine()}UNION ALL${this.newLine()}`) +
+                entity.subSelects.map(o => this.toSelectString(o, context)).join(`${this.newLine()}UNION ALL${this.newLine()}`) +
                 `${this.newLine(-1)})`;
         }
         else if (entity instanceof ProjectionEntityExpression) {
             entityQ = `(${this.newLine(1)}` +
-                this.toSelectString(entity.subSelect, param) +
+                this.toSelectString(entity.subSelect, context) +
                 `${this.newLine(-1)})`;
         }
         else if (entity instanceof RawEntityExpression) {
             entityQ = `(${entity.sqlTemplateStrings.reduce((res, str, i) => {
                 let paramName = "";
                 if (entity.parameters.length > i) {
-                    paramName = this.toSqlParameterString(entity.parameters[i], param);
+                    paramName = this.toSqlParameterString(entity.parameters[i], context);
                 }
                 return res + str + paramName;
             }, "")})`;
         }
         else if (entity instanceof SqlTableValueParameterExpression) {
-            if (param?.option?.supportTVP) {
-                entityQ = this.toSqlParameterString(entity, param);
+            if (context?.option?.supportTVP) {
+                entityQ = this.toSqlParameterString(entity, context);
             }
             else {
                 if (entity.asTempTable) {
                     entityQ = this.entityName(entity);
                 }
                 else {
-                    const paramValue = param.parameters.get(entity);
-                    return this.toTableValueConstructorQuery(entity, paramValue.value as TE[], param);
+                    const paramValue = context.parameters.get(entity);
+                    return this.toTableValueConstructorQuery(entity, paramValue.value as TE[], context);
                 }
             }
         }
@@ -625,17 +625,17 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
 
         return result;
     }
-    protected getJoinQueryString<TE extends object>(joins: IEnumerable<JoinRelation<TE>>, param?: IQueryBuilderContext): string {
+    protected getJoinQueryString<TE extends object>(joins: IEnumerable<JoinRelation<TE>>, context?: IQueryBuilderContext): string {
         let result = "";
         if (joins.some(() => true)) {
             result += this.newLine();
             result += Enumerable.from(joins).map((o) => {
-                const childString = this.isSimpleSelect(o.child) ? this.getEntityQueryString(o.child.entity, param)
-                    : "(" + this.newLine(1) + this.toSelectString(o.child, param) + this.newLine(-1) + ") AS " + this.enclose(o.child.entity.alias ?? o.child.entity.name);
+                const childString = this.isSimpleSelect(o.child) ? this.getEntityQueryString(o.child.entity, context)
+                    : "(" + this.newLine(1) + this.toSelectString(o.child, context) + this.newLine(-1) + ") AS " + this.enclose(o.child.entity.alias ?? o.child.entity.name);
 
                 let joinStr = `${o.type} JOIN ${childString}`;
                 if (o.relation) {
-                    joinStr += ` ON ${this.toString(o.relation, param)}`;
+                    joinStr += ` ON ${this.toString(o.relation, context)}`;
                 }
 
                 return joinStr;
@@ -643,35 +643,35 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         }
         return result;
     }
-    protected getPagingQueryString<TE extends object>(sqlExp: SelectExpression<TE>, param?: IQueryBuilderContext): string {
+    protected getPagingQueryString<TE extends object>(sqlExp: SelectExpression<TE>, context?: IQueryBuilderContext): string {
         let result = "";
         if (sqlExp.orders.length <= 0) {
             if (sqlExp.distinct || sqlExp.isAggregated) {
-                result += `${this.newLine()}ORDER BY ${this.toString(sqlExp.projectedColumns.find(o => true), param)}`;
+                result += `${this.newLine()}ORDER BY ${this.toString(sqlExp.projectedColumns.find(o => true), context)}`;
             }
             else {
                 let column = sqlExp.entity.primaryColumns[0];
                 if (!column) {
                     column = sqlExp.entity.columns[0];
                 }
-                result += `${this.newLine()}ORDER BY ${this.toString(column, param)}`;
+                result += `${this.newLine()}ORDER BY ${this.toString(column, context)}`;
             }
         }
         if (sqlExp.paging.skip) {
-            result += `${this.newLine()}OFFSET ${this.toString(sqlExp.paging.skip, param)} ROWS`;
+            result += `${this.newLine()}OFFSET ${this.toString(sqlExp.paging.skip, context)} ROWS`;
         }
         if (sqlExp.paging.take) {
-            result += `${this.newLine()}FETCH NEXT ${this.toString(sqlExp.paging.take, param)} ROWS ONLY`;
+            result += `${this.newLine()}FETCH NEXT ${this.toString(sqlExp.paging.take, context)} ROWS ONLY`;
         }
         return result;
     }
-    protected getParameter(param: IQueryBuilderContext) {
+    protected getParameter(context: IQueryBuilderContext) {
         const paramObj = new Map<string, any>();
-        let qparams = this.getQueryParameters(param);
-        if (!param.option?.supportTVP) {
+        let qparams = this.getQueryParameters(context);
+        if (!context.option?.supportTVP) {
             qparams = qparams.filter(o => !(o instanceof SqlTableValueParameterExpression));
         }
-        for (const [k, p] of param.parameters) {
+        for (const [k, p] of context.parameters) {
             if (!qparams.includes(k)) {
                 continue;
             }
@@ -685,7 +685,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
 
         return paramObj;
     }
-    protected getParentJoinQueryString(parentRel: IQueryIncludeRelation, param?: IQueryBuilderContext) {
+    protected getParentJoinQueryString(parentRel: IQueryIncludeRelation, context?: IQueryBuilderContext) {
         if (!parentRel || parentRel instanceof JoinRelation) {
             return "";
         }
@@ -710,13 +710,13 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                 throw "invalid parent";
             }
         }
-        const entityString = this.isSimpleSelect(parentSelect) ? this.getEntityQueryString(parent.entity, param) : `(${this.newLine(1)}${this.toSelectString(parentSelect, param)}${this.newLine(-1)}) AS ${this.enclose(parent.entity.alias ?? parent.entity.name)}`;
-        const relationString = this.toLogicalString(parentRel.relation, param);
+        const entityString = this.isSimpleSelect(parentSelect) ? this.getEntityQueryString(parent.entity, context) : `(${this.newLine(1)}${this.toSelectString(parentSelect, context)}${this.newLine(-1)}) AS ${this.enclose(parent.entity.alias ?? parent.entity.name)}`;
+        const relationString = this.toLogicalString(parentRel.relation, context);
         return this.newLine() + `INNER JOIN ${entityString} ON ${relationString}`;
     }
     // TODO: catch paramExps at querycache
-    protected getQueryParameters(param: IQueryBuilderContext) {
-        const queryExp = param.rootQueryExpression ?? param.queryExpression;
+    protected getQueryParameters(context: IQueryBuilderContext) {
+        const queryExp = context.rootQueryExpression ?? context.queryExpression;
         let paramExps = Enumerable.from(queryExp.paramExps);
         if (!(queryExp.parentRelation instanceof IncludeRelation)) {
             return paramExps;
@@ -922,7 +922,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         context.parameters.set(tvpExp, { value: tvpValues });
         return tvpExp;
     }
-    protected getTempTableQuery<TE extends object>(tvpExp: SqlTableValueParameterExpression<TE>, values: TE[], param?: IQueryBuilderContext): IQuery[] {
+    protected getTempTableQuery<TE extends object>(tvpExp: SqlTableValueParameterExpression<TE>, values: TE[], context?: IQueryBuilderContext): IQuery[] {
         const result: IQuery[] = [];
         result.push({
             query: `DROP TABLE IF EXISTS ${this.entityName(tvpExp)}`,
@@ -970,7 +970,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             insertQuery.values.push(itemExp as SetterObj<TE>);
         }
 
-        result.push(...this.getInsertQuery(insertQuery, param.option, param.parameters));
+        result.push(...this.getInsertQuery(insertQuery, context.option, context.parameters));
 
         for (const q of result) {
             q.type |= QueryType.ADDITIONAL;
@@ -978,7 +978,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
 
         return result;
     }
-    protected toTableValueConstructorQuery<TE extends object>(entityExp: SqlTableValueParameterExpression<TE>, values: TE[], param?: IQueryBuilderContext): string {
+    protected toTableValueConstructorQuery<TE extends object>(entityExp: SqlTableValueParameterExpression<TE>, values: TE[], context?: IQueryBuilderContext): string {
         const columns = entityExp.columns.map(o => this.enclose(o.columnName)).join(", ");
         let i = 0;
         const valueLiterals = values.map(o => {
@@ -1179,20 +1179,20 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
     //#endregion
 
     //#region IExpression
-    protected toArrayString(expression: ArrayValueExpression<any>, param?: IQueryBuilderContext): string {
-        const itemStr = expression.items.map((o) => this.toOperandString(o, param)).join(", ");
+    protected toArrayString(expression: ArrayValueExpression<any>, context?: IQueryBuilderContext): string {
+        const itemStr = expression.items.map((o) => this.toOperandString(o, context)).join(", ");
         return `(${itemStr})`;
     }
-    protected toFunctionCallString(expression: FunctionCallExpression<any>, param?: IQueryBuilderContext): string {
+    protected toFunctionCallString(expression: FunctionCallExpression<any>, context?: IQueryBuilderContext): string {
         const fn = ExpressionExecutor.execute(expression.fnExpression);
         const transformer = this.resolveTranslator(fn);
         if (transformer) {
-            return transformer.translate(this, expression, param);
+            return transformer.translate(this, expression, context);
         }
 
         throw new Error(`function "${expression.functionName}" not suported`);
     }
-    protected toInstantiationString(expression: InstantiationExpression, param?: IQueryBuilderContext) {
+    protected toInstantiationString(expression: InstantiationExpression, context?: IQueryBuilderContext) {
         const translator = this.resolveTranslator(expression.type);
         if (!translator) {
             try {
@@ -1202,9 +1202,9 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                 throw new Error(`instantiate "${expression.type.name}" not supported`);
             }
         }
-        return translator.translate(this, expression, param);
+        return translator.translate(this, expression, context);
     }
-    protected toMemberAccessString(exp: MemberAccessExpression<any, any>, param?: IQueryBuilderContext): string {
+    protected toMemberAccessString(exp: MemberAccessExpression<any, any>, context?: IQueryBuilderContext): string {
         let translater: IQueryTranslatorItem;
         if (exp.objectOperand.type === Object && exp.objectOperand instanceof ValueExpression) {
             translater = this.resolveTranslator(exp.objectOperand.value, exp.memberName);
@@ -1214,17 +1214,17 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         }
 
         if (translater) {
-            return translater.translate(this, exp, param);
+            return translater.translate(this, exp, context);
         }
         throw new Error(`${exp.memberName} not supported.`);
     }
-    protected toMethodCallString<TE, K extends MethodKey<TE>, T = MethodReturnType<TE, K>>(exp: MethodCallExpression<TE, K, T>, param?: IQueryBuilderContext): string {
+    protected toMethodCallString<TE, K extends MethodKey<TE>, T = MethodReturnType<TE, K>>(exp: MethodCallExpression<TE, K, T>, context?: IQueryBuilderContext): string {
         let translator: IQueryTranslatorItem;
         if (exp.objectOperand instanceof SelectExpression) {
             translator = this.resolveTranslator(SelectExpression.prototype, exp.methodName as any);
         }
         else if (exp.objectOperand instanceof SqlParameterExpression || exp.objectOperand instanceof ParameterExpression || exp.objectOperand instanceof ValueExpression) {
-            const value = this.extractValue(exp.objectOperand, param);
+            const value = this.extractValue(exp.objectOperand, context);
             translator = this.resolveTranslator(value, exp.methodName);
         }
 
@@ -1233,30 +1233,30 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         }
 
         if (translator) {
-            return translator.translate(this, exp, param);
+            return translator.translate(this, exp, context);
         }
 
         throw new Error(`${(exp.objectOperand.type as any).name}.${exp.methodName} not supported in linq to sql.`);
     }
-    protected toOperatorString(expression: IBinaryOperatorExpression, param?: IQueryBuilderContext) {
+    protected toOperatorString(expression: IBinaryOperatorExpression, context?: IQueryBuilderContext) {
         const translator = this.resolveTranslator(expression.constructor);
         if (!translator) {
             throw new Error(`operator "${expression.constructor.name}" not supported`);
         }
-        return translator.translate(this, expression, param);
+        return translator.translate(this, expression, context);
     }
-    protected toRawSqlString(expression: RawSqlExpression, param?: IQueryBuilderContext) {
+    protected toRawSqlString(expression: RawSqlExpression, context?: IQueryBuilderContext) {
         return expression.sqlStatement;
     }
-    protected toSqlParameterString(expression: SqlParameterExpression, param?: IQueryBuilderContext): string {
-        const paramValue = param.parameters.get(expression);
+    protected toSqlParameterString(expression: SqlParameterExpression, context?: IQueryBuilderContext): string {
+        const paramValue = context.parameters.get(expression);
         if (!paramValue) {
             throw new Error(`Sql Parameter ${expression.toString()} no supported`);
         }
 
         return `:${paramValue.name}`;
     }
-    protected toValueString(expression: ValueExpression<any>, param?: IQueryBuilderContext): string {
+    protected toValueString(expression: ValueExpression<any>, context?: IQueryBuilderContext): string {
         if (expression.value === undefined && expression.expressionString) {
             return expression.expressionString;
         }

@@ -63,14 +63,14 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
         query.add(...queries);
         return [query];
     }
-    protected override getParameter(param: IQueryBuilderContext) {
+    protected override getParameter(context: IQueryBuilderContext) {
         const paramObj = new Map<string, any>();
-        let qparams = this.getQueryParameters(param);
-        if (!param.option?.supportTVP) {
+        let qparams = this.getQueryParameters(context);
+        if (!context.option?.supportTVP) {
             qparams = qparams.filter(o => !(o instanceof SqlTableValueParameterExpression));
         }
         let i = 0;
-        for (const [k, p] of param.parameters) {
+        for (const [k, p] of context.parameters) {
             if (!qparams.includes(k)) {
                 continue;
             }
@@ -86,17 +86,17 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
 
         return paramObj;
     }
-    protected override toSqlParameterString(expression: SqlParameterExpression, param: IQueryBuilderContext): string {
-        const paramValue = param.parameters.get(expression);
+    protected override toSqlParameterString(expression: SqlParameterExpression, context: IQueryBuilderContext): string {
+        const paramValue = context.parameters.get(expression);
         if (!paramValue) {
             throw new Error(`Sql Parameter ${expression.toString()} no supported`);
         }
 
-        let qparams = this.getQueryParameters(param);
-        if (!param.option?.supportTVP) {
+        let qparams = this.getQueryParameters(context);
+        if (!context.option?.supportTVP) {
             qparams = qparams.filter(o => !(o instanceof SqlTableValueParameterExpression));
         }
-        const indexMap = Enumerable.from(param.parameters)
+        const indexMap = Enumerable.from(context.parameters)
             .filter(o => qparams.includes(o[0]))
             .flatMap(o => {
                 if (o[0] instanceof SqlTableValueParameterExpression) {
