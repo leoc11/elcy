@@ -277,7 +277,7 @@ export class EntityEntry<TE extends object = any> implements IEntityEntry<TE> {
     /**
      * Load relation to this entity.
      */
-    public async loadRelation(...relations: Array<(entity: QueryableChain<TE>) => Exclude<object, ValueType>>) {
+    public async loadRelated(...relations: Array<(entity: QueryableChain<TE>) => Exclude<object, ValueType>>) {
         if (!relations.length) {
             return;
         }
@@ -294,7 +294,7 @@ export class EntityEntry<TE extends object = any> implements IEntityEntry<TE> {
         let mainQuery = this.dbSet.parameter({ entity: this.entity }).filter(a);
 
         for (const relation of relations) {
-            mainQuery = mainQuery.loads(relation);
+            mainQuery = mainQuery.withRelated(relation);
         }
 
         await mainQuery.toArray();

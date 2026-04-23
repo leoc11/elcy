@@ -1,6 +1,6 @@
 // Bun Snapshot v1, https://bun.sh/docs/test/snapshots
 
-exports[`Mssql QUERYABLE LOADS should eager load list navigation property 1`] = `
+exports[`Mssql QUERYABLE WITH RELATED should eager load list navigation property 1`] = `
 [
   BatchedQuery {
     "_isProcessed": true,
@@ -139,7 +139,7 @@ WHERE ([entity0].[deleted]=0)"
 ]
 `;
 
-exports[`Mssql QUERYABLE LOADS should support nested include 1`] = `
+exports[`Mssql QUERYABLE WITH RELATED should support nested include 1`] = `
 [
   BatchedQuery {
     "_isProcessed": true,
@@ -353,7 +353,7 @@ WHERE ([entity0].[deleted]=0)"
 ]
 `;
 
-exports[`Mssql QUERYABLE LOADS should eager load scalar navigation property 1`] = `
+exports[`Mssql QUERYABLE WITH RELATED should eager load scalar navigation property 1`] = `
 [
   BatchedQuery {
     "_isProcessed": true,
@@ -460,7 +460,7 @@ WHERE ([entity0].[deleted]=0)"
 ]
 `;
 
-exports[`Mssql QUERYABLE LOADS should eager load 2 navigation properties at once 1`] = `
+exports[`Mssql QUERYABLE WITH RELATED should eager load 2 navigation properties at once 1`] = `
 [
   BatchedQuery {
     "_isProcessed": true,
@@ -7535,7 +7535,7 @@ WHERE (([entity0].[deleted]=0) AND ([entity0].[dateTime]=@param0))"
 ]
 `;
 
-exports[`Mssql QUERYABLE PARAMETERS should be used in loads 1`] = `
+exports[`Mssql QUERYABLE PARAMETERS should be used in withRelated 1`] = `
 [
   BatchedQuery {
     "_isProcessed": true,

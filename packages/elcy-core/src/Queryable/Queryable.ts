@@ -51,9 +51,9 @@ declare module "./Queryable" {
         groupJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, [T, T2]>, resultSelector: FunctionExpression<TResult, [T, Enumerable<T2>]>): Queryable<TResult>;
         groupJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, [T, T2]> | ((item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean), resultSelector: FunctionExpression<TResult, [T, Enumerable<T2>]> | ((item1: QueryableChain<T>, item2: Enumerable<QueryableChain<T2>>) => TResult)): Queryable<TResult>;
 
-        loads(...includes: Array<(item: QueryableChain<T>) => Exclude<object, ValueType>>): Queryable<T>;
-        loads(...includes: Array<FunctionExpression<Exclude<object, ValueType>, [T]>>): Queryable<T>;
-        loads(...includes: Array<FunctionExpression<Exclude<object, ValueType>, [T]> | ((item: QueryableChain<T>) => Exclude<object, ValueType>)>): Queryable<T>;
+        withRelated(...includes: Array<(item: QueryableChain<T>) => Exclude<object, ValueType>>): Queryable<T>;
+        withRelated(...includes: Array<FunctionExpression<Exclude<object, ValueType>, [T]>>): Queryable<T>;
+        withRelated(...includes: Array<FunctionExpression<Exclude<object, ValueType>, [T]> | ((item: QueryableChain<T>) => Exclude<object, ValueType>)>): Queryable<T>;
 
         innerJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, [T, T2]>, resultSelector: FunctionExpression<TResult, [T, T2]>): Queryable<TResult>;
         innerJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean, resultSelector: (item1: QueryableChain<T>, item2: QueryableChain<T2>) => TResult): Queryable<TResult>;
@@ -170,7 +170,7 @@ Queryable.prototype.except = function <T>(this: Queryable<T>, ...items: [Queryab
 Queryable.prototype.pivot = function <T, TD extends { [key: string]: (o: QueryableChain<T>) => ValueType }, TM extends { [key: string]: (o: QueryableChain<T[]>) => ValueType }>(this: Queryable<T>, dimensions: TD | FunctionExpression<PivotD<T, TD>, [T]>, metrics: TM | FunctionExpression<PivotM<T, TM>, [IEnumerable<T>]>): Queryable<Pivot<T, TD, TM>> {
     return new PivotQueryable(this, dimensions, metrics);
 };
-Queryable.prototype.loads = function <T>(this: Queryable<T>, ...includes: FunctionExpression<Exclude<object, ValueType>, [T]>[] | Array<(item: T) => Exclude<object, ValueType>>): Queryable<T> {
+Queryable.prototype.withRelated = function <T>(this: Queryable<T>, ...includes: FunctionExpression<Exclude<object, ValueType>, [T]>[] | Array<(item: T) => Exclude<object, ValueType>>): Queryable<T> {
     return new IncludeQueryable(this, includes);
 };
 Queryable.prototype.project = function <T>(this: Queryable<T>, ...includes: FunctionExpression<ValueType, [T]>[] | Array<(item: T) => ValueType>): Queryable<T> {

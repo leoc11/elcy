@@ -35,11 +35,11 @@ export class IncludeQueryable<T> extends Queryable<T> {
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<object, T>;
         const selectors = this.selectors.map((o) => o.clone());
-        const methodExpression = new MethodCallExpression(objectOperand, "loads" as MethodKey<T[]>, selectors);
+        const methodExpression = new MethodCallExpression(objectOperand, "withRelated" as MethodKey<T[]>, selectors);
         const visitParam: IQueryVisitParameter = { selectExpression: objectOperand, scope: "queryable" };
         return queryVisitor.visit(methodExpression, visitParam) as any;
     }
     public hashCode(): number {
-        return hashCodeAdd(hashCode("LOADS", this.parent.hashCode()), Enumerable.from(this.selectors).sum((o) => o.hashCode()));
+        return hashCodeAdd(hashCode("WITHRELATED", this.parent.hashCode()), Enumerable.from(this.selectors).sum((o) => o.hashCode()));
     }
 }

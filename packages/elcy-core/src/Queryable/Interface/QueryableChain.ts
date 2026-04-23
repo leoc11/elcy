@@ -35,5 +35,5 @@ type QueryableObjectChain<T extends object> = {
     : NonNullable<T[P]> extends object ? QueryableObjectChain<NonNullable<T[P]>>
     : T[P];
 } & QueryChainMarker<T>;
-type QueryableArrayChain<T> = Enumerable<QueryableChain<T>> & { loads: (...includes: Array<(item: QueryableChain<T>) => Exclude<object, ValueType>>) => QueryableArrayChain<T> };
-type QueryableGroupArrayChain<K, T> = Enumerable<QueryableChain<T>> & { key: QueryableChain<K>, loads: (...includes: Array<(item: QueryableChain<T>) => Exclude<object, ValueType>>) => QueryableArrayChain<T> };
+type QueryableArrayChain<T> = Enumerable<QueryableChain<T>> & { withRelated: (...includes: Array<(item: QueryableChain<T>) => Exclude<object, ValueType>>) => QueryableArrayChain<T> };
+type QueryableGroupArrayChain<K, T> = Enumerable<QueryableChain<T>> & { key: QueryableChain<K>, withRelated: (...includes: Array<(item: QueryableChain<T>) => Exclude<object, ValueType>>) => QueryableArrayChain<T> };

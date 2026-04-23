@@ -106,12 +106,12 @@ export class RawQueryable<TE extends object> extends Queryable<TE> {
         }
         return super.deferredUpdate(setter);
     }
-    override loads<TLoad extends object>(...includes: Array<FunctionExpression<TLoad extends ValueType ? never: TLoad, [TE]>>): Queryable<TE>;
-    override loads<TLoad extends object>(...includes: Array<(item: QueryableChain<TE>) => TLoad extends ValueType ? never: TLoad>): Queryable<TE>;
-    override loads<TLoad extends object>(...includes: Array<FunctionExpression<TLoad extends ValueType ? never: TLoad, [TE]> | ((item: QueryableChain<TE>) => TLoad extends ValueType ? never: TLoad)>): Queryable<TE> {
+    override withRelated<TLoad extends object>(...includes: Array<FunctionExpression<TLoad extends ValueType ? never: TLoad, [TE]>>): Queryable<TE>;
+    override withRelated<TLoad extends object>(...includes: Array<(item: QueryableChain<TE>) => TLoad extends ValueType ? never: TLoad>): Queryable<TE>;
+    override withRelated<TLoad extends object>(...includes: Array<FunctionExpression<TLoad extends ValueType ? never: TLoad, [TE]> | ((item: QueryableChain<TE>) => TLoad extends ValueType ? never: TLoad)>): Queryable<TE> {
         if (this.isView) {
             throw new Error("not supported");
         }
-        return super.loads(...includes);
+        return super.withRelated(...includes);
     }
 }

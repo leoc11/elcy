@@ -174,7 +174,7 @@ describe("DBCONTEXT", () => {
             db.detach(entity);
             const entry = db.attach(entity);
 
-            await entry.loadRelation((o) => o.table1);
+            await entry.loadRelated((o) => o.table1);
 
             const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
             expect(queries).toMatchSnapshot();
@@ -191,7 +191,7 @@ describe("DBCONTEXT", () => {
             db.detach(entity);
             const entry = db.attach(entity);
 
-            await entry.loadRelation((o) => o.table1Manies);
+            await entry.loadRelated((o) => o.table1Manies);
 
             const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
             expect(queries).toMatchSnapshot();
@@ -212,7 +212,7 @@ describe("DBCONTEXT", () => {
             db.detach(entity);
             const entry = db.attach(entity);
 
-            await entry.loadRelation((o) => o.table1Table2s.loads((od) => od.table1));
+            await entry.loadRelated((o) => o.table1Table2s.withRelated((od) => od.table1));
 
             const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
             expect(queries).toMatchSnapshot();

@@ -305,9 +305,6 @@ export class RelationalQueryVisitor implements IQueryVisitor {
             }
 
             if (column) {
-                if (param.scope === "project" && objectOperand.select) {
-                    ArrayExtension.add(objectOperand.select.selects, column as IColumnExpression);
-                }
                 return column;
             }
 
@@ -325,8 +322,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                     const relation = include.relation.clone(replaceMap);
 
                     switch (param.scope) {
-                        case "project":
-                        case "loads": {
+                        case "withRelated": {
                             selectExp.addInclude(include.name, child, relation, include.type, include.isEmbedded);
                             return include.type === "many" ? child as unknown as IExpression<T> : child.entity as IExpression<T>;
                         }
@@ -357,8 +353,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                 }
 
                 switch (param.scope) {
-                    case "project":
-                    case "loads": {
+                    case "withRelated": {
                         const child = new SelectExpression(entityExp);
                         this.setDefaultBehaviour(child);
                         (objectOperand as IEntityExpression<TE>).select.addInclude(exp.memberName, child, relationMeta);
@@ -388,8 +383,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                 const result = objectOperand.key as IExpression<T & object>;
                 if (isEntityExp(result)) {
                     switch (param.scope) {
-                        case "project":
-                        case "loads":
+                        case "withRelated":
                         case "select-object": {
                             return result;
                         }
@@ -453,7 +447,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
             let selectOperand = objectOperandSelect;
             switch (exp.methodName) {
                 case "groupBy": {
-                    if (param.scope === "loads" || param.scope === "project") {
+                    if (param.scope === "withRelated") {
                         throw new Error(`${param.scope} did not support ${exp.methodName}`);
                     }
 
@@ -506,7 +500,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                 }
                 case "map":
                 case "flatMap": {
-                    if (param.scope === "loads" || param.scope === "project") {
+                    if (param.scope === "withRelated") {
                         throw new Error(`${param.scope} did not support ${exp.methodName}`);
                     }
 
@@ -633,11 +627,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
 
                     return selectOperand as unknown as IExpression<T>;
                 }
-                case "project":
-                case "loads": {
-                    if (exp.methodName === "project") {
-                        objectOperand.selects = [];
-                    }
+                case "withRelated": {
                     const paramExpCount = selectOperand.paramExps.length;
                     for (const paramFn of exp.params) {
                         const selectorFn = paramFn as FunctionExpression<T, [unknown]>;
@@ -687,7 +677,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                     return selectOperand as unknown as IExpression<T>;
                 }
                 case "includes": {
-                    if (param.scope === "loads" || param.scope === "project") {
+                    if (param.scope === "withRelated") {
                         throw new Error(`${param.scope} did not support ${exp.methodName}`);
                     }
 
@@ -727,7 +717,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                     return andExp as IExpression<T>;
                 }
                 case "distinct": {
-                    if (param.scope === "loads" || param.scope === "project") {
+                    if (param.scope === "withRelated") {
                         throw new Error(`${param.scope} did not support ${exp.methodName}`);
                     }
 
@@ -796,7 +786,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                     return objectOperand as unknown as IExpression<T>;
                 }
                 case "count": {
-                    if (param.scope === "loads" || param.scope === "project") {
+                    if (param.scope === "withRelated") {
                         throw new Error(`${param.scope} did not support ${exp.methodName}`);
                     }
 
@@ -880,7 +870,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                 }
                 case "sum":
                 case "avg": {
-                    if (param.scope === "loads" || param.scope === "project") {
+                    if (param.scope === "withRelated") {
                         throw new Error(`${param.scope} did not support ${exp.methodName}`);
                     }
 
@@ -976,7 +966,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                 }
                 case "max":
                 case "min": {
-                    if (param.scope === "loads" || param.scope === "project") {
+                    if (param.scope === "withRelated") {
                         throw new Error(`${param.scope} did not support ${exp.methodName}`);
                     }
 
@@ -1071,7 +1061,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                     }
                 }
                 case "join": {
-                    if (param.scope === "loads" || param.scope === "project") {
+                    if (param.scope === "withRelated") {
                         throw new Error(`${param.scope} did not support ${exp.methodName}`);
                     }
 
@@ -1158,7 +1148,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                 }
                 case "every":
                 case "some": {
-                    if (param.scope === "loads" || param.scope === "project") {
+                    if (param.scope === "withRelated") {
                         throw new Error(`${param.scope} did not support ${exp.methodName}`);
                     }
 
@@ -1270,7 +1260,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                     }
                 }
                 case "find": {
-                    if (param.scope === "loads" || param.scope === "project") {
+                    if (param.scope === "withRelated") {
                         throw new Error(`${param.scope} did not support ${exp.methodName}`);
                     }
 
@@ -1497,7 +1487,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                 case "intersect":
                 case "except":
                 case "concat": {
-                    if (param.scope === "loads" || param.scope === "project") {
+                    if (param.scope === "withRelated") {
                         throw new Error(`${param.scope} did not support ${exp.methodName}`);
                     }
 
@@ -1572,7 +1562,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                 case "rightJoin":
                 case "fullJoin":
                 case "groupJoin": {
-                    if (param.scope === "loads" || param.scope === "project") {
+                    if (param.scope === "withRelated") {
                         throw new Error(`${param.scope} did not support ${exp.methodName}`);
                     }
 
@@ -1624,7 +1614,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                     return selectOperand as unknown as IExpression<T>;
                 }
                 case "crossJoin": {
-                    if (param.scope === "loads" || param.scope === "project") {
+                    if (param.scope === "withRelated") {
                         throw new Error(`${param.scope} did not support ${exp.methodName}`);
                     }
 

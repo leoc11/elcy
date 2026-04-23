@@ -8,7 +8,7 @@ mockContext(db);
 describe("DEFERRED QUERY", () => {
     describe("TO ARRAY", async () => {
         it("should work", async () => {
-            const deferred = db.table1s.loads((o) => o.table1Manies).deferredToArray();
+            const deferred = db.table1s.withRelated((o) => o.table1Manies).deferredToArray();
             // do something here.
             const a = await deferred.execute();
 
@@ -17,7 +17,7 @@ describe("DEFERRED QUERY", () => {
             expect(a[0]).toBeInstanceOf(Table1);
         });
         it("should be executed in batch", async () => {
-            const deferred = db.table1s.loads((o) => o.table1Manies).deferredToArray();
+            const deferred = db.table1s.withRelated((o) => o.table1Manies).deferredToArray();
             await db.table1s.count();
             const a = deferred.value;
             expect(a).toBeInstanceOf(Array);
@@ -25,7 +25,7 @@ describe("DEFERRED QUERY", () => {
             expect(a[0]).toBeInstanceOf(Table1);
         });
         it("re-execution should used resolved value", async () => {
-            const deferred = db.table1s.loads((o) => o.table1Manies).deferredToArray();
+            const deferred = db.table1s.withRelated((o) => o.table1Manies).deferredToArray();
             // emulate the resolved value.
             deferred.value = [];
             const a = await deferred.execute();
@@ -35,20 +35,20 @@ describe("DEFERRED QUERY", () => {
     });
     describe("COUNT", async () => {
         it("should work", async () => {
-            const deferred = db.table1s.loads((o) => o.table1Manies).deferredCount();
+            const deferred = db.table1s.withRelated((o) => o.table1Manies).deferredCount();
             // do something here.
             const a = await deferred.execute();
 
             expect(typeof a).toBe("number");
         });
         it("should be executed in batch", async () => {
-            const deferred = db.table1s.loads((o) => o.table1Manies).deferredCount();
+            const deferred = db.table1s.withRelated((o) => o.table1Manies).deferredCount();
             await db.table1s.count();
             const a = deferred.value;
             expect(typeof a).toBe("number");
         });
         it("re-execution should used resolved value", async () => {
-            const deferred = db.table1s.loads((o) => o.table1Manies).deferredCount();
+            const deferred = db.table1s.withRelated((o) => o.table1Manies).deferredCount();
             // emulate the resolved value.
             deferred.value = Infinity;
             const a = await deferred.execute();
@@ -252,7 +252,7 @@ describe("DEFERRED QUERY", () => {
         it("should execute several query in batch", async () => {
             const sum = db.table1s.map((o) => o.decimalNumber).deferredSum();
             const any = db.table1s.deferredSome((o) => o.decimalNumber < 1000000000);
-            const array = db.table1s.loads((o) => o.table1Manies).deferredToArray();
+            const array = db.table1s.withRelated((o) => o.table1Manies).deferredToArray();
             // do something here.
             await any.execute();
 

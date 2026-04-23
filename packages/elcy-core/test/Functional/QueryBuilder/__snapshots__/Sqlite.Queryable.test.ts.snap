@@ -1,6 +1,6 @@
 // Bun Snapshot v1, https://bun.sh/docs/test/snapshots
 
-exports[`Sqlite QUERYABLE LOADS should eager load list navigation property 1`] = `
+exports[`Sqlite QUERYABLE WITH RELATED should eager load list navigation property 1`] = `
 [
   {
     "parameters": Map {},
@@ -73,7 +73,7 @@ WHERE ("entity0"."deleted"=false)"
 ]
 `;
 
-exports[`Sqlite QUERYABLE LOADS should support nested include 1`] = `
+exports[`Sqlite QUERYABLE WITH RELATED should support nested include 1`] = `
 [
   {
     "parameters": Map {},
@@ -186,7 +186,7 @@ WHERE ("entity0"."deleted"=false)"
 ]
 `;
 
-exports[`Sqlite QUERYABLE LOADS should eager load scalar navigation property 1`] = `
+exports[`Sqlite QUERYABLE WITH RELATED should eager load scalar navigation property 1`] = `
 [
   {
     "parameters": Map {},
@@ -243,7 +243,7 @@ WHERE ("entity0"."deleted"=false)"
 ]
 `;
 
-exports[`Sqlite QUERYABLE LOADS should eager load 2 navigation properties at once 1`] = `
+exports[`Sqlite QUERYABLE WITH RELATED should eager load 2 navigation properties at once 1`] = `
 [
   {
     "parameters": Map {},
@@ -5471,7 +5471,7 @@ WHERE (("entity0"."deleted"=false) AND ("entity0"."dateTime"=:param0))"
 ]
 `;
 
-exports[`Sqlite QUERYABLE PARAMETERS should be used in loads 1`] = `
+exports[`Sqlite QUERYABLE PARAMETERS should be used in withRelated 1`] = `
 [
   {
     "parameters": 

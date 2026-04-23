@@ -25,11 +25,11 @@ export const queryableTest = (db: ITestContext) => {
     });
 
     describe("QUERYABLE", async () => {
-        describe("LOADS", async () => {
+        describe("WITH RELATED", async () => {
             it("should eager load list navigation property", async () => {
                 const spy = vi.spyOn(db.connection, "query");
 
-                const include = db.table1s.loads((o) => o.table1Manies);
+                const include = db.table1s.withRelated((o) => o.table1Manies);
                 const results = await include.toArray();
 
                 const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
@@ -57,7 +57,7 @@ export const queryableTest = (db: ITestContext) => {
             it("should support nested include", async () => {
                 const spy = vi.spyOn(db.connection, "query");
 
-                const include = db.table1s.loads((o) => o.table1Table2s.loads((o) => o.table2));
+                const include = db.table1s.withRelated((o) => o.table1Table2s.withRelated((o) => o.table2));
                 const results = await include.toArray();
 
                 const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
@@ -77,7 +77,7 @@ export const queryableTest = (db: ITestContext) => {
             it("should eager load scalar navigation property", async () => {
                 const spy = vi.spyOn(db.connection, "query");
 
-                const include = db.table1Manies.loads((o) => o.table1);
+                const include = db.table1Manies.withRelated((o) => o.table1);
                 const results = await include.toArray();
 
                 const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
@@ -93,7 +93,7 @@ export const queryableTest = (db: ITestContext) => {
             it("should eager load 2 navigation properties at once", async () => {
                 const spy = vi.spyOn(db.connection, "query");
 
-                const include = db.table1Table2s.loads((o) => o.table1, (o) => o.table2);
+                const include = db.table1Table2s.withRelated((o) => o.table1, (o) => o.table2);
                 const results = await include.toArray();
 
                 const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
@@ -453,7 +453,7 @@ export const queryableTest = (db: ITestContext) => {
             it("should filter included list", async () => {
                 const spy = vi.spyOn(db.connection, "query");
 
-                const where = db.table1s.loads((o) => o.table1Table2s.filter((od) => od.table2.t2Number <= 15000));
+                const where = db.table1s.withRelated((o) => o.table1Table2s.filter((od) => od.table2.t2Number <= 15000));
                 const results = await where.toArray();
 
                 const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
@@ -621,7 +621,7 @@ export const queryableTest = (db: ITestContext) => {
             it("could be used in include", async () => {
                 const spy = vi.spyOn(db.connection, "query");
 
-                const order = db.table1s.loads((o) => o.table1Table2s.orderBy([(od) => od.table2.t2Name, "DESC"]));
+                const order = db.table1s.withRelated((o) => o.table1Table2s.orderBy([(od) => od.table2.t2Name, "DESC"]));
                 const results = await order.toArray();
 
                 const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
@@ -1037,7 +1037,7 @@ export const queryableTest = (db: ITestContext) => {
             it("should work in include", async () => {
                 const spy = vi.spyOn(db.connection, "query");
 
-                const take = db.table1s.loads((o) => o.table1Manies.orderBy([(o) => o.integer]).slice(1, 10).slice(0, 2).slice(1));
+                const take = db.table1s.withRelated((o) => o.table1Manies.orderBy([(o) => o.integer]).slice(1, 10).slice(0, 2).slice(1));
                 const results = await take.toArray();
 
                 const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
@@ -1053,7 +1053,7 @@ export const queryableTest = (db: ITestContext) => {
                 const spy = vi.spyOn(db.connection, "query");
 
                 const take = db.table1s.
-                    loads((o) => o.table1Manies
+                    withRelated((o) => o.table1Manies
                         .orderBy([(o) => o.integer, "DESC"])
                         .slice(0, 5).slice(1)
                         .orderBy([(o) => o.name])
@@ -1766,7 +1766,7 @@ export const queryableTest = (db: ITestContext) => {
             });
             it("should support self select and keep defined includes", async () => {
                 const spy = vi.spyOn(db.connection, "query");
-                const results = await db.table1s.loads((o) => o.table1Manies).toMap((o) => o.id);
+                const results = await db.table1s.withRelated((o) => o.table1Manies).toMap((o) => o.id);
 
                 const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
                 expect(queries).toMatchSnapshot();
@@ -2191,7 +2191,7 @@ export const queryableTest = (db: ITestContext) => {
                     expect(o).toBeInstanceOf(Table1);
                 }
             });
-            it("should be used in loads", async () => {
+            it("should be used in withRelated", async () => {
                 const spy = vi.spyOn(db.connection, "query");
 
                 let skip1 = 5;
@@ -2201,7 +2201,7 @@ export const queryableTest = (db: ITestContext) => {
                 let filter2 = 2000;
                 const include = db.table1s
                     .parameter({ skip1, take1, take2, filter1, filter2 })
-                    .loads(o => o.table1Table2s.slice(skip1, take1), (o) => o.table1Manies.slice(0, take2).filter(o => o.integer > filter1))
+                    .withRelated(o => o.table1Table2s.slice(skip1, take1), (o) => o.table1Manies.slice(0, take2).filter(o => o.integer > filter1))
                     .filter(o => o.decimalNumber < filter2);
                 const results = await include.toArray();
 
@@ -3088,7 +3088,8 @@ SELECT 3 as id, 'name 3' as name`;
                     expect(typeof o).toBe("bigint");
                 }
             });
-            it.skip("should not support loads", async () => {});
+            it.skip("should not support withRelated if custom schema", async () => {});
+            it.skip("should support withRelated if not custom schema", async () => {});
         });
     });
 }

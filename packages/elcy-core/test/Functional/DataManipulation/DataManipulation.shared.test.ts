@@ -682,7 +682,7 @@ export const dataManipulationTest = (db: ITestContext) => {
             it("should bulk delete with include (soft delete)", async () => {
                 const spy = vi.spyOn(db.connection, "query");
                 const effected = await db.table1s
-                    .loads((o) => o.table1Manies)
+                    .withRelated((o) => o.table1Manies)
                     .delete((o) => o.id === 1n);
 
                 expect(spy.mock.calls.length).toBeGreaterThanOrEqual(1);
@@ -693,7 +693,7 @@ export const dataManipulationTest = (db: ITestContext) => {
             it("should bulk delete with include (hard delete)", async () => {
                 const spy = vi.spyOn(db.connection, "query");
                 const effected = await db.table1s
-                    .loads((o) => o.table1Manies)
+                    .withRelated((o) => o.table1Manies)
                     .filter((o) => o.id === 1n)
                     .delete("hard");
 
@@ -704,7 +704,7 @@ export const dataManipulationTest = (db: ITestContext) => {
             });
             it("should fail soft delete for not supported entity", async () => {
                 const promise = db.table1s
-                    .loads((o) => o.table1Table2s)
+                    .withRelated((o) => o.table1Table2s)
                     .filter((o) => o.id === 1n)
                     .delete("soft");
 
