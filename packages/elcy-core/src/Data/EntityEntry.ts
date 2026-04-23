@@ -15,10 +15,9 @@ import { IEntityEntry } from "./Interface/IEntityEntry";
 import { ArrayExtension } from "src/Extensions/ArrayExtension";
 import { QueryableChain } from "src/Queryable/Interface/QueryableChain";
 import { IExpression } from "src/ExpressionBuilder/Expression/IExpression";
-import { EqualExpression } from "src/ExpressionBuilder/Expression/EqualExpression";
 import { AndExpression } from "src/ExpressionBuilder/Expression/AndExpression";
-import { DeferredQuery } from "src/Query/DeferredQuery";
 import { isColumnMetaData, isRelationMetaData } from "src/Helper/Util";
+import { StrictEqualExpression } from "src/ExpressionBuilder/Expression/StrictEqualExpression";
 
 export class EntityEntry<TE extends object = any> implements IEntityEntry<TE> {
     public get isCompletelyLoaded() {
@@ -288,19 +287,17 @@ export class EntityEntry<TE extends object = any> implements IEntityEntry<TE> {
         const entityParamExp = new ParameterExpression("entity", this.dbSet.type);
         let andExp: IExpression<boolean>;
         for (const pk of dbSet.primaryKeys) {
-            const d = new EqualExpression(new MemberAccessExpression(param, pk.propertyName), new MemberAccessExpression(entityParamExp, pk.propertyName));
+            const d = new StrictEqualExpression(new MemberAccessExpression(param, pk.propertyName), new MemberAccessExpression(entityParamExp, pk.propertyName));
             andExp = andExp ? new AndExpression(andExp, d) : d;
         }
         const a = new FunctionExpression(andExp, [param]);
-        const mainQuery = this.dbSet.parameter({ id: this.entity }).filter(a);
+        let mainQuery = this.dbSet.parameter({ entity: this.entity }).filter(a);
 
-        let deferredQuery: DeferredQuery;
         for (const relation of relations) {
-            deferredQuery = mainQuery.map(relation).deferredToArray();
+            mainQuery = mainQuery.loads(relation);
         }
 
-        await deferredQuery;
-        this.buildRelation();
+        await mainQuery.toArray();
     }
 
     /**
