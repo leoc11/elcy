@@ -6311,7 +6311,7 @@ exports[`Sqlite QUERYABLE ARRAY PARAMETER should work in select (Relation/Array)
 [
   {
     "query": "DROP TABLE IF EXISTS temp."ad_1"",
-    "type": 4,
+    "type": 36,
   },
   {
     "query": 
@@ -6322,7 +6322,7 @@ exports[`Sqlite QUERYABLE ARRAY PARAMETER should work in select (Relation/Array)
 	"integer" numeric
 )"
 ,
-    "type": 4,
+    "type": 36,
   },
   {
     "parameters": Map {},
@@ -6330,7 +6330,7 @@ exports[`Sqlite QUERYABLE ARRAY PARAMETER should work in select (Relation/Array)
 "INSERT INTO temp."ad_1" AS "entity1"("__index","table1Id","integer") VALUES
 	(0,1234567890,11)"
 ,
-    "type": 2,
+    "type": 34,
   },
   {
     "parameters": Map {},
@@ -6719,6 +6719,488 @@ INNER JOIN (
 	WHERE ("entity7"."deleted"=false)
 ) AS "entity7" ON ("entity0"."table1Id"="entity7"."id")
 WHERE ("entity0"."name"='filter')"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Sqlite QUERYABLE RAW should work 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."name"
+FROM (SELECT 1 as id, 'name 1' as name
+UNION ALL
+SELECT 2 as id, 'name 2' as name
+UNION ALL
+SELECT 3 as id, 'name 3' as name) AS "entity0""
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Sqlite QUERYABLE RAW should support parameter 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      ":param0" => 1,
+      ":param1" => "name 1",
+      ":param2" => 2,
+      ":param3" => "name 2",
+      ":param4" => 3,
+      ":param5" => "name 3",
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."name"
+FROM (SELECT :param0 as id, :param1 as name
+UNION ALL
+SELECT :param2 as id, :param3 as name
+UNION ALL
+SELECT :param4 as id, :param5 as name) AS "entity0""
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Sqlite QUERYABLE RAW should filter 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      ":param0" => 1,
+      ":param1" => "name 1",
+      ":param2" => 2,
+      ":param3" => "name 2",
+      ":param4" => 3,
+      ":param5" => "name 3",
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."name"
+FROM (SELECT :param0 as id, :param1 as name
+UNION ALL
+SELECT :param2 as id, :param3 as name
+UNION ALL
+SELECT :param4 as id, :param5 as name) AS "entity0"
+WHERE ("entity0"."id">1)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Sqlite QUERYABLE RAW should map 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      ":param0" => 1,
+      ":param1" => "name 1",
+      ":param2" => 2,
+      ":param3" => "name 2",
+      ":param4" => 3,
+      ":param5" => "name 3",
+    }
+,
+    "query": 
+"SELECT "entity0"."name"
+FROM (SELECT :param0 as id, :param1 as name
+UNION ALL
+SELECT :param2 as id, :param3 as name
+UNION ALL
+SELECT :param4 as id, :param5 as name) AS "entity0""
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Sqlite QUERYABLE RAW should order by 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      ":param0" => 1,
+      ":param1" => "name 1",
+      ":param2" => 2,
+      ":param3" => "name 2",
+      ":param4" => 3,
+      ":param5" => "name 3",
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."name"
+FROM (SELECT :param0 as id, :param1 as name
+UNION ALL
+SELECT :param2 as id, :param3 as name
+UNION ALL
+SELECT :param4 as id, :param5 as name) AS "entity0"
+ORDER BY "entity0"."name" DESC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Sqlite QUERYABLE RAW should slice 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      ":param0" => 1,
+      ":param1" => "name 1",
+      ":param2" => 2,
+      ":param3" => "name 2",
+      ":param4" => 3,
+      ":param5" => "name 3",
+      ":param6" => 1,
+      ":param7" => 9,
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."name"
+FROM (SELECT :param0 as id, :param1 as name
+UNION ALL
+SELECT :param2 as id, :param3 as name
+UNION ALL
+SELECT :param4 as id, :param5 as name) AS "entity0"
+LIMIT :param7
+OFFSET :param6"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Sqlite QUERYABLE RAW should some 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      ":param0" => 1,
+      ":param1" => "name 1",
+      ":param2" => 2,
+      ":param3" => "name 2",
+      ":param4" => 3,
+      ":param5" => "name 3",
+    }
+,
+    "query": 
+"SELECT true AS "column0"
+FROM (SELECT :param0 as id, :param1 as name
+UNION ALL
+SELECT :param2 as id, :param3 as name
+UNION ALL
+SELECT :param4 as id, :param5 as name) AS "entity0"
+WHERE ("entity0"."id"=2)
+LIMIT 1"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Sqlite QUERYABLE RAW should every 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      ":param0" => 1,
+      ":param1" => "name 1",
+      ":param2" => 2,
+      ":param3" => "name 2",
+      ":param4" => 3,
+      ":param5" => "name 3",
+    }
+,
+    "query": 
+"SELECT false AS "column0"
+FROM (SELECT :param0 as id, :param1 as name
+UNION ALL
+SELECT :param2 as id, :param3 as name
+UNION ALL
+SELECT :param4 as id, :param5 as name) AS "entity0"
+WHERE NOT(
+	("entity0"."id">=0)
+)
+LIMIT 1"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Sqlite QUERYABLE RAW should min 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      ":param0" => 1,
+      ":param1" => "name 1",
+      ":param2" => 2,
+      ":param3" => "name 2",
+      ":param4" => 3,
+      ":param5" => "name 3",
+    }
+,
+    "query": 
+"SELECT MIN("entity0"."name") AS "column0"
+FROM (SELECT :param0 as id, :param1 as name
+UNION ALL
+SELECT :param2 as id, :param3 as name
+UNION ALL
+SELECT :param4 as id, :param5 as name) AS "entity0""
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Sqlite QUERYABLE RAW should max 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      ":param0" => 1,
+      ":param1" => "name 1",
+      ":param2" => 2,
+      ":param3" => "name 2",
+      ":param4" => 3,
+      ":param5" => "name 3",
+    }
+,
+    "query": 
+"SELECT MAX("entity0"."name") AS "column0"
+FROM (SELECT :param0 as id, :param1 as name
+UNION ALL
+SELECT :param2 as id, :param3 as name
+UNION ALL
+SELECT :param4 as id, :param5 as name) AS "entity0""
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Sqlite QUERYABLE RAW should find 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      ":param0" => 1,
+      ":param1" => "name 1",
+      ":param2" => 2,
+      ":param3" => "name 2",
+      ":param4" => 3,
+      ":param5" => "name 3",
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."name"
+FROM (SELECT :param0 as id, :param1 as name
+UNION ALL
+SELECT :param2 as id, :param3 as name
+UNION ALL
+SELECT :param4 as id, :param5 as name) AS "entity0"
+LIMIT 1"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Sqlite QUERYABLE RAW should avg 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      ":param0" => 1,
+      ":param1" => "name 1",
+      ":param2" => 2,
+      ":param3" => "name 2",
+      ":param4" => 3,
+      ":param5" => "name 3",
+    }
+,
+    "query": 
+"SELECT AVG("entity0"."id") AS "column0"
+FROM (SELECT :param0 as id, :param1 as name
+UNION ALL
+SELECT :param2 as id, :param3 as name
+UNION ALL
+SELECT :param4 as id, :param5 as name) AS "entity0""
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Sqlite QUERYABLE RAW should count 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      ":param0" => 1,
+      ":param1" => "name 1",
+      ":param2" => 2,
+      ":param3" => "name 2",
+      ":param4" => 3,
+      ":param5" => "name 3",
+    }
+,
+    "query": 
+"SELECT COUNT("entity0".*) AS "column0"
+FROM (SELECT :param0 as id, :param1 as name
+UNION ALL
+SELECT :param2 as id, :param3 as name
+UNION ALL
+SELECT :param4 as id, :param5 as name) AS "entity0""
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Sqlite QUERYABLE RAW should distinct 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      ":param0" => 1,
+      ":param1" => "name 1",
+      ":param2" => 2,
+      ":param3" => "name 2",
+      ":param4" => 3,
+      ":param5" => "name 3",
+    }
+,
+    "query": 
+"SELECT DISTINCT "entity0"."id",
+	"entity0"."name"
+FROM (SELECT :param0 as id, :param1 as name
+UNION ALL
+SELECT :param2 as id, :param3 as name
+UNION ALL
+SELECT :param4 as id, :param5 as name) AS "entity0""
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Sqlite QUERYABLE RAW should group 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      ":param0" => 1,
+      ":param1" => "name 1",
+      ":param2" => 2,
+      ":param3" => "name 2",
+      ":param4" => 3,
+      ":param5" => "name 3",
+    }
+,
+    "query": 
+"SELECT "entity0"."name"
+FROM (SELECT :param0 as id, :param1 as name
+UNION ALL
+SELECT :param2 as id, :param3 as name
+UNION ALL
+SELECT :param4 as id, :param5 as name) AS "entity0"
+GROUP BY "entity0"."name"
+ORDER BY "entity0"."name" ASC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Sqlite QUERYABLE RAW should work as subquery 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE (("entity0"."deleted"=false) AND "entity0"."id" IN (
+	SELECT "entity1"."id"
+	FROM (SELECT 1 as id, 'name 1' as name
+UNION ALL
+SELECT 2 as id, 'name 2' as name
+UNION ALL
+SELECT 3 as id, 'name 3' as name) AS "entity1"
+	WHERE ("entity1"."id">5)
+))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Sqlite QUERYABLE RAW should union 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      ":param0" => 0,
+      ":param1" => 5,
+      ":param2" => 0,
+      ":param3" => 5,
+    }
+,
+    "query": 
+"SELECT "entity0"."id"
+FROM (
+	SELECT "entity0"."id"
+	FROM (SELECT 1 as id, 'name 1' as name
+UNION ALL
+SELECT 2 as id, 'name 2' as name
+UNION ALL
+SELECT 3 as id, 'name 3' as name) AS "entity0"
+	ORDER BY "entity0"."id" DESC
+	LIMIT :param1
+	OFFSET :param0
+	UNION
+	SELECT "entity1"."id"
+	FROM "fixture"."Table1s" AS "entity1"
+	WHERE ("entity1"."deleted"=false)
+	ORDER BY "entity1"."id" ASC
+	LIMIT :param3
+	OFFSET :param2
+) AS "entity0""
 ,
     "type": 1,
   },

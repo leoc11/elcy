@@ -3,8 +3,8 @@ import { beforeEach, afterEach, describe, it, expect, vi } from "bun:test";
 import { IConnection } from "../../../src/Connection/IConnection";
 import { PooledConnection } from "../../../src/Connection/PooledConnection";
 import { ISaveEventParam } from "../../../src/MetaData/Interface/ISaveEventParam";
-import { MockConnection } from "../../Mock/MockConnection";
-import { mockContext } from "../../Mock/MockContext";
+import { MockConnection } from "../../fixture/mock/MockConnection";
+import { mockContext } from "../../fixture/mock/MockContext";
 import { IQuery } from "../../../src/Query/IQuery";
 import { getEntityMetadata, getRelationMetadata } from "../../../src/MetaData/MetaDataMapper";
 import { ITestContext, Table1, Table1Many, Table1One, Table2 } from "../../fixture";
@@ -13,7 +13,7 @@ import { matchSnapShot } from "../../fixture/Utilities";
 import { Enumerable } from "@elcy/enumerable";
 import { EntityState } from "../../../src/Data/EntityState";
 import { BatchedQuery } from "../../../src/Query/BatchedQuery";
-import { QueryType } from "../../../src/Common/Enum";
+import { QueryType, UpsertStrategy } from "../../../src/Common/Enum";
 import { IDeleteEventParam } from "../../../src/MetaData/Interface/IDeleteEventParam";
 
 export const dataManipulationTest = (db: ITestContext) => {
@@ -184,6 +184,9 @@ export const dataManipulationTest = (db: ITestContext) => {
                 const m = [null, null, data.id, data.id, data2.id];
                 let ix = 0;
                 const matcher = flatQueries.reduce((r, o, i) => {
+                    if (o.type & QueryType.ADDITIONAL) {
+                        return r;
+                    }
                     if (o.type & QueryType.DML) {
                         const checkValue = m[ix++];
                         if (checkValue) {
@@ -268,6 +271,21 @@ export const dataManipulationTest = (db: ITestContext) => {
                 const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
                 expect(queries).toMatchSnapshot();
                 expect(effected).toBe(11);
+            });
+            it("should do upsert", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+
+                db.table1s.new({
+                    id: 1n,
+                    string: "Original",
+                    integer: 11
+                });
+                const effected = await db.saveChanges({
+                    upsertStrategy: UpsertStrategy.Insert
+                });
+                const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+                expect(effected).toBe(1);
             });
             it.skip("should insert default identity entity", async () => {
                 throw "Not supported yet";
@@ -548,6 +566,9 @@ export const dataManipulationTest = (db: ITestContext) => {
                 const m = [null, data.id];
                 let ix = 0;
                 const matcher = flatQueries.reduce((r, o, i) => {
+                    if (o.type & QueryType.ADDITIONAL) {
+                        return r;
+                    }
                     if (o.type & QueryType.DML) {
                         const checkValue = m[ix++];
                         if (checkValue) {
@@ -563,6 +584,26 @@ export const dataManipulationTest = (db: ITestContext) => {
                 
                 expect(effected).toBe(2);
                 expect(entity.table1Id).toBe(data.id);
+            });
+            it("should do upsert", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+
+                const entity = db.table1s.new({
+                    id: 1n,
+                    string: "Original",
+                    integer: 11
+                });
+                const entry = db.entry(entity);
+                entry.state = EntityState.Unchanged;
+                entity.string = "Updated";
+                expect(entry.state as EntityState).toBe(EntityState.Modified);
+
+                const effected = await db.saveChanges({
+                    upsertStrategy: UpsertStrategy.Update
+                });
+                const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+                expect(effected).toBe(1);
             });
         });
         describe("DELETE", () => {
@@ -773,3 +814,5 @@ export const dataManipulationTest = (db: ITestContext) => {
         });
     });
 };
+
+// dataManipulationTest(new MysqlContext());

@@ -70,8 +70,8 @@ export class QueuedTimeout<T> {
             timeoutItem = this.queue[0];
         }
 
-        if (!this._timeout && timeoutItem && timeoutItem.timeOut !== Infinity) {
-            this._timeout = setTimeout(() => this.execute(), Date.now() - timeoutItem.timeOut);
+        if (!this._timeout && timeoutItem && Number.isFinite(timeoutItem.timeOut)) {
+            this._timeout = setTimeout(() => this.execute(), Math.max(1, timeoutItem.timeOut - Date.now()));
         }
     }
     public shift() {

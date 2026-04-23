@@ -61,9 +61,7 @@ Date.prototype.addSeconds = function (seconds: number): Date {
 };
 
 Date.prototype.addMilliseconds = function (milliSeconds: number): Date {
-    const dat = new Date(this.valueOf());
-    dat.setDate(dat.getDate() + milliSeconds);
-    return dat;
+    return new Date(this.valueOf() + milliSeconds);
 };
 
 Date.prototype.toDate = function (): Date {

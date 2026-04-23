@@ -8499,9 +8499,7 @@ exports[`Mysql QUERYABLE ARRAY PARAMETER should work in select (Relation/Array) 
         "parameters": Map {},
         "query": 
 "SELECT "entity1"."__index"
-FROM (
-	SELECT NULL AS "__index", 1234567890 AS "table1Id", 11 AS "integer"
-) AS "entity1"
+FROM "ad_1" AS "entity1"
 WHERE ("entity1"."__index" IS NULL)"
 ,
         "type": 1,
@@ -8546,9 +8544,7 @@ INSERT INTO "ad_1"("__index","table1Id","integer") VALUES
 (NULL,1234567890,11);
 
 SELECT "entity1"."__index"
-FROM (
-	SELECT NULL AS "__index", 1234567890 AS "table1Id", 11 AS "integer"
-) AS "entity1"
+FROM "ad_1" AS "entity1"
 WHERE ("entity1"."__index" IS NULL);
 
 SELECT "entity1"."__index",
@@ -8909,6 +8905,492 @@ INNER JOIN (
 	WHERE ("entity7"."deleted"=false)
 ) AS "entity7" ON ("entity0"."table1Id"="entity7"."id")
 WHERE ("entity0"."name"='filter')"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Mysql QUERYABLE RAW should work 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."name"
+FROM (SELECT 1 as id, 'name 1' as name
+UNION ALL
+SELECT 2 as id, 'name 2' as name
+UNION ALL
+SELECT 3 as id, 'name 3' as name) AS "entity0""
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Mysql QUERYABLE RAW should support parameter 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "?0" => 1,
+      "?1" => "name 1",
+      "?2" => 2,
+      "?3" => "name 2",
+      "?4" => 3,
+      "?5" => "name 3",
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."name"
+FROM (SELECT ? as id, ? as name
+UNION ALL
+SELECT ? as id, ? as name
+UNION ALL
+SELECT ? as id, ? as name) AS "entity0""
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Mysql QUERYABLE RAW should filter 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "?0" => 1,
+      "?1" => "name 1",
+      "?2" => 2,
+      "?3" => "name 2",
+      "?4" => 3,
+      "?5" => "name 3",
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."name"
+FROM (SELECT ? as id, ? as name
+UNION ALL
+SELECT ? as id, ? as name
+UNION ALL
+SELECT ? as id, ? as name) AS "entity0"
+WHERE ("entity0"."id">1)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Mysql QUERYABLE RAW should map 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "?0" => 1,
+      "?1" => "name 1",
+      "?2" => 2,
+      "?3" => "name 2",
+      "?4" => 3,
+      "?5" => "name 3",
+    }
+,
+    "query": 
+"SELECT "entity0"."name"
+FROM (SELECT ? as id, ? as name
+UNION ALL
+SELECT ? as id, ? as name
+UNION ALL
+SELECT ? as id, ? as name) AS "entity0""
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Mysql QUERYABLE RAW should order by 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "?0" => 1,
+      "?1" => "name 1",
+      "?2" => 2,
+      "?3" => "name 2",
+      "?4" => 3,
+      "?5" => "name 3",
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."name"
+FROM (SELECT ? as id, ? as name
+UNION ALL
+SELECT ? as id, ? as name
+UNION ALL
+SELECT ? as id, ? as name) AS "entity0"
+ORDER BY "entity0"."name" DESC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Mysql QUERYABLE RAW should slice 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "?0" => 1,
+      "?1" => "name 1",
+      "?2" => 2,
+      "?3" => "name 2",
+      "?4" => 3,
+      "?5" => "name 3",
+      "?6" => 1,
+      "?7" => 9,
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."name"
+FROM (SELECT ? as id, ? as name
+UNION ALL
+SELECT ? as id, ? as name
+UNION ALL
+SELECT ? as id, ? as name) AS "entity0"
+ORDER BY "entity0"."id"
+OFFSET ? ROWS
+FETCH NEXT ? ROWS ONLY"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Mysql QUERYABLE RAW should some 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "?0" => 1,
+      "?1" => "name 1",
+      "?2" => 2,
+      "?3" => "name 2",
+      "?4" => 3,
+      "?5" => "name 3",
+    }
+,
+    "query": 
+"SELECT true AS "column0"
+FROM (SELECT ? as id, ? as name
+UNION ALL
+SELECT ? as id, ? as name
+UNION ALL
+SELECT ? as id, ? as name) AS "entity0"
+WHERE ("entity0"."id"=2)
+ORDER BY true
+FETCH NEXT 1 ROWS ONLY"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Mysql QUERYABLE RAW should every 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "?0" => 1,
+      "?1" => "name 1",
+      "?2" => 2,
+      "?3" => "name 2",
+      "?4" => 3,
+      "?5" => "name 3",
+    }
+,
+    "query": 
+"SELECT false AS "column0"
+FROM (SELECT ? as id, ? as name
+UNION ALL
+SELECT ? as id, ? as name
+UNION ALL
+SELECT ? as id, ? as name) AS "entity0"
+WHERE NOT(
+	("entity0"."id">=0)
+)
+ORDER BY false
+FETCH NEXT 1 ROWS ONLY"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Mysql QUERYABLE RAW should min 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "?0" => 1,
+      "?1" => "name 1",
+      "?2" => 2,
+      "?3" => "name 2",
+      "?4" => 3,
+      "?5" => "name 3",
+    }
+,
+    "query": 
+"SELECT MIN("entity0"."name") AS "column0"
+FROM (SELECT ? as id, ? as name
+UNION ALL
+SELECT ? as id, ? as name
+UNION ALL
+SELECT ? as id, ? as name) AS "entity0""
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Mysql QUERYABLE RAW should max 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "?0" => 1,
+      "?1" => "name 1",
+      "?2" => 2,
+      "?3" => "name 2",
+      "?4" => 3,
+      "?5" => "name 3",
+    }
+,
+    "query": 
+"SELECT MAX("entity0"."name") AS "column0"
+FROM (SELECT ? as id, ? as name
+UNION ALL
+SELECT ? as id, ? as name
+UNION ALL
+SELECT ? as id, ? as name) AS "entity0""
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Mysql QUERYABLE RAW should find 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "?0" => 1,
+      "?1" => "name 1",
+      "?2" => 2,
+      "?3" => "name 2",
+      "?4" => 3,
+      "?5" => "name 3",
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."name"
+FROM (SELECT ? as id, ? as name
+UNION ALL
+SELECT ? as id, ? as name
+UNION ALL
+SELECT ? as id, ? as name) AS "entity0"
+ORDER BY "entity0"."id"
+FETCH NEXT 1 ROWS ONLY"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Mysql QUERYABLE RAW should avg 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "?0" => 1,
+      "?1" => "name 1",
+      "?2" => 2,
+      "?3" => "name 2",
+      "?4" => 3,
+      "?5" => "name 3",
+    }
+,
+    "query": 
+"SELECT AVG("entity0"."id") AS "column0"
+FROM (SELECT ? as id, ? as name
+UNION ALL
+SELECT ? as id, ? as name
+UNION ALL
+SELECT ? as id, ? as name) AS "entity0""
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Mysql QUERYABLE RAW should count 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "?0" => 1,
+      "?1" => "name 1",
+      "?2" => 2,
+      "?3" => "name 2",
+      "?4" => 3,
+      "?5" => "name 3",
+    }
+,
+    "query": 
+"SELECT COUNT("entity0".*) AS "column0"
+FROM (SELECT ? as id, ? as name
+UNION ALL
+SELECT ? as id, ? as name
+UNION ALL
+SELECT ? as id, ? as name) AS "entity0""
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Mysql QUERYABLE RAW should distinct 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "?0" => 1,
+      "?1" => "name 1",
+      "?2" => 2,
+      "?3" => "name 2",
+      "?4" => 3,
+      "?5" => "name 3",
+    }
+,
+    "query": 
+"SELECT DISTINCT "entity0"."id",
+	"entity0"."name"
+FROM (SELECT ? as id, ? as name
+UNION ALL
+SELECT ? as id, ? as name
+UNION ALL
+SELECT ? as id, ? as name) AS "entity0""
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Mysql QUERYABLE RAW should group 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "?0" => 1,
+      "?1" => "name 1",
+      "?2" => 2,
+      "?3" => "name 2",
+      "?4" => 3,
+      "?5" => "name 3",
+    }
+,
+    "query": 
+"SELECT "entity0"."name"
+FROM (SELECT ? as id, ? as name
+UNION ALL
+SELECT ? as id, ? as name
+UNION ALL
+SELECT ? as id, ? as name) AS "entity0"
+GROUP BY "entity0"."name"
+ORDER BY "entity0"."name" ASC"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Mysql QUERYABLE RAW should work as subquery 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE (("entity0"."deleted"=false) AND "entity0"."id" IN (
+	SELECT "entity1"."id"
+	FROM (SELECT 1 as id, 'name 1' as name
+UNION ALL
+SELECT 2 as id, 'name 2' as name
+UNION ALL
+SELECT 3 as id, 'name 3' as name) AS "entity1"
+	WHERE ("entity1"."id">5)
+))"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Mysql QUERYABLE RAW should union 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "?0" => 0,
+      "?1" => 5,
+      "?2" => 0,
+      "?3" => 5,
+    }
+,
+    "query": 
+"SELECT "entity0"."id"
+FROM (
+	SELECT "entity0"."id"
+	FROM (SELECT 1 as id, 'name 1' as name
+UNION ALL
+SELECT 2 as id, 'name 2' as name
+UNION ALL
+SELECT 3 as id, 'name 3' as name) AS "entity0"
+	ORDER BY "entity0"."id" DESC
+	OFFSET ? ROWS
+	FETCH NEXT ? ROWS ONLY
+	UNION
+	SELECT "entity1"."id"
+	FROM "fixture"."Table1s" AS "entity1"
+	WHERE ("entity1"."deleted"=false)
+	ORDER BY "entity1"."id" ASC
+	OFFSET ? ROWS
+	FETCH NEXT ? ROWS ONLY
+) AS "entity0""
 ,
     "type": 1,
   },

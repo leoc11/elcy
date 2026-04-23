@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "bun:test";
 import { Uuid } from "../../../src/Data/Uuid";
 import { DbFunction } from "../../../src/Query/DbFunction";
 import { Enumerable } from "@elcy/enumerable";
-import { mockContext } from "../../Mock/MockContext";
+import { mockContext } from "../../fixture/mock/MockContext";
 import { IQuery } from "../../../src/Query/IQuery";
 import { getEntityMetadata } from "../../../src/MetaData/MetaDataMapper";
 import { Table1, Table1Many, Table1One, Table1Table2, Table1Table2Many, Table2, Table2Table3, Table3 } from "../../fixture";
@@ -2778,6 +2778,317 @@ export const queryableTest = (db: ITestContext) => {
                     expect(o.t3Names).toBeString();
                 }
             });
+        });
+        describe("RAW", () => {
+            it("should work", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+
+                const rawQuery = db.map({ id: Number, name: String }).fromSql`SELECT 1 as id, 'name 1' as name
+UNION ALL
+SELECT 2 as id, 'name 2' as name
+UNION ALL
+SELECT 3 as id, 'name 3' as name`;
+                const results = await rawQuery.toArray();
+
+                const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+
+                expect(results.length).toBeGreaterThan(0);
+                for (const o of results) {
+                    expect(o).toBeInstanceOf(Object);
+                    expect(o.id).toBeNumber();
+                    expect(o.name).toBeString();
+                    // TODO: check  db.entry(o); should throw
+                }
+            });
+            it("should support parameter", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+
+                const rawQuery = db.map({ id: Number, name: String }).fromSql`SELECT ${1} as id, ${"name 1"} as name
+UNION ALL
+SELECT ${2} as id, ${"name 2"} as name
+UNION ALL
+SELECT ${3} as id, ${"name 3"} as name`;
+                const results = await rawQuery.toArray();
+
+                const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+
+                expect(results.length).toBeGreaterThan(0);
+                for (const o of results) {
+                    expect(o).toBeInstanceOf(Object);
+                    expect(o.id).toBeNumber();
+                    expect(o.name).toBeString();
+                    // TODO: check  db.entry(o); should throw
+                }
+            });
+            it("should filter", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+
+                const rawQuery = db.map({ id: Number, name: String }).fromSql`SELECT ${1} as id, ${"name 1"} as name
+UNION ALL
+SELECT ${2} as id, ${"name 2"} as name
+UNION ALL
+SELECT ${3} as id, ${"name 3"} as name`;
+                const results = await rawQuery.filter(o => o.id > 1).toArray();
+
+                const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+
+                expect(results.length).toBeGreaterThan(0);
+                for (const o of results) {
+                    expect(o).toBeInstanceOf(Object);
+                    expect(o.id).toBeNumber();
+                    expect(o.name).toBeString();
+                }
+            });
+            it("should map", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+
+                const rawQuery = db.map({ id: Number, name: String }).fromSql`SELECT ${1} as id, ${"name 1"} as name
+UNION ALL
+SELECT ${2} as id, ${"name 2"} as name
+UNION ALL
+SELECT ${3} as id, ${"name 3"} as name`;
+                const results = await rawQuery.map(o => o.name).toArray();
+
+                const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+
+                expect(results.length).toBeGreaterThan(0);
+                for (const o of results) {
+                    expect(o).toBeString();
+                }
+            });
+            it("should order by", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+
+                const rawQuery = db.map({ id: Number, name: String }).fromSql`SELECT ${1} as id, ${"name 1"} as name
+UNION ALL
+SELECT ${2} as id, ${"name 2"} as name
+UNION ALL
+SELECT ${3} as id, ${"name 3"} as name`;
+                const results = await rawQuery.orderBy([o => o.name, "DESC"]).toArray();
+
+                const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+
+                expect(results.length).toBeGreaterThan(0);
+                for (const o of results) {
+                    expect(o).toBeInstanceOf(Object);
+                    expect(o.id).toBeNumber();
+                    expect(o.name).toBeString();
+                }
+            });
+            it("should slice", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+
+                const rawQuery = db.map({ id: Number, name: String }).fromSql`SELECT ${1} as id, ${"name 1"} as name
+UNION ALL
+SELECT ${2} as id, ${"name 2"} as name
+UNION ALL
+SELECT ${3} as id, ${"name 3"} as name`;
+                const results = await rawQuery.slice(1, 10).toArray();
+
+                const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+
+                expect(results.length).toBeGreaterThan(0);
+                for (const o of results) {
+                    expect(o).toBeInstanceOf(Object);
+                    expect(o.id).toBeNumber();
+                    expect(o.name).toBeString();
+                }
+            });
+            it("should some", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+
+                const rawQuery = db.map({ id: Number, name: String }).fromSql`SELECT ${1} as id, ${"name 1"} as name
+UNION ALL
+SELECT ${2} as id, ${"name 2"} as name
+UNION ALL
+SELECT ${3} as id, ${"name 3"} as name`;
+                const results = await rawQuery.some(o => o.id === 2);
+
+                const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+
+                expect(results).toBeBoolean();
+            });
+            it("should every", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+
+                const rawQuery = db.map({ id: Number, name: String }).fromSql`SELECT ${1} as id, ${"name 1"} as name
+UNION ALL
+SELECT ${2} as id, ${"name 2"} as name
+UNION ALL
+SELECT ${3} as id, ${"name 3"} as name`;
+                const results = await rawQuery.every(o => o.id >= 0);
+
+                const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+
+                expect(results).toBeBoolean();
+            });
+            it("should min", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+
+                const rawQuery = db.map({ id: Number, name: String }).fromSql`SELECT ${1} as id, ${"name 1"} as name
+UNION ALL
+SELECT ${2} as id, ${"name 2"} as name
+UNION ALL
+SELECT ${3} as id, ${"name 3"} as name`;
+                const results = await rawQuery.min(o => o.name);
+
+                const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+
+                expect(results).toBeString();
+            });
+            it("should max", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+
+                const rawQuery = db.map({ id: Number, name: String }).fromSql`SELECT ${1} as id, ${"name 1"} as name
+UNION ALL
+SELECT ${2} as id, ${"name 2"} as name
+UNION ALL
+SELECT ${3} as id, ${"name 3"} as name`;
+                const results = await rawQuery.max(o => o.name);
+
+                const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+
+                expect(results).toBeString();
+            });
+            it("should find", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+
+                const rawQuery = db.map({ id: Number, name: String }).fromSql`SELECT ${1} as id, ${"name 1"} as name
+UNION ALL
+SELECT ${2} as id, ${"name 2"} as name
+UNION ALL
+SELECT ${3} as id, ${"name 3"} as name`;
+                const results = await rawQuery.find();
+
+                const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+
+                expect(results).toBeInstanceOf(Object);
+                expect(results.id).toBeNumber();
+                expect(results.name).toBeString();
+            });
+            it("should avg", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+
+                const rawQuery = db.map({ id: Number, name: String }).fromSql`SELECT ${1} as id, ${"name 1"} as name
+UNION ALL
+SELECT ${2} as id, ${"name 2"} as name
+UNION ALL
+SELECT ${3} as id, ${"name 3"} as name`;
+                const results = await rawQuery.avg(o => o.id);
+
+                const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+
+                expect(results).toBeNumber();
+            });
+            it("should count", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+
+                const rawQuery = db.map({ id: Number, name: String }).fromSql`SELECT ${1} as id, ${"name 1"} as name
+UNION ALL
+SELECT ${2} as id, ${"name 2"} as name
+UNION ALL
+SELECT ${3} as id, ${"name 3"} as name`;
+                const results = await rawQuery.count();
+
+                const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+
+                expect(results).toBeNumber();
+            });
+            it("should distinct", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+
+                const rawQuery = db.map({ id: Number, name: String }).fromSql`SELECT ${1} as id, ${"name 1"} as name
+UNION ALL
+SELECT ${2} as id, ${"name 2"} as name
+UNION ALL
+SELECT ${3} as id, ${"name 3"} as name`;
+                const results = await rawQuery.distinct().toArray();
+
+                const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+
+                expect(results.length).toBeGreaterThan(0);
+                for (const o of results) {
+                    expect(o).toBeInstanceOf(Object);
+                    expect(o.id).toBeNumber();
+                    expect(o.name).toBeString();
+                }
+            });
+            it("should group", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+
+                const rawQuery = db.map({ id: Number, name: String }).fromSql`SELECT ${1} as id, ${"name 1"} as name
+UNION ALL
+SELECT ${2} as id, ${"name 2"} as name
+UNION ALL
+SELECT ${3} as id, ${"name 3"} as name`;
+                const results = await rawQuery.groupBy(o => o.name).map(o => o.key).toArray();
+
+                const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+
+                expect(results.length).toBeGreaterThan(0);
+                for (const o of results) {
+                    expect(o).toBeString();
+                }
+            });
+            it("should work as subquery", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+
+                const rawQuery = db.map({ id: BigInt, name: String }).fromSql`SELECT 1 as id, 'name 1' as name
+UNION ALL
+SELECT 2 as id, 'name 2' as name
+UNION ALL
+SELECT 3 as id, 'name 3' as name`;
+                const ad = rawQuery.filter((o) => o.id > 5).asSubquery();
+                const subQuery = db.table1s.parameter({ ad }).filter((o) => ad.map((od) => od.id).includes(o.id));
+                const results = await subQuery.toArray();
+
+                const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+
+                expect(results).toBeInstanceOf(Array);
+                expect(results.length).not.toBe(0);
+                for (const o of results) {
+                    expect(o).toBeInstanceOf(Table1);
+                }
+            });
+            it("should union", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+                
+                const rawQuery = db.map({ id: BigInt, name: String }).fromSql`SELECT 1 as id, 'name 1' as name
+UNION ALL
+SELECT 2 as id, 'name 2' as name
+UNION ALL
+SELECT 3 as id, 'name 3' as name`;
+                const greatest = rawQuery.orderBy([(o) => o.id, "DESC"]).map((o) => o.id).slice(0, 5);
+                const worst = db.table1s.orderBy([(o) => o.id, "ASC"]).map(o => o.id).slice(0, 5);
+                const join = greatest.union(worst);
+                const results = await join.toArray();
+
+                const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+
+                expect(results).toBeInstanceOf(Array);
+                expect(results.length).not.toBe(0);
+                for (const o of results) {
+                    expect(typeof o).toBe("bigint");
+                }
+            });
+            it.skip("should not support loads", async () => {});
         });
     });
 }

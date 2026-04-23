@@ -1,0 +1,479 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`DBCONTEXT ENTITY ENTRY should reload all properties 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "$1" => 1n,
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE (("entity0"."deleted"=false) AND ("entity0"."id"=$1))
+ORDER BY "entity0"."id"
+FETCH NEXT 1 ROWS ONLY"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`DBCONTEXT ENTITY ENTRY should load to-one relation 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": 
+Map {
+      "$1" => 1n,
+      "$2" => 1n,
+    }
+,
+    "_queries": [
+      {
+        "parameters": 
+Map {
+          "$1" => 1n,
+        }
+,
+        "query": 
+"SELECT "entity1"."id",
+	"entity1"."bigint",
+	"entity1"."binary",
+	"entity1"."boolean",
+	"entity1"."date",
+	"entity1"."plainDate",
+	"entity1"."dateTime",
+	"entity1"."instant",
+	"entity1"."decimal",
+	"entity1"."decimalNumber",
+	"entity1"."decimalDecimal",
+	"entity1"."deleted",
+	"entity1"."identifier",
+	"entity1"."identifierString",
+	"entity1"."integer",
+	"entity1"."real",
+	"entity1"."string",
+	"entity1"."time",
+	"entity1"."plainTime",
+	"entity1"."createdDate",
+	"entity1"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity1"
+INNER JOIN (
+	SELECT "entity0"."id",
+		"entity0"."table1Id",
+		"entity0"."name",
+		"entity0"."integer",
+		"entity0"."deleted"
+	FROM "Table1Manies" AS "entity0"
+	WHERE (("entity0"."deleted"=false) AND ("entity0"."id"=$1))
+) AS "entity0" ON ("entity0"."table1Id"="entity1"."id")
+WHERE ("entity1"."deleted"=false)
+ORDER BY "entity1"."id" ASC"
+,
+        "type": 1,
+      },
+      {
+        "parameters": 
+Map {
+          "$1" => 1n,
+        }
+,
+        "query": 
+"SELECT "entity0"."id",
+	"entity0"."table1Id",
+	"entity0"."name",
+	"entity0"."integer",
+	"entity0"."deleted"
+FROM "Table1Manies" AS "entity0"
+WHERE (("entity0"."deleted"=false) AND ("entity0"."id"=$1))"
+,
+        "type": 1,
+      },
+    ],
+    "_query": 
+"SELECT "entity1"."id",
+	"entity1"."bigint",
+	"entity1"."binary",
+	"entity1"."boolean",
+	"entity1"."date",
+	"entity1"."plainDate",
+	"entity1"."dateTime",
+	"entity1"."instant",
+	"entity1"."decimal",
+	"entity1"."decimalNumber",
+	"entity1"."decimalDecimal",
+	"entity1"."deleted",
+	"entity1"."identifier",
+	"entity1"."identifierString",
+	"entity1"."integer",
+	"entity1"."real",
+	"entity1"."string",
+	"entity1"."time",
+	"entity1"."plainTime",
+	"entity1"."createdDate",
+	"entity1"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity1"
+INNER JOIN (
+	SELECT "entity0"."id",
+		"entity0"."table1Id",
+		"entity0"."name",
+		"entity0"."integer",
+		"entity0"."deleted"
+	FROM "Table1Manies" AS "entity0"
+	WHERE (("entity0"."deleted"=false) AND ("entity0"."id"=$1))
+) AS "entity0" ON ("entity0"."table1Id"="entity1"."id")
+WHERE ("entity1"."deleted"=false)
+ORDER BY "entity1"."id" ASC;
+
+SELECT "entity0"."id",
+	"entity0"."table1Id",
+	"entity0"."name",
+	"entity0"."integer",
+	"entity0"."deleted"
+FROM "Table1Manies" AS "entity0"
+WHERE (("entity0"."deleted"=false) AND ("entity0"."id"=$2))"
+,
+    "_type": 1,
+  },
+]
+`;
+
+exports[`DBCONTEXT ENTITY ENTRY should load to-many relation 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": 
+Map {
+      "$1" => 1n,
+      "$2" => 1n,
+    }
+,
+    "_queries": [
+      {
+        "parameters": 
+Map {
+          "$1" => 1n,
+        }
+,
+        "query": 
+"SELECT "entity1"."id",
+	"entity1"."table1Id",
+	"entity1"."name",
+	"entity1"."integer",
+	"entity1"."deleted"
+FROM "Table1Manies" AS "entity1"
+INNER JOIN (
+	SELECT "entity0"."id",
+		"entity0"."bigint",
+		"entity0"."binary",
+		"entity0"."boolean",
+		"entity0"."date",
+		"entity0"."plainDate",
+		"entity0"."dateTime",
+		"entity0"."instant",
+		"entity0"."decimal",
+		"entity0"."decimalNumber",
+		"entity0"."decimalDecimal",
+		"entity0"."deleted",
+		"entity0"."identifier",
+		"entity0"."identifierString",
+		"entity0"."integer",
+		"entity0"."real",
+		"entity0"."string",
+		"entity0"."time",
+		"entity0"."plainTime",
+		"entity0"."createdDate",
+		"entity0"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE (("entity0"."deleted"=false) AND ("entity0"."id"=$1))
+) AS "entity0" ON ("entity0"."id"="entity1"."table1Id")
+WHERE ("entity1"."deleted"=false)
+ORDER BY "entity1"."table1Id" ASC"
+,
+        "type": 1,
+      },
+      {
+        "parameters": 
+Map {
+          "$1" => 1n,
+        }
+,
+        "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE (("entity0"."deleted"=false) AND ("entity0"."id"=$1))"
+,
+        "type": 1,
+      },
+    ],
+    "_query": 
+"SELECT "entity1"."id",
+	"entity1"."table1Id",
+	"entity1"."name",
+	"entity1"."integer",
+	"entity1"."deleted"
+FROM "Table1Manies" AS "entity1"
+INNER JOIN (
+	SELECT "entity0"."id",
+		"entity0"."bigint",
+		"entity0"."binary",
+		"entity0"."boolean",
+		"entity0"."date",
+		"entity0"."plainDate",
+		"entity0"."dateTime",
+		"entity0"."instant",
+		"entity0"."decimal",
+		"entity0"."decimalNumber",
+		"entity0"."decimalDecimal",
+		"entity0"."deleted",
+		"entity0"."identifier",
+		"entity0"."identifierString",
+		"entity0"."integer",
+		"entity0"."real",
+		"entity0"."string",
+		"entity0"."time",
+		"entity0"."plainTime",
+		"entity0"."createdDate",
+		"entity0"."modifiedDate"
+	FROM "fixture"."Table1s" AS "entity0"
+	WHERE (("entity0"."deleted"=false) AND ("entity0"."id"=$1))
+) AS "entity0" ON ("entity0"."id"="entity1"."table1Id")
+WHERE ("entity1"."deleted"=false)
+ORDER BY "entity1"."table1Id" ASC;
+
+SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE (("entity0"."deleted"=false) AND ("entity0"."id"=$2))"
+,
+    "_type": 1,
+  },
+]
+`;
+
+exports[`DBCONTEXT ENTITY ENTRY should load multiple relations 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": 
+Map {
+      "$1" => 1,
+      "$2" => 1,
+      "$3" => 1,
+    }
+,
+    "_queries": [
+      {
+        "parameters": 
+Map {
+          "$1" => 1,
+        }
+,
+        "query": 
+"SELECT "entity2"."id",
+	"entity2"."bigint",
+	"entity2"."binary",
+	"entity2"."boolean",
+	"entity2"."date",
+	"entity2"."plainDate",
+	"entity2"."dateTime",
+	"entity2"."instant",
+	"entity2"."decimal",
+	"entity2"."decimalNumber",
+	"entity2"."decimalDecimal",
+	"entity2"."deleted",
+	"entity2"."identifier",
+	"entity2"."identifierString",
+	"entity2"."integer",
+	"entity2"."real",
+	"entity2"."string",
+	"entity2"."time",
+	"entity2"."plainTime",
+	"entity2"."createdDate",
+	"entity2"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity2"
+INNER JOIN (
+	SELECT "entity1"."table1Id",
+		"entity1"."table2Id",
+		"entity1"."option12"
+	FROM "Table1_Table2s" AS "entity1"
+	INNER JOIN (
+		SELECT "entity0"."id",
+			"entity0"."rowVersion",
+			"entity0"."t2Name",
+			"entity0"."t2Number"
+		FROM "fixture"."Table2s" AS "entity0"
+		WHERE ("entity0"."id"=$1)
+	) AS "entity0" ON ("entity0"."id"="entity1"."table2Id")
+) AS "entity1" ON ("entity1"."table1Id"="entity2"."id")
+WHERE ("entity2"."deleted"=false)
+ORDER BY "entity2"."id" ASC"
+,
+        "type": 1,
+      },
+      {
+        "parameters": 
+Map {
+          "$1" => 1,
+        }
+,
+        "query": 
+"SELECT "entity1"."table1Id",
+	"entity1"."table2Id",
+	"entity1"."option12"
+FROM "Table1_Table2s" AS "entity1"
+INNER JOIN (
+	SELECT "entity0"."id",
+		"entity0"."rowVersion",
+		"entity0"."t2Name",
+		"entity0"."t2Number"
+	FROM "fixture"."Table2s" AS "entity0"
+	WHERE ("entity0"."id"=$1)
+) AS "entity0" ON ("entity0"."id"="entity1"."table2Id")
+ORDER BY "entity1"."table2Id" ASC"
+,
+        "type": 1,
+      },
+      {
+        "parameters": 
+Map {
+          "$1" => 1,
+        }
+,
+        "query": 
+"SELECT "entity0"."id",
+	"entity0"."rowVersion",
+	"entity0"."t2Name",
+	"entity0"."t2Number"
+FROM "fixture"."Table2s" AS "entity0"
+WHERE ("entity0"."id"=$1)"
+,
+        "type": 1,
+      },
+    ],
+    "_query": 
+"SELECT "entity2"."id",
+	"entity2"."bigint",
+	"entity2"."binary",
+	"entity2"."boolean",
+	"entity2"."date",
+	"entity2"."plainDate",
+	"entity2"."dateTime",
+	"entity2"."instant",
+	"entity2"."decimal",
+	"entity2"."decimalNumber",
+	"entity2"."decimalDecimal",
+	"entity2"."deleted",
+	"entity2"."identifier",
+	"entity2"."identifierString",
+	"entity2"."integer",
+	"entity2"."real",
+	"entity2"."string",
+	"entity2"."time",
+	"entity2"."plainTime",
+	"entity2"."createdDate",
+	"entity2"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity2"
+INNER JOIN (
+	SELECT "entity1"."table1Id",
+		"entity1"."table2Id",
+		"entity1"."option12"
+	FROM "Table1_Table2s" AS "entity1"
+	INNER JOIN (
+		SELECT "entity0"."id",
+			"entity0"."rowVersion",
+			"entity0"."t2Name",
+			"entity0"."t2Number"
+		FROM "fixture"."Table2s" AS "entity0"
+		WHERE ("entity0"."id"=$1)
+	) AS "entity0" ON ("entity0"."id"="entity1"."table2Id")
+) AS "entity1" ON ("entity1"."table1Id"="entity2"."id")
+WHERE ("entity2"."deleted"=false)
+ORDER BY "entity2"."id" ASC;
+
+SELECT "entity1"."table1Id",
+	"entity1"."table2Id",
+	"entity1"."option12"
+FROM "Table1_Table2s" AS "entity1"
+INNER JOIN (
+	SELECT "entity0"."id",
+		"entity0"."rowVersion",
+		"entity0"."t2Name",
+		"entity0"."t2Number"
+	FROM "fixture"."Table2s" AS "entity0"
+	WHERE ("entity0"."id"=$2)
+) AS "entity0" ON ("entity0"."id"="entity1"."table2Id")
+ORDER BY "entity1"."table2Id" ASC;
+
+SELECT "entity0"."id",
+	"entity0"."rowVersion",
+	"entity0"."t2Name",
+	"entity0"."t2Number"
+FROM "fixture"."Table2s" AS "entity0"
+WHERE ("entity0"."id"=$3)"
+,
+    "_type": 1,
+  },
+]
+`;

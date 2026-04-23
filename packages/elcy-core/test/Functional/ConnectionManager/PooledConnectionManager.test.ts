@@ -4,7 +4,7 @@ import { describe, it, expect } from "bun:test";
 import { PooledConnectionManager } from "../../../src/Connection/PooledConnectionManager";
 import { IConnectionPoolOption } from "../../../src/Data/Interface/IConnectionOption";
 import { ConnectionError } from "../../../src/Error/ConnectionError";
-import { MockDriver } from "../../Mock/MockDriver";
+import { MockDriver } from "../../fixture/mock/MockDriver";
 
 describe("POOLED CONNECTION MANAGER", () => {
     const getManager = (option?: IConnectionPoolOption) => {

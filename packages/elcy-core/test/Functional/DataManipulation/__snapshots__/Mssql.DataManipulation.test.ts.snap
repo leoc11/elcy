@@ -355,6 +355,26 @@ VALUES
 ]
 `;
 
+exports[`Mssql DATA MANIPULATION INSERT should do upsert 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "@param0" => 11,
+      "@param1" => "Original",
+    }
+,
+    "query": 
+"INSERT INTO [fixture].[Table1s]([bigint], [binary], [boolean], [date], [plainDate], [dateTime], [instant], [decimal], [decimalNumber], [decimalDecimal], [deleted], [identifier], [identifierString], [integer], [real], [string], [time], [plainTime])
+OUTPUT [INSERTED].[id],([INSERTED].[integer]+[INSERTED].[decimalNumber]) AS [computed],[INSERTED].[createdDate],[INSERTED].[modifiedDate],[INSERTED].[deleted],[INSERTED].[integer]
+VALUES
+	(DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,@param0,DEFAULT,@param1,DEFAULT,DEFAULT)"
+,
+    "type": 3,
+  },
+]
+`;
+
 exports[`Mssql DATA MANIPULATION UPDATE should update entity 1 1`] = `
 [
   {
@@ -667,6 +687,168 @@ WHERE ([entity1].[id]=@param1)"
 ]
 `;
 
+exports[`Mssql DATA MANIPULATION UPDATE should do upsert 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": Map {},
+    "_queries": [
+      {
+        "query": "DROP TABLE IF EXISTS [#param0]",
+        "type": 36,
+      },
+      {
+        "query": 
+"CREATE TABLE [#param0]
+(
+	[id] bigint,
+	[bigint] bigint,
+	[binary] varbinary,
+	[boolean] bit,
+	[date] datetime,
+	[plainDate] date,
+	[dateTime] datetime,
+	[instant] datetime2,
+	[decimal] nvarchar(255),
+	[decimalNumber] decimal(18, 0),
+	[decimalDecimal] decimal,
+	[deleted] bit,
+	[identifier] uniqueidentifier,
+	[identifierString] nvarchar(255),
+	[integer] decimal(18, 0),
+	[real] decimal(18, 0),
+	[string] nvarchar(255),
+	[time] time,
+	[plainTime] time,
+	[modifiedDate] datetime2
+)"
+,
+        "type": 36,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"INSERT INTO [#param0]([id], [bigint], [binary], [boolean], [date], [plainDate], [dateTime], [instant], [decimal], [decimalNumber], [decimalDecimal], [deleted], [identifier], [identifierString], [integer], [real], [string], [time], [plainTime], [modifiedDate])
+VALUES
+	(NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,11,NULL,'Updated',NULL,NULL,NULL)"
+,
+        "type": 34,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"UPDATE [entity0] WITH (UPDLOCK, HOLDLOCK)
+SET [modifiedDate] = getutcdate(),
+	[string] = [upsert].[string]
+OUTPUT [INSERTED].[id],[INSERTED].[computed] AS [computed],[INSERTED].[createdDate],[INSERTED].[modifiedDate],[INSERTED].[deleted],[INSERTED].[integer]
+FROM [Table1s] AS [entity0]
+JOIN [#param0] AS [upsert] ON ([id]=[id])"
+,
+        "type": 3,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"INSERT INTO [fixture].[Table1s] ([bigint],[binary],[boolean],[date],[plainDate],[dateTime],[instant],[decimal],[decimalNumber],[decimalDecimal],[deleted],[identifier],[identifierString],[integer],[real],[string],[time],[plainTime])
+OUTPUT [INSERTED].[id],[INSERTED].[computed] AS [computed],[INSERTED].[createdDate],[INSERTED].[modifiedDate],[INSERTED].[deleted],[INSERTED].[integer]
+SELECT [upsert].[id],
+	[upsert].[bigint],
+	[upsert].[binary],
+	[upsert].[boolean],
+	[upsert].[date],
+	[upsert].[plainDate],
+	[upsert].[dateTime],
+	[upsert].[instant],
+	[upsert].[decimal],
+	[upsert].[decimalNumber],
+	[upsert].[decimalDecimal],
+	[upsert].[deleted],
+	[upsert].[identifier],
+	[upsert].[identifierString],
+	[upsert].[integer],
+	[upsert].[real],
+	[upsert].[string],
+	[upsert].[time],
+	[upsert].[plainTime]
+FROM [#param0] AS [upsert]
+WHERE NOT EXISTS (
+	SELECT 1 FROM [fixture].[Table1s] AS [entity0] WITH (UPDLOCK, HOLDLOCK)
+	WHERE ([id]=[id])
+)"
+,
+        "type": 3,
+      },
+    ],
+    "_query": 
+"DROP TABLE IF EXISTS [#param0];
+
+CREATE TABLE [#param0]
+(
+	[id] bigint,
+	[bigint] bigint,
+	[binary] varbinary,
+	[boolean] bit,
+	[date] datetime,
+	[plainDate] date,
+	[dateTime] datetime,
+	[instant] datetime2,
+	[decimal] nvarchar(255),
+	[decimalNumber] decimal(18, 0),
+	[decimalDecimal] decimal,
+	[deleted] bit,
+	[identifier] uniqueidentifier,
+	[identifierString] nvarchar(255),
+	[integer] decimal(18, 0),
+	[real] decimal(18, 0),
+	[string] nvarchar(255),
+	[time] time,
+	[plainTime] time,
+	[modifiedDate] datetime2
+);
+
+INSERT INTO [#param0]([id], [bigint], [binary], [boolean], [date], [plainDate], [dateTime], [instant], [decimal], [decimalNumber], [decimalDecimal], [deleted], [identifier], [identifierString], [integer], [real], [string], [time], [plainTime], [modifiedDate])
+VALUES
+	(NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,11,NULL,'Updated',NULL,NULL,NULL);
+
+UPDATE [entity0] WITH (UPDLOCK, HOLDLOCK)
+SET [modifiedDate] = getutcdate(),
+	[string] = [upsert].[string]
+OUTPUT [INSERTED].[id],[INSERTED].[computed] AS [computed],[INSERTED].[createdDate],[INSERTED].[modifiedDate],[INSERTED].[deleted],[INSERTED].[integer]
+FROM [Table1s] AS [entity0]
+JOIN [#param0] AS [upsert] ON ([id]=[id]);
+
+INSERT INTO [fixture].[Table1s] ([bigint],[binary],[boolean],[date],[plainDate],[dateTime],[instant],[decimal],[decimalNumber],[decimalDecimal],[deleted],[identifier],[identifierString],[integer],[real],[string],[time],[plainTime])
+OUTPUT [INSERTED].[id],[INSERTED].[computed] AS [computed],[INSERTED].[createdDate],[INSERTED].[modifiedDate],[INSERTED].[deleted],[INSERTED].[integer]
+SELECT [upsert].[id],
+	[upsert].[bigint],
+	[upsert].[binary],
+	[upsert].[boolean],
+	[upsert].[date],
+	[upsert].[plainDate],
+	[upsert].[dateTime],
+	[upsert].[instant],
+	[upsert].[decimal],
+	[upsert].[decimalNumber],
+	[upsert].[decimalDecimal],
+	[upsert].[deleted],
+	[upsert].[identifier],
+	[upsert].[identifierString],
+	[upsert].[integer],
+	[upsert].[real],
+	[upsert].[string],
+	[upsert].[time],
+	[upsert].[plainTime]
+FROM [#param0] AS [upsert]
+WHERE NOT EXISTS (
+	SELECT 1 FROM [fixture].[Table1s] AS [entity0] WITH (UPDLOCK, HOLDLOCK)
+	WHERE ([id]=[id])
+)"
+,
+    "_type": 39,
+  },
+]
+`;
+
 exports[`Mssql DATA MANIPULATION DELETE should delete entity (soft delete) + should update modifiedDate 1`] = `
 [
   {
@@ -912,7 +1094,7 @@ exports[`Mssql DATA MANIPULATION DELETE should cascade delete entity + relation 
     "_queries": [
       {
         "query": "DROP TABLE IF EXISTS [#delete]",
-        "type": 4,
+        "type": 36,
       },
       {
         "query": 
@@ -921,7 +1103,7 @@ exports[`Mssql DATA MANIPULATION DELETE should cascade delete entity + relation 
 	[id] bigint
 )"
 ,
-        "type": 4,
+        "type": 36,
       },
       {
         "parameters": Map {},
@@ -930,7 +1112,7 @@ exports[`Mssql DATA MANIPULATION DELETE should cascade delete entity + relation 
 VALUES
 	(1)"
 ,
-        "type": 2,
+        "type": 34,
       },
       {
         "parameters": Map {},
@@ -977,7 +1159,7 @@ SET [entity1].[deleted] = 1
 FROM [Table1Manies] AS [entity1]
 WHERE ([entity1].[deleted]=0)"
 ,
-    "_type": 6,
+    "_type": 38,
   },
 ]
 `;
@@ -990,7 +1172,7 @@ exports[`Mssql DATA MANIPULATION DELETE should delete with SET NULL option (soft
     "_queries": [
       {
         "query": "DROP TABLE IF EXISTS [#delete]",
-        "type": 4,
+        "type": 36,
       },
       {
         "query": 
@@ -999,7 +1181,7 @@ exports[`Mssql DATA MANIPULATION DELETE should delete with SET NULL option (soft
 	[id] bigint
 )"
 ,
-        "type": 4,
+        "type": 36,
       },
       {
         "parameters": Map {},
@@ -1008,7 +1190,7 @@ exports[`Mssql DATA MANIPULATION DELETE should delete with SET NULL option (soft
 VALUES
 	(1)"
 ,
-        "type": 2,
+        "type": 34,
       },
       {
         "parameters": Map {},
@@ -1053,7 +1235,7 @@ UPDATE [entity1]
 SET [entity1].[table1Id] = NULL
 FROM [Table1Manies] AS [entity1]"
 ,
-    "_type": 6,
+    "_type": 38,
   },
 ]
 `;
@@ -1066,7 +1248,7 @@ exports[`Mssql DATA MANIPULATION DELETE should delete with SET DEFAULT option (s
     "_queries": [
       {
         "query": "DROP TABLE IF EXISTS [#delete]",
-        "type": 4,
+        "type": 36,
       },
       {
         "query": 
@@ -1075,7 +1257,7 @@ exports[`Mssql DATA MANIPULATION DELETE should delete with SET DEFAULT option (s
 	[id] bigint
 )"
 ,
-        "type": 4,
+        "type": 36,
       },
       {
         "parameters": Map {},
@@ -1084,7 +1266,7 @@ exports[`Mssql DATA MANIPULATION DELETE should delete with SET DEFAULT option (s
 VALUES
 	(1)"
 ,
-        "type": 2,
+        "type": 34,
       },
       {
         "parameters": Map {},
@@ -1129,7 +1311,7 @@ UPDATE [entity1]
 SET [entity1].[table1Id] = 0
 FROM [Table1Manies] AS [entity1]"
 ,
-    "_type": 6,
+    "_type": 38,
   },
 ]
 `;

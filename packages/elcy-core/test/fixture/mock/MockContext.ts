@@ -1,8 +1,8 @@
-import { IConnection } from "../../src/Connection/IConnection";
-import { PooledConnection } from "../../src/Connection/PooledConnection";
-import { DbContext } from "../../src/Data/DbContext";
+import { IConnection } from "../../../src/Connection/IConnection";
+import { PooledConnection } from "../../../src/Connection/PooledConnection";
+import { DbContext } from "../../../src/Data/DbContext";
 import { IEnumerable } from "@elcy/enumerable";
-import { DeferredQuery } from "../../src/Query/DeferredQuery";
+import { DeferredQuery } from "../../../src/Query/DeferredQuery";
 import { MockConnection } from "./MockConnection";
 
 export interface IMockedContext {

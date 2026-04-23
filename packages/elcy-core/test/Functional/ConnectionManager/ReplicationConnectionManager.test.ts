@@ -1,6 +1,6 @@
 import {describe, it, expect } from "bun:test";
 import { ReplicationConnectionManager } from "../../../src/Connection/ReplicationConnectionManager";
-import { MockDriver } from "../../Mock/MockDriver";
+import { MockDriver } from "../../fixture/mock/MockDriver";
 
 describe("REPLICATION CONNECTION MANAGER", () => {
     const driver = new MockDriver({ database: "Master" });

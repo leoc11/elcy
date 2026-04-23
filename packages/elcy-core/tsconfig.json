@@ -4,6 +4,7 @@
     "target": "esnext",
     "composite": true,
     "module": "esnext",
+    "experimentalDecorators": false,
     "outDir": "dist",
     "rootDir": "./src",
     "baseUrl": ".",

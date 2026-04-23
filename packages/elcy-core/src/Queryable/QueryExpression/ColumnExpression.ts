@@ -52,7 +52,7 @@ export class ColumnExpression<TE extends object = any, T = ValueType> implements
         return clone;
     }
     public hashCode() {
-        return hashCode(this.propertyName, hashCode(this.columnName, this.entity.hashCode()));
+        return hashCode(this.propertyName, hashCode(this.columnName, hashCode(this.entity.name)));
     }
     public toString(): string {
         return `Column(${this.propertyName})`;

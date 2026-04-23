@@ -4,9 +4,9 @@ import { Column } from "./Column";
 import { ClassAccessor, ClassPropertyDecorator } from "../Type";
 import { IEntityMetaData } from "src/MetaData/Interface/IEntityMetaData";
 
-export function RowVersionColumn<TE extends object, T extends Uint8Array>(option?: IRowVersionColumnOption): ClassPropertyDecorator<TE, Uint8Array>;
-export function RowVersionColumn<TE extends object, T extends Uint8Array>(name?: string, defaultValue?: () => T): ClassPropertyDecorator<TE, Uint8Array>;
-export function RowVersionColumn<TE extends object, T extends Uint8Array>(optionOrName?: IRowVersionColumnOption | string, defaultValue?: () => T): ClassPropertyDecorator<TE, Uint8Array> {
+export function RowVersionColumn<TE extends object>(option?: IRowVersionColumnOption): ClassPropertyDecorator<TE, bigint | Uint8Array>;
+export function RowVersionColumn<TE extends object>(name?: string): ClassPropertyDecorator<TE, bigint | Uint8Array>;
+export function RowVersionColumn<TE extends object>(optionOrName?: IRowVersionColumnOption | string): ClassPropertyDecorator<TE, bigint | Uint8Array> {
     let option: IRowVersionColumnOption = {};
     if (optionOrName && typeof optionOrName !== "string") {
         option = optionOrName;
@@ -15,13 +15,11 @@ export function RowVersionColumn<TE extends object, T extends Uint8Array>(option
         if (typeof optionOrName !== "undefined") {
             option.columnName = optionOrName as string;
         }
-        if (typeof defaultValue !== "undefined") {
-            option.default = defaultValue;
-        }
     }
 
-    const columnDecorator = Column<TE, Uint8Array>(Uint8Array, RowVersionColumnMetaData, option);
-    return (target: undefined | ClassAccessor<Uint8Array>, context: ClassFieldDecoratorContext<TE, Uint8Array> | ClassAccessorDecoratorContext<TE, Uint8Array>) => {
+    option.isReadOnly = true;
+    const columnDecorator = Column<TE, bigint | Uint8Array>(Uint8Array, RowVersionColumnMetaData, option);
+    return (target: undefined | ClassAccessor<bigint | Uint8Array>, context: ClassFieldDecoratorContext<TE, bigint | Uint8Array> | ClassAccessorDecoratorContext<TE, bigint | Uint8Array>) => {
         let columnHandlers = context.metadata.columns as Array<(entityMeta: IEntityMetaData<TE>) => void>;
         if (!Array.isArray(columnHandlers)) {
             context.metadata.columns = columnHandlers = [];

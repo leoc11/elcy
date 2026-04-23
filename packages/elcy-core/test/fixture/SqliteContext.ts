@@ -2,7 +2,7 @@ import "../../src/Startup";
 import { IQueryCacheManager } from "../../src/Cache/IQueryCacheManager";
 import { IResultCacheManager } from "../../src/Cache/IResultCacheManager";
 import { IDriver } from "../../src/Connection/IDriver";
-import { MockDriver } from "../Mock/MockDriver";
+import { MockDriver } from "./mock/MockDriver";
 import { Table1, Table1Many, Table1One, Table1Table2, Table1Table2Many, Table1Table2One, Table1Table3, Table2, Table2Table3, Table3 } from "./model";
 import { ITestContext } from "./ITestContext";
 import { SqliteDbContext } from "../../src/Provider/Sqlite/SqliteDbContext";

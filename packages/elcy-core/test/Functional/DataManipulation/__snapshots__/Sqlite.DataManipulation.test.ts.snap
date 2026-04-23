@@ -313,6 +313,25 @@ Map {
 ]
 `;
 
+exports[`Sqlite DATA MANIPULATION INSERT should do upsert 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      ":param0" => 11,
+      ":param1" => "Original",
+    }
+,
+    "query": 
+"INSERT INTO "fixture"."Table1s" AS "entity0"("bigint","binary","boolean","date","plainDate","dateTime","instant","decimal","decimalNumber","decimalDecimal","deleted","identifier","identifierString","integer","real","string","time","plainTime") VALUES
+	(DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,:param0,DEFAULT,:param1,DEFAULT,DEFAULT)
+RETURNING "entity0"."id",("entity0"."integer" + "entity0"."decimalNumber") AS "computed","entity0"."createdDate","entity0"."modifiedDate","entity0"."deleted","entity0"."integer""
+,
+    "type": 3,
+  },
+]
+`;
+
 exports[`Sqlite DATA MANIPULATION UPDATE should update entity 1 1`] = `
 [
   {
@@ -613,6 +632,27 @@ RETURNING "id""
 ]
 `;
 
+exports[`Sqlite DATA MANIPULATION UPDATE should do upsert 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      ":param0" => 11,
+      ":param1" => "Updated",
+    }
+,
+    "query": 
+"INSERT INTO "fixture"."Table1s" AS "entity0"("bigint","binary","boolean","date","plainDate","dateTime","instant","decimal","decimalNumber","decimalDecimal","deleted","identifier","identifierString","integer","real","string","time","plainTime") VALUES
+	(DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,:param0,DEFAULT,:param1,DEFAULT,DEFAULT)ON CONFLICT (id) DO UPDATE
+SET "modifiedDate" = STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW'),
+	"string" = EXCLUDED."string"
+RETURNING "entity0"."id","entity0"."computed" AS "computed","entity0"."createdDate","entity0"."modifiedDate","entity0"."deleted","entity0"."integer""
+,
+    "type": 3,
+  },
+]
+`;
+
 exports[`Sqlite DATA MANIPULATION DELETE should delete entity (soft delete) + should update modifiedDate 1`] = `
 [
   {
@@ -885,7 +925,7 @@ exports[`Sqlite DATA MANIPULATION DELETE should cascade delete entity + relation
 [
   {
     "query": "DROP TABLE IF EXISTS temp."delete"",
-    "type": 4,
+    "type": 36,
   },
   {
     "query": 
@@ -894,7 +934,7 @@ exports[`Sqlite DATA MANIPULATION DELETE should cascade delete entity + relation
 	"id" integer
 )"
 ,
-    "type": 4,
+    "type": 36,
   },
   {
     "parameters": Map {},
@@ -902,7 +942,7 @@ exports[`Sqlite DATA MANIPULATION DELETE should cascade delete entity + relation
 "INSERT INTO temp."delete" AS "delete"("id") VALUES
 	(1)"
 ,
-    "type": 2,
+    "type": 34,
   },
   {
     "parameters": Map {},
@@ -930,7 +970,7 @@ exports[`Sqlite DATA MANIPULATION DELETE should delete with SET NULL option (sof
 [
   {
     "query": "DROP TABLE IF EXISTS temp."delete"",
-    "type": 4,
+    "type": 36,
   },
   {
     "query": 
@@ -939,7 +979,7 @@ exports[`Sqlite DATA MANIPULATION DELETE should delete with SET NULL option (sof
 	"id" integer
 )"
 ,
-    "type": 4,
+    "type": 36,
   },
   {
     "parameters": Map {},
@@ -947,7 +987,7 @@ exports[`Sqlite DATA MANIPULATION DELETE should delete with SET NULL option (sof
 "INSERT INTO temp."delete" AS "delete"("id") VALUES
 	(1)"
 ,
-    "type": 2,
+    "type": 34,
   },
   {
     "parameters": Map {},
@@ -974,7 +1014,7 @@ exports[`Sqlite DATA MANIPULATION DELETE should delete with SET DEFAULT option (
 [
   {
     "query": "DROP TABLE IF EXISTS temp."delete"",
-    "type": 4,
+    "type": 36,
   },
   {
     "query": 
@@ -983,7 +1023,7 @@ exports[`Sqlite DATA MANIPULATION DELETE should delete with SET DEFAULT option (
 	"id" integer
 )"
 ,
-    "type": 4,
+    "type": 36,
   },
   {
     "parameters": Map {},
@@ -991,7 +1031,7 @@ exports[`Sqlite DATA MANIPULATION DELETE should delete with SET DEFAULT option (
 "INSERT INTO temp."delete" AS "delete"("id") VALUES
 	(1)"
 ,
-    "type": 2,
+    "type": 34,
   },
   {
     "parameters": Map {},

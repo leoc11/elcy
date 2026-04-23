@@ -339,6 +339,25 @@ Map {
 ]
 `;
 
+exports[`Postgresql DATA MANIPULATION INSERT should do upsert 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "$1" => 11,
+      "$2" => "Original",
+    }
+,
+    "query": 
+"INSERT INTO "fixture"."Table1s" AS "entity0"("bigint","binary","boolean","date","plainDate","dateTime","instant","decimal","decimalNumber","decimalDecimal","deleted","identifier","identifierString","integer","real","string","time","plainTime") VALUES
+	(DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,$1,DEFAULT,$2,DEFAULT,DEFAULT)
+RETURNING "entity0"."id",("entity0"."integer"+"entity0"."decimalNumber") AS "computed","entity0"."createdDate","entity0"."modifiedDate","entity0"."deleted","entity0"."integer""
+,
+    "type": 3,
+  },
+]
+`;
+
 exports[`Postgresql DATA MANIPULATION UPDATE should update entity 1 1`] = `
 [
   {
@@ -645,6 +664,27 @@ RETURNING "entity1"."id""
 ]
 `;
 
+exports[`Postgresql DATA MANIPULATION UPDATE should do upsert 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "$1" => 11,
+      "$2" => "Updated",
+    }
+,
+    "query": 
+"INSERT INTO "fixture"."Table1s" AS "entity0"("bigint","binary","boolean","date","plainDate","dateTime","instant","decimal","decimalNumber","decimalDecimal","deleted","identifier","identifierString","integer","real","string","time","plainTime") VALUES
+	(DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,$1,DEFAULT,$2,DEFAULT,DEFAULT)ON CONFLICT (id) DO UPDATE
+SET "modifiedDate" = CURRENT_TIMESTAMP AT TIME ZONE 'UTC',
+	"string" = EXCLUDED."string"
+RETURNING "entity0"."id","entity0"."computed" AS "computed","entity0"."createdDate","entity0"."modifiedDate","entity0"."deleted","entity0"."integer""
+,
+    "type": 3,
+  },
+]
+`;
+
 exports[`Postgresql DATA MANIPULATION DELETE should delete entity (soft delete) + should update modifiedDate 1`] = `
 [
   {
@@ -902,7 +942,7 @@ exports[`Postgresql DATA MANIPULATION DELETE should cascade delete entity + rela
     "_queries": [
       {
         "query": "DROP TABLE IF EXISTS pg_temp."delete"",
-        "type": 4,
+        "type": 36,
       },
       {
         "query": 
@@ -911,7 +951,7 @@ exports[`Postgresql DATA MANIPULATION DELETE should cascade delete entity + rela
 	"id" bigint
 )"
 ,
-        "type": 4,
+        "type": 36,
       },
       {
         "parameters": Map {},
@@ -919,7 +959,7 @@ exports[`Postgresql DATA MANIPULATION DELETE should cascade delete entity + rela
 "INSERT INTO pg_temp."delete" AS "delete"("id") VALUES
 	(1)"
 ,
-        "type": 2,
+        "type": 34,
       },
       {
         "parameters": Map {},
@@ -940,10 +980,7 @@ SET "deleted" = true
 FROM (
 	SELECT "entity0"."id"
 	FROM "fixture"."Table1s" AS "entity0"
-	INNER JOIN (
-		VALUES
-		(1)
-	) AS "delete"("id") ON ("entity0"."id"="delete"."id")
+	INNER JOIN pg_temp."delete" AS "delete" ON ("entity0"."id"="delete"."id")
 	WHERE ("entity0"."deleted"=false)
 ) AS "entity0"
 WHERE ("entity0"."id"="entity1"."table1Id") AND ("entity1"."deleted"=false)"
@@ -973,15 +1010,12 @@ SET "deleted" = true
 FROM (
 	SELECT "entity0"."id"
 	FROM "fixture"."Table1s" AS "entity0"
-	INNER JOIN (
-		VALUES
-		(1)
-	) AS "delete"("id") ON ("entity0"."id"="delete"."id")
+	INNER JOIN pg_temp."delete" AS "delete" ON ("entity0"."id"="delete"."id")
 	WHERE ("entity0"."deleted"=false)
 ) AS "entity0"
 WHERE ("entity0"."id"="entity1"."table1Id") AND ("entity1"."deleted"=false)"
 ,
-    "_type": 6,
+    "_type": 38,
   },
 ]
 `;
@@ -994,7 +1028,7 @@ exports[`Postgresql DATA MANIPULATION DELETE should delete with SET NULL option 
     "_queries": [
       {
         "query": "DROP TABLE IF EXISTS pg_temp."delete"",
-        "type": 4,
+        "type": 36,
       },
       {
         "query": 
@@ -1003,7 +1037,7 @@ exports[`Postgresql DATA MANIPULATION DELETE should delete with SET NULL option 
 	"id" bigint
 )"
 ,
-        "type": 4,
+        "type": 36,
       },
       {
         "parameters": Map {},
@@ -1011,7 +1045,7 @@ exports[`Postgresql DATA MANIPULATION DELETE should delete with SET NULL option 
 "INSERT INTO pg_temp."delete" AS "delete"("id") VALUES
 	(1)"
 ,
-        "type": 2,
+        "type": 34,
       },
       {
         "parameters": Map {},
@@ -1032,10 +1066,7 @@ SET "table1Id" = NULL
 FROM (
 	SELECT "entity0"."id"
 	FROM "fixture"."Table1s" AS "entity0"
-	INNER JOIN (
-		VALUES
-		(1)
-	) AS "delete"("id") ON ("entity0"."id"="delete"."id")
+	INNER JOIN pg_temp."delete" AS "delete" ON ("entity0"."id"="delete"."id")
 	WHERE ("entity0"."deleted"=false)
 ) AS "entity0"
 WHERE ("entity0"."id"="entity1"."table1Id")"
@@ -1065,15 +1096,12 @@ SET "table1Id" = NULL
 FROM (
 	SELECT "entity0"."id"
 	FROM "fixture"."Table1s" AS "entity0"
-	INNER JOIN (
-		VALUES
-		(1)
-	) AS "delete"("id") ON ("entity0"."id"="delete"."id")
+	INNER JOIN pg_temp."delete" AS "delete" ON ("entity0"."id"="delete"."id")
 	WHERE ("entity0"."deleted"=false)
 ) AS "entity0"
 WHERE ("entity0"."id"="entity1"."table1Id")"
 ,
-    "_type": 6,
+    "_type": 38,
   },
 ]
 `;
@@ -1086,7 +1114,7 @@ exports[`Postgresql DATA MANIPULATION DELETE should delete with SET DEFAULT opti
     "_queries": [
       {
         "query": "DROP TABLE IF EXISTS pg_temp."delete"",
-        "type": 4,
+        "type": 36,
       },
       {
         "query": 
@@ -1095,7 +1123,7 @@ exports[`Postgresql DATA MANIPULATION DELETE should delete with SET DEFAULT opti
 	"id" bigint
 )"
 ,
-        "type": 4,
+        "type": 36,
       },
       {
         "parameters": Map {},
@@ -1103,7 +1131,7 @@ exports[`Postgresql DATA MANIPULATION DELETE should delete with SET DEFAULT opti
 "INSERT INTO pg_temp."delete" AS "delete"("id") VALUES
 	(1)"
 ,
-        "type": 2,
+        "type": 34,
       },
       {
         "parameters": Map {},
@@ -1124,10 +1152,7 @@ SET "table1Id" = 0
 FROM (
 	SELECT "entity0"."id"
 	FROM "fixture"."Table1s" AS "entity0"
-	INNER JOIN (
-		VALUES
-		(1)
-	) AS "delete"("id") ON ("entity0"."id"="delete"."id")
+	INNER JOIN pg_temp."delete" AS "delete" ON ("entity0"."id"="delete"."id")
 	WHERE ("entity0"."deleted"=false)
 ) AS "entity0"
 WHERE ("entity0"."id"="entity1"."table1Id")"
@@ -1157,15 +1182,12 @@ SET "table1Id" = 0
 FROM (
 	SELECT "entity0"."id"
 	FROM "fixture"."Table1s" AS "entity0"
-	INNER JOIN (
-		VALUES
-		(1)
-	) AS "delete"("id") ON ("entity0"."id"="delete"."id")
+	INNER JOIN pg_temp."delete" AS "delete" ON ("entity0"."id"="delete"."id")
 	WHERE ("entity0"."deleted"=false)
 ) AS "entity0"
 WHERE ("entity0"."id"="entity1"."table1Id")"
 ,
-    "_type": 6,
+    "_type": 38,
   },
 ]
 `;

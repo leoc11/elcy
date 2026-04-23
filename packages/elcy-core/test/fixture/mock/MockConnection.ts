@@ -1,43 +1,43 @@
-import { QueryType } from "../../src/Common/Enum";
-import { IsolationLevel } from "../../src/Common/StringType";
-import { IConnection } from "../../src/Connection/IConnection";
-import { TimeSpan } from "../../src/Data/TimeSpan";
-import { Uuid } from "../../src/Data/Uuid";
+import { QueryType } from "../../../src/Common/Enum";
+import { IsolationLevel } from "../../../src/Common/StringType";
+import { IConnection } from "../../../src/Connection/IConnection";
+import { TimeSpan } from "../../../src/Data/TimeSpan";
+import { Uuid } from "../../../src/Data/Uuid";
 import { Enumerable, IEnumerable } from "@elcy/enumerable";
-import { EventHandlerFactory } from "../../src/Event/EventHandlerFactory";
-import { IEventDispacher, IEventHandler } from "../../src/Event/IEventHandler";
-import { EqualExpression } from "../../src/ExpressionBuilder/Expression/EqualExpression";
-import { IExpression } from "../../src/ExpressionBuilder/Expression/IExpression";
-import { StrictEqualExpression } from "../../src/ExpressionBuilder/Expression/StrictEqualExpression";
-import { ValueExpression } from "../../src/ExpressionBuilder/Expression/ValueExpression";
-import { ExpressionExecutor } from "../../src/ExpressionBuilder/ExpressionExecutor";
-import { isColumnExp, visitExpression } from "../../src/Helper/Util";
-import { IntegerColumnMetaData } from "../../src/MetaData/IntegerColumnMetaData";
-import { StringColumnMetaData } from "../../src/MetaData/StringColumnMetaData";
-import { BatchedQuery } from "../../src/Query/BatchedQuery";
-import { DeferredQuery } from "../../src/Query/DeferredQuery";
-import { IQuery } from "../../src/Query/IQuery";
-import { IQueryResult } from "../../src/Query/IQueryResult";
-import { IncludeRelation } from "../../src/Queryable/Interface/IncludeRelation";
-import { PagingJoinRelation } from "../../src/Queryable/Interface/PagingJoinRelation";
-import { ColumnExpression } from "../../src/Queryable/QueryExpression/ColumnExpression";
-import { DeleteExpression } from "../../src/Queryable/QueryExpression/DeleteExpression";
-import { IColumnExpression } from "../../src/Queryable/QueryExpression/IColumnExpression";
-import { InsertExpression } from "../../src/Queryable/QueryExpression/InsertExpression";
-import { InsertIntoExpression } from "../../src/Queryable/QueryExpression/InsertIntoExpression";
-import { SelectExpression } from "../../src/Queryable/QueryExpression/SelectExpression";
-import { SqlParameterExpression } from "../../src/Queryable/QueryExpression/SqlParameterExpression";
-import { SqlTableValueParameterExpression } from "../../src/Queryable/QueryExpression/SqlTableValueParameterExpression";
-import { UpdateExpression } from "../../src/Queryable/QueryExpression/UpdateExpression";
-import { UpsertExpression } from "../../src/Queryable/QueryExpression/UpsertExpression";
-import { Temporal } from "../../src/Data/Temporal";
-import { Decimal } from "../../src/Data/Decimal";
+import { EventHandlerFactory } from "../../../src/Event/EventHandlerFactory";
+import { IEventDispacher, IEventHandler } from "../../../src/Event/IEventHandler";
+import { EqualExpression } from "../../../src/ExpressionBuilder/Expression/EqualExpression";
+import { IExpression } from "../../../src/ExpressionBuilder/Expression/IExpression";
+import { StrictEqualExpression } from "../../../src/ExpressionBuilder/Expression/StrictEqualExpression";
+import { ValueExpression } from "../../../src/ExpressionBuilder/Expression/ValueExpression";
+import { ExpressionExecutor } from "../../../src/ExpressionBuilder/ExpressionExecutor";
+import { isColumnExp, visitExpression } from "../../../src/Helper/Util";
+import { IntegerColumnMetaData } from "../../../src/MetaData/IntegerColumnMetaData";
+import { StringColumnMetaData } from "../../../src/MetaData/StringColumnMetaData";
+import { BatchedQuery } from "../../../src/Query/BatchedQuery";
+import { DeferredQuery } from "../../../src/Query/DeferredQuery";
+import { IQuery } from "../../../src/Query/IQuery";
+import { IQueryResult } from "../../../src/Query/IQueryResult";
+import { IncludeRelation } from "../../../src/Queryable/Interface/IncludeRelation";
+import { PagingJoinRelation } from "../../../src/Queryable/Interface/PagingJoinRelation";
+import { ColumnExpression } from "../../../src/Queryable/QueryExpression/ColumnExpression";
+import { DeleteExpression } from "../../../src/Queryable/QueryExpression/DeleteExpression";
+import { IColumnExpression } from "../../../src/Queryable/QueryExpression/IColumnExpression";
+import { InsertExpression } from "../../../src/Queryable/QueryExpression/InsertExpression";
+import { InsertIntoExpression } from "../../../src/Queryable/QueryExpression/InsertIntoExpression";
+import { SelectExpression } from "../../../src/Queryable/QueryExpression/SelectExpression";
+import { SqlParameterExpression } from "../../../src/Queryable/QueryExpression/SqlParameterExpression";
+import { SqlTableValueParameterExpression } from "../../../src/Queryable/QueryExpression/SqlTableValueParameterExpression";
+import { UpdateExpression } from "../../../src/Queryable/QueryExpression/UpdateExpression";
+import { UpsertExpression } from "../../../src/Queryable/QueryExpression/UpsertExpression";
+import { Temporal } from "../../../src/Data/Temporal";
+import { Decimal } from "../../../src/Data/Decimal";
 
-import { LessThanExpression } from "../../src/ExpressionBuilder/Expression/LessThanExpression";
-import { GreaterThanExpression } from "../../src/ExpressionBuilder/Expression/GreaterThanExpression";
-import { GreaterEqualExpression } from "../../src/ExpressionBuilder/Expression/GreaterEqualExpression";
-import { LessEqualExpression } from "../../src/ExpressionBuilder/Expression/LessEqualExpression";
-import { SerializeColumnMetaData } from "../../src/MetaData/SerializeColumnMetaData";
+import { LessThanExpression } from "../../../src/ExpressionBuilder/Expression/LessThanExpression";
+import { GreaterThanExpression } from "../../../src/ExpressionBuilder/Expression/GreaterThanExpression";
+import { GreaterEqualExpression } from "../../../src/ExpressionBuilder/Expression/GreaterEqualExpression";
+import { LessEqualExpression } from "../../../src/ExpressionBuilder/Expression/LessEqualExpression";
+import { SerializeColumnMetaData } from "../../../src/MetaData/SerializeColumnMetaData";
 
 const charList = ["a", "a", "i", "i", "u", "u", "e", "e", "o", "o", " ", " ", " ", "h", "w", "l", "r", "y"];
 export class MockConnection implements IConnection {
@@ -73,6 +73,7 @@ export class MockConnection implements IConnection {
     private _results: IQueryResult[];
     private _transactionCount: number = 0;
     public close(): Promise<void> {
+        this.isOpen = false;
         return Promise.resolve();
     }
     public commitTransaction(): Promise<void> {
@@ -92,6 +93,10 @@ export class MockConnection implements IConnection {
                             effectedRows: 1
                         };
                         i++;
+                        if (query.type & QueryType.ADDITIONAL) {
+                            result.effectedRows = 0;
+                            return result;
+                        }
                         if (query.type & QueryType.DML) {
                             if (i >= skipCount) {
                                 result.effectedRows = Math.floor(Math.random() * 100 + 1);
@@ -230,10 +235,14 @@ export class MockConnection implements IConnection {
                         const result: IQueryResult = {
                             effectedRows: 1
                         };
-                        if (query.type & QueryType.DML) {
+                        if (query.type & QueryType.ADDITIONAL) {
+                            result.effectedRows = 0;
+                            return result;
+                        }
+                        if (query.type & QueryType.DML && tvps.length > index) {
                             const arrayParameter = tvps[index];
                             const paramValue = deferred.parameters.get(arrayParameter);
-                            if (Array.isArray(paramValue.value)) {
+                            if (Array.isArray(paramValue?.value)) {
                                 result.effectedRows = paramValue.value.length;
                             }
                         }
@@ -247,13 +256,18 @@ export class MockConnection implements IConnection {
                 else if (command instanceof InsertExpression) {
                     let i = 0;
                     const rowPerQuery = command.values.length / Enumerable.from(deferred.queries)
+                        .filter(o => !Boolean(o.type & QueryType.ADDITIONAL))
                         .filter(o => Boolean(o.type & QueryType.DML))
                         .count();
                     return deferred.queries.map((query) => {
                         const result: IQueryResult = {
-                            effectedRows: 0
+                            effectedRows: 1
                         };
                         i++;
+                        if (query.type & QueryType.ADDITIONAL) {
+                            result.effectedRows = 0;
+                            return result;
+                        }
                         if (query.type & QueryType.DQL) {
                             const rows = command.values.map((o) => {
                                 const val: { [key in any]: any } = {};
@@ -268,7 +282,7 @@ export class MockConnection implements IConnection {
                             if (i >= skipCount) {
                                 result.effectedRows = rowPerQuery;
                             }
-                            else {
+                            else if (tvps.length > i) {
                                 const arrayParameter = tvps[i];
                                 const paramValue = deferred.parameters.get(arrayParameter);
                                 if (Array.isArray(paramValue.value)) {
@@ -285,9 +299,13 @@ export class MockConnection implements IConnection {
                     const values: unknown[] = arrayParameter ? deferred.parameters.get(arrayParameter).value as [] : [null];
                     return deferred.queries.map((query) => {
                         const result: IQueryResult = {
-                            effectedRows: 0
+                            effectedRows: 1
                         };
                         i++;
+                        if (query.type & QueryType.ADDITIONAL) {
+                            result.effectedRows = 0;
+                            return result;
+                        }
                         if (query.type & QueryType.DQL) {
                             const equalValueMap = {};
                             if (command.where) {
@@ -357,12 +375,16 @@ export class MockConnection implements IConnection {
                         const result: IQueryResult = {
                             effectedRows: 1
                         };
+                        if (query.type & QueryType.ADDITIONAL) {
+                            result.effectedRows = 0;
+                            return result;
+                        }
                         if (query.type & QueryType.DML) {
                             i++;
-                            if (i < skipCount) {
+                            if (i < skipCount && tvps.length > i) {
                                 const arrayParameter = tvps[i];
                                 const paramValue = deferred.parameters.get(arrayParameter);
-                                if (Array.isArray(paramValue.value)) {
+                                if (Array.isArray(paramValue?.value)) {
                                     result.effectedRows = paramValue.value.length;
                                 }
                             }
@@ -371,15 +393,28 @@ export class MockConnection implements IConnection {
                     });
                 }
                 else if (command instanceof UpsertExpression) {
-                    const dmlCount = Enumerable.from(deferred.queries).filter((o) => (o.type & QueryType.DML) !== 0).count();
+                    let remainingRowCount = command.values.length;
+                    const rowPerQuery = Math.ceil(remainingRowCount / Enumerable.from(deferred.queries)
+                        .filter(o => !Boolean(o.type & QueryType.ADDITIONAL))
+                        .filter(o => Boolean(o.type & QueryType.DML))
+                        .count());
+
                     let i = 0;
                     return deferred.queries.map((query) => {
                         const result: IQueryResult = {
                             effectedRows: 1
                         };
+                        i++;
+                        if (query.type & QueryType.ADDITIONAL) {
+                            result.effectedRows = 0;
+                            return result;
+                        }
                         if (query.type & QueryType.DML) {
-                            i++;
-                            if (i !== dmlCount) {
+                            if (i >= skipCount) {
+                                result.effectedRows = Math.min(rowPerQuery, remainingRowCount);
+                                remainingRowCount -= result.effectedRows;
+                            }
+                            else if (tvps.length > i) {
                                 const arrayParameter = tvps[i];
                                 const paramValue = deferred.parameters.get(arrayParameter);
                                 if (Array.isArray(paramValue.value)) {
@@ -506,6 +541,7 @@ export class MockConnection implements IConnection {
         return null;
     }
     public open(): Promise<void> {
+        this.isOpen = true;
         return Promise.resolve();
     }
     public async query(command: IQuery): Promise<IQueryResult[]>;

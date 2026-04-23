@@ -17,10 +17,10 @@ export class InsertExpression<TE extends object = object> implements IQueryExpre
         }
         return this._columns;
     }
-
     public get type() {
         return undefined as GenericType<void>;
     }
+    
     constructor(public readonly entity: IEntityExpression<TE>, public readonly values: Array<SetterObj<TE>>, columns?: Array<IColumnExpression<TE>>, returnings?: Array<IColumnExpression<TE>>) {
         if (columns) {
             this._columns = columns;
