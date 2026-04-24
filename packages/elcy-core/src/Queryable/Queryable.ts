@@ -16,7 +16,6 @@ import { OptionQueryable } from "./OptionQueryable";
 import { OrderQueryable } from "./OrderQueryable";
 import { ParameterQueryable } from "./ParameterQueryable";
 import { PivotQueryable } from "./PivotQueryable";
-import { ProjectQueryable } from "./ProjectQueryable";
 import { RightJoinQueryable } from "./RightJoinQueryable";
 import { SelectManyQueryable } from "./SelectManyQueryable";
 import { SelectQueryable } from "./SelectQueryable";
@@ -73,10 +72,6 @@ declare module "./Queryable" {
         pivot<TD extends { [key: string]: (o: QueryableChain<T>) => ValueType }, TM extends { [key: string]: (o: QueryableChain<T[]>) => ValueType }>(dimensions: TD, metrics: TM): Queryable<Pivot<T, TD, TM>>;
         pivot<TD extends { [key: string]: (o: QueryableChain<T>) => ValueType }, TM extends { [key: string]: (o: QueryableChain<T[]>) => ValueType }>(dimensions: FunctionExpression<PivotD<T, TD>, [T]>, metrics: FunctionExpression<PivotM<T, TM>, [IEnumerable<T>]>): Queryable<Pivot<T, TD, TM>>;
         pivot<TD extends { [key: string]: (o: QueryableChain<T>) => ValueType }, TM extends { [key: string]: (o: QueryableChain<T[]>) => ValueType }>(dimensions: TD | FunctionExpression<PivotD<T, TD>, [T]>, metrics: TM | FunctionExpression<PivotM<T, TM>, [IEnumerable<T>]>): Queryable<Pivot<T, TD, TM>>;
-
-        project(...includes: Array<(item: QueryableChain<T>) => ValueType>): Queryable<T>;
-        project(...includes: FunctionExpression<ValueType, [T]>[]): Queryable<T>;
-        project(...includes: FunctionExpression<ValueType, [T]>[] | Array<(item: QueryableChain<T>) => ValueType>): Queryable<T>;
 
         rightJoin<T2, TResult>(array2: Queryable<T2>, relation: FunctionExpression<boolean, [T, T2]>, resultSelector: FunctionExpression<TResult, [T | null, T2]>): Queryable<TResult>;
         rightJoin<T2, TResult>(array2: Queryable<T2>, relation: (item: QueryableChain<T>, item2: QueryableChain<T2>) => boolean, resultSelector: (item1: QueryableChain<T> | null, item2: QueryableChain<T2>) => TResult): Queryable<TResult>;
@@ -172,9 +167,6 @@ Queryable.prototype.pivot = function <T, TD extends { [key: string]: (o: Queryab
 };
 Queryable.prototype.withRelated = function <T>(this: Queryable<T>, ...includes: FunctionExpression<Exclude<object, ValueType>, [T]>[] | Array<(item: T) => Exclude<object, ValueType>>): Queryable<T> {
     return new IncludeQueryable(this, includes);
-};
-Queryable.prototype.project = function <T>(this: Queryable<T>, ...includes: FunctionExpression<ValueType, [T]>[] | Array<(item: T) => ValueType>): Queryable<T> {
-    return new ProjectQueryable(this, includes);
 };
 
 export { Queryable };
