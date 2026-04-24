@@ -1,4 +1,3 @@
-import "../../../src/Startup";
 // tslint:disable-next-line: ordered-imports
 import { describe, it, expect } from "bun:test";
 import { PooledConnectionManager } from "../../../src/Connection/PooledConnectionManager";

@@ -302,13 +302,6 @@ relationalQueryTranslator.registerMethod(Date.prototype, "setMinutes", (qb, exp,
 relationalQueryTranslator.registerMethod(Date.prototype, "setMonth", (qb, exp, context) => `DATEADD(MM, (${qb.toString(exp.params[0], context)} - (MONTH(${qb.toString(exp.objectOperand, context)}) - 1)), ${qb.toString(exp.objectOperand, context)})`);
 relationalQueryTranslator.registerMethod(Date.prototype, "setSeconds", (qb, exp, context) => `DATEADD(SS, (${qb.toString(exp.params[0], context)} - DATEPART(second, ${qb.toString(exp.objectOperand, context)})), ${qb.toString(exp.objectOperand, context)})`);
 relationalQueryTranslator.registerMethod(Date.prototype, "toDateString", (qb, exp, context) => `CONCAT(LEFT(DATENAME(WEEKDAY, ${qb.toString(exp.objectOperand, context)}), 3), ${qb.valueString(" ")}, LEFT(DATENAME(MONTH, ${qb.toString(exp.objectOperand, context)}), 3), ${qb.valueString(" ")}, RIGHT(CONCAT(${qb.valueString("0")}, RTRIM(MONTH(${qb.toString(exp.objectOperand, context)}))), 2), ${qb.valueString(" ")}, RIGHT(CONCAT(${qb.valueString("0")}, RTRIM(MONTH(${qb.toString(exp.objectOperand, context)}))), 2))`);
-relationalQueryTranslator.registerMethod(Date.prototype, "addDays", (qb, exp, context) => `DATEADD(DAY, ${qb.toString(exp.params[0], context)}, ${qb.toString(exp.objectOperand, context)})`);
-relationalQueryTranslator.registerMethod(Date.prototype, "addMonths", (qb, exp, context) => `DATEADD(MM, ${qb.toString(exp.params[0], context)}, ${qb.toString(exp.objectOperand, context)})`);
-relationalQueryTranslator.registerMethod(Date.prototype, "addYears", (qb, exp, context) => `DATEADD(YYYY, ${qb.toString(exp.params[0], context)}, ${qb.toString(exp.objectOperand, context)})`);
-relationalQueryTranslator.registerMethod(Date.prototype, "addHours", (qb, exp, context) => `DATEADD(HH, ${qb.toString(exp.params[0], context)}, ${qb.toString(exp.objectOperand, context)})`);
-relationalQueryTranslator.registerMethod(Date.prototype, "addMinutes", (qb, exp, context) => `DATEADD(MI, ${qb.toString(exp.params[0], context)}, ${qb.toString(exp.objectOperand, context)})`);
-relationalQueryTranslator.registerMethod(Date.prototype, "addSeconds", (qb, exp, context) => `DATEADD(SS, ${qb.toString(exp.params[0], context)}, ${qb.toString(exp.objectOperand, context)})`);
-relationalQueryTranslator.registerMethod(Date.prototype, "addMilliseconds", (qb, exp, context) => `DATEADD(MS, ${qb.toString(exp.params[0], context)}, ${qb.toString(exp.objectOperand, context)})`);
 
 /**
  * RegExp
@@ -433,6 +426,39 @@ relationalQueryTranslator.registerMethod(DbFunction, "like", (qb, exp, context) 
 });
 relationalQueryTranslator.registerMethod(DbFunction, "timestamp", () => "CURRENT_TIMESTAMP", () => true);
 relationalQueryTranslator.registerMethod(DbFunction, "utcTimestamp", () => "CURRENT_TIMESTAMP AT TIME ZONE 'UTC'", () => true);
+relationalQueryTranslator.registerMethod(DbFunction, "dateAdd", (qb, exp, context) => {
+    const dateExp = exp.params[0] as IExpression<Date>;
+    const paramExp = exp.params[1] as ObjectValueExpression<Record<"years" | "months" | "days" | "hours" | "minutes" | "seconds" | "milliseconds", number>>;
+    const intervalParams = [] as string[];
+    if (paramExp.object.years) {
+        intervalParams.push(`years => ${qb.toString(paramExp.object.years, context)}`);
+    }
+    if (paramExp.object.months) {
+        intervalParams.push(`months => ${qb.toString(paramExp.object.months, context)}`);
+    }
+    if (paramExp.object.days) {
+        intervalParams.push(`days => ${qb.toString(paramExp.object.days, context)}`);
+    }
+    if (paramExp.object.hours) {
+        intervalParams.push(`hours => ${qb.toString(paramExp.object.hours, context)}`);
+    }
+    if (paramExp.object.minutes) {
+        intervalParams.push(`mins => ${qb.toString(paramExp.object.minutes, context)}`);
+    }
+    let secondParts = [] as string[];
+    if (paramExp.object.seconds) {
+        secondParts.push(qb.toString(paramExp.object.seconds, context));
+    }
+    if (paramExp.object.milliseconds) {
+        secondParts.push(`(${qb.toString(paramExp.object.milliseconds, context)} / 1000)`);
+    }
+    if (secondParts.length) {
+        intervalParams.push(`secs => ${secondParts.join("+")}`);
+    }
+    return `${qb.toString(dateExp, context)} + make_interval(${intervalParams.join(",")})`;
+});
+relationalQueryTranslator.registerMethod(DbFunction, "getDate", (qb, exp, context) => `CAST(${qb.toString(exp.objectOperand, context)} AS DATE)`);
+relationalQueryTranslator.registerMethod(DbFunction, "getTime", (qb, exp, context) => `CAST(${qb.toString(exp.objectOperand, context)} AS TIME)`);
 
 if (Temporal) {
     /**
@@ -500,7 +526,7 @@ if (Temporal) {
         if (secondParts.length) {
             intervalParams.push(`secs => ${secondParts.join("+")}`);
         }
-        return `${qb.toString(exp.objectOperand, context)}) + make_interval(${intervalParams.join(",")})`;
+        return `(${qb.toString(exp.objectOperand, context)} + make_interval(${intervalParams.join(",")})`;
     });
     relationalQueryTranslator.registerMethod(Temporal.Instant.prototype, "subtract", (qb, exp, context) => {
         const paramExp = exp.params[0] as ObjectValueExpression<Omit<Temporal.DurationLike, 'years' | 'months' | 'weeks' | 'days'>>;
@@ -599,7 +625,7 @@ if (Temporal) {
         if (secondParts.length) {
             intervalParams.push(`secs => ${secondParts.join("+")}`);
         }
-        return `${qb.toString(exp.objectOperand, context)}) + make_interval(${intervalParams.join(",")})`;
+        return `${qb.toString(exp.objectOperand, context)} + make_interval(${intervalParams.join(",")})`;
     });
     relationalQueryTranslator.registerMethod(Temporal.PlainDate.prototype, "subtract", (qb, exp, context) => {
         const paramExp = exp.params[0] as ObjectValueExpression<Temporal.DurationLike>;
@@ -725,7 +751,7 @@ if (Temporal) {
         if (secondParts.length) {
             intervalParams.push(`secs => ${secondParts.join("+")}`);
         }
-        return `${qb.toString(exp.objectOperand, context)}) + make_interval(${intervalParams.join(",")})`;
+        return `${qb.toString(exp.objectOperand, context)} + make_interval(${intervalParams.join(",")})`;
     });
     relationalQueryTranslator.registerMethod(Temporal.PlainTime.prototype, "subtract", (qb, exp, context) => {
         const paramExp = exp.params[0] as ObjectValueExpression<Temporal.DurationLike>;

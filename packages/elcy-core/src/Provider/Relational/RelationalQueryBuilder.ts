@@ -70,6 +70,7 @@ import { SerializeColumnMetaData } from "src/MetaData/SerializeColumnMetaData";
 import { IQueryIncludeRelation } from "src/Queryable/QueryExpression/IQueryIncludeRelation";
 import { IMultiOperatorExpression } from "src/ExpressionBuilder/Expression/IMultiOperatorExpression";
 import { Null } from "src/Common/Constant";
+import { DateExtension } from "src/Extensions/DateExtension";
 
 export abstract class RelationalQueryBuilder implements IQueryBuilder {
     public get lastInsertIdQuery() {
@@ -209,7 +210,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             case Date: {
                 const timeZoneHandling: TimeZoneHandling = column instanceof DateTimeColumnMetaData ? column.timeZoneHandling : "none";
                 if (timeZoneHandling !== "none") {
-                    result = (result as Date).toUTCDate();
+                    result = DateExtension.getUTCDate(result as Date);
                 }
                 break;
             }

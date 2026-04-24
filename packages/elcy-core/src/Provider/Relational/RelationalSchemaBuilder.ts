@@ -686,7 +686,7 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
         }
         if (columnMeta instanceof TimeColumnMetaData || groupType === "Time") {
             // Result: CONVERT(TIME, GETUTCDATE())
-            return this.queryBuilder.toString(ExpressionBuilder.parse(() => DbFunction.utcTimestamp().toTime()).body);
+            return this.queryBuilder.toString(ExpressionBuilder.parse(() => DbFunction.getTime(DbFunction.utcTimestamp())).body);
         }
         if (columnMeta instanceof RowVersionColumn || groupType === "RowVersion") {
             // Result: CURRENT_TIMESTAMP;

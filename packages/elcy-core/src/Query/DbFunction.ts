@@ -1,4 +1,7 @@
+import { ObjectLike } from "src/Common/Type";
 import { CodedError } from "../Error/CodedError";
+import { TimeSpan } from "src/Data/TimeSpan";
+import { DateExtension } from "src/Extensions/DateExtension";
 
 function toRegExp(pattern: string, escape: string = "\\") {
     let regexStr = "^";
@@ -51,8 +54,41 @@ class DbFunctionConstruct {
         return new Date();
     }
     public utcTimestamp() {
-        const ts = new Date();
-        return ts.toUTCDate();
-    };
+        return DateExtension.getUTCDate(new Date());
+    }
+    public dateAdd(date: Date, durationLike: ObjectLike<Record<"years" | "months" | "days" | "hours" | "minutes" | "seconds" | "milliseconds", number>>) {
+        const result = new Date(date.getTime());
+        if (durationLike.years) {
+            result.setFullYear(result.getFullYear() + durationLike.years);
+        }
+        if (durationLike.months) {
+            result.setMonth(result.getMonth() + durationLike.months);
+        }
+        if (durationLike.days) {
+            result.setDate(result.getDate() + durationLike.days);
+        }
+        if (durationLike.hours) {
+            result.setHours(result.getHours() + durationLike.hours);
+        }
+        if (durationLike.minutes) {
+            result.setMinutes(result.getMinutes() + durationLike.minutes);
+        }
+        if (durationLike.seconds) {
+            result.setSeconds(result.getSeconds() + durationLike.seconds);
+        }
+        if (durationLike.milliseconds) {
+            result.setMilliseconds(result.getMilliseconds() + durationLike.milliseconds);
+        }
+
+        return result;
+    }
+    public getTime(date: Date) {
+        return new TimeSpan(date);
+    }
+    public getDate(date: Date) {
+        const dat = new Date(date.getTime());
+        dat.setHours(0, 0, 0, 0);
+        return dat;
+    }
 }
 export const DbFunction = new DbFunctionConstruct();

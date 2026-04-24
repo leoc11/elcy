@@ -1,4 +1,3 @@
-import "../../src/Startup";
 import { IQueryCacheManager } from "../../src/Cache/IQueryCacheManager";
 import { IResultCacheManager } from "../../src/Cache/IResultCacheManager";
 import { IDriver } from "../../src/Connection/IDriver";

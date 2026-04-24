@@ -4,6 +4,7 @@ import { IQueryResult } from "../Query/IQueryResult";
 import { ICacheItem } from "./ICacheItem";
 import { ICacheOption } from "./ICacheOption";
 import { IResultCacheManager } from "./IResultCacheManager";
+import { DbFunction } from "src/Query/DbFunction";
 
 export class DefaultResultCacheManager implements IResultCacheManager {
     private _expiredQueue = new QueuedTimeout((item: ICacheItem) => {
@@ -24,7 +25,7 @@ export class DefaultResultCacheManager implements IResultCacheManager {
         return Promise.resolve(keys.map((key) => {
             const item = this._keyMap.get(key);
             if (item && item.slidingExpiration) {
-                const expiredDate = (new Date()).addMilliseconds(item.slidingExpiration.totalMilliSeconds());
+                const expiredDate = DbFunction.dateAdd(new Date(), { milliseconds: item.slidingExpiration.totalMilliSeconds() });
                 if (item.expiredTime < expiredDate) {
                     item.expiredTime = expiredDate;
                     this._expiredQueue.clearTimeout(item);
@@ -75,7 +76,7 @@ export class DefaultResultCacheManager implements IResultCacheManager {
         item.key = key;
         this._keyMap.set(key, item);
         if (!item.expiredTime && item.slidingExpiration) {
-            item.expiredTime = (new Date()).addMilliseconds(item.slidingExpiration.totalMilliSeconds());
+            item.expiredTime = DbFunction.dateAdd(new Date(), { milliseconds: item.slidingExpiration.totalMilliSeconds() });
         }
         if (item.expiredTime) {
             this._expiredQueue.setTimeout(item, item.expiredTime);

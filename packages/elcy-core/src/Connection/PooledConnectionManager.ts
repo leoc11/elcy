@@ -6,6 +6,7 @@ import { IConnection } from "./IConnection";
 import { IConnectionManager } from "./IConnectionManager";
 import { IDriver } from "./IDriver";
 import { PooledConnection } from "./PooledConnection";
+import { DbFunction } from "src/Query/DbFunction";
 
 interface IResolver<T> {
     reject: (reason: unknown) => void;
@@ -63,7 +64,7 @@ export class PooledConnectionManager<T extends DbType = DbType> implements IConn
                     resolver.resolve = ok;
                     resolver.reject = fail;
                 });
-                this.waitingQueue.setTimeout(resolver, this.poolOption.acquireTimeout !== Infinity ? new Date().addMilliseconds(this.poolOption.acquireTimeout) : undefined);
+                this.waitingQueue.setTimeout(resolver, this.poolOption.acquireTimeout !== Infinity ? DbFunction.dateAdd(new Date(), { milliseconds: this.poolOption.acquireTimeout }) : undefined);
                 return promise;
             }
 
@@ -83,7 +84,7 @@ export class PooledConnectionManager<T extends DbType = DbType> implements IConn
                     waiting.resolve(connection);
                 }
                 else {
-                    this.pools.setTimeout(connection, (new Date()).addMilliseconds(this.poolOption.idleTimeout));
+                    this.pools.setTimeout(connection, DbFunction.dateAdd(new Date(), { milliseconds: this.poolOption.idleTimeout }));
                     if (this.pools.queue.length > this.poolOption.max) {
                         await this.pools.forceExecute(this.pools.queue.length - this.poolOption.max);
                     }

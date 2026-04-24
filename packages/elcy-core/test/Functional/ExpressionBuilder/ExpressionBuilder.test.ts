@@ -1,4 +1,3 @@
-import "../../../src/Startup";
 import { describe, it, expect } from "bun:test";
 import { ExpressionBuilder } from "../../../src/ExpressionBuilder/ExpressionBuilder";
 import { ExpressionExecutor } from "../../../src/ExpressionBuilder/ExpressionExecutor";

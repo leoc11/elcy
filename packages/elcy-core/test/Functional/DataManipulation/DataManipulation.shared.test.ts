@@ -1,4 +1,3 @@
-import "../../../src/Startup";
 import { beforeEach, afterEach, describe, it, expect, vi } from "bun:test";
 import { IConnection } from "../../../src/Connection/IConnection";
 import { PooledConnection } from "../../../src/Connection/PooledConnection";
