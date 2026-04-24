@@ -126,12 +126,14 @@ export class UpdateExpression<TE extends object = object> implements IQueryExpre
             }
 
             relations = null;
+            const andExp = new AndExpression();
             for (const [parentColMeta, childColMeta] of relationMeta.relationMaps) {
                 const parentCol = this.entity.columns.find((o) => o.propertyName === parentColMeta.propertyName);
                 const childCol = child.entity.columns.find((o) => o.propertyName === childColMeta.propertyName);
                 const logicalExp = new StrictEqualExpression(parentCol, childCol);
-                relations = relations ? new AndExpression(relations, logicalExp) : logicalExp;
+                andExp.operands.push(logicalExp);
             }
+            relations = andExp.asOperand();
         }
         else {
             relations = relationMetaOrRelations;

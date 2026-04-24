@@ -68,6 +68,7 @@ import { Temporal } from "src/Data/Temporal";
 import { Decimal } from "src/Data/Decimal";
 import { SerializeColumnMetaData } from "src/MetaData/SerializeColumnMetaData";
 import { IQueryIncludeRelation } from "src/Queryable/QueryExpression/IQueryIncludeRelation";
+import { IMultiOperatorExpression } from "src/ExpressionBuilder/Expression/IMultiOperatorExpression";
 
 export abstract class RelationalQueryBuilder implements IQueryBuilder {
     public get lastInsertIdQuery() {
@@ -418,6 +419,9 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                 }
                 else if ((expression as IUnaryOperatorExpression).operand) {
                     return this.toOperatorString(expression as any, context);
+                }
+                else if ((expression as IMultiOperatorExpression).operands) {
+                    return `(${this.toOperatorString(expression as any, context)})`;
                 }
             }
         }
@@ -788,17 +792,17 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                     relationData.distinct = true;
 
                     // Bridge to Child relation
-                    let bridgeChildRelation: IExpression<boolean>;
+                    const bridgeChildRelation = new AndExpression();
                     for (const childCol of childSelect.primaryKeys) {
                         const bridgeCol = relationData.allColumns.find((o) => o.columnName === childCol.columnName);
                         relationData.selects.push(bridgeCol);
                         const logicalExp = new StrictEqualExpression(bridgeCol, childCol);
-                        bridgeChildRelation = bridgeChildRelation ? new AndExpression(bridgeChildRelation, logicalExp) : logicalExp;
+                        bridgeChildRelation.operands.push(logicalExp);
                     }
-                    relationData.addInclude(include.name, childSelect, bridgeChildRelation, "one");
+                    relationData.addInclude(include.name, childSelect, bridgeChildRelation.asOperand(), "one");
 
                     // Parent to Bridge relation
-                    let parentBridgeRelation: IExpression<boolean>;
+                    const parentBridgeRelation = new AndExpression();
                     const cloneMap = new Map();
                     mapReplaceExp(cloneMap, selectExp.entity, relationData.entity);
                     for (const parentCol of selectExp.primaryKeys) {
@@ -808,9 +812,9 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                         }
                         relationData.selects.push(bridgeCol);
                         const logicalExp = new StrictEqualExpression(parentCol, bridgeCol);
-                        parentBridgeRelation = parentBridgeRelation ? new AndExpression(parentBridgeRelation, logicalExp) : logicalExp;
+                        parentBridgeRelation.operands.push(logicalExp);
                     }
-                    selectExp.addInclude(include.name, relationData, parentBridgeRelation, "many");
+                    selectExp.addInclude(include.name, relationData, parentBridgeRelation.asOperand(), "many");
 
                     result = result.concat(this.getSelectQuery(relationData, context.option, context.parameters));
                 }
@@ -859,14 +863,14 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             clone.distinct = true;
             clone.selects = clone.resolvedGroupBy.slice();
 
-            let relation: IExpression<boolean>;
+            const relation = new AndExpression();
             for (const col of selectExp.resolvedGroupBy) {
                 const cloneCol = clone.resolvedGroupBy.find((o) => o.dataPropertyName === col.dataPropertyName);
                 const logicalExp = new StrictEqualExpression(col, cloneCol);
-                relation = relation ? new AndExpression(relation, logicalExp) : logicalExp;
+                relation.operands.push(logicalExp);
             }
 
-            const joinRel = clone.parentRelation = new JoinRelation(selectExp, clone, relation, "INNER");
+            const joinRel = clone.parentRelation = new JoinRelation(selectExp, clone, relation.asOperand(), "INNER");
             selectExp.joins.push(joinRel);
         }
 
@@ -1082,19 +1086,19 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         if (upsertExp.returnings.length) {
             const selectExp = new SelectExpression(upsertExp.entity);
             selectExp.selects = upsertExp.returnings.slice(0);
-            let relation: IExpression<boolean>;
+            const relation = new AndExpression();
             for (const column of selectExp.entity.primaryColumns) {
                 const newValueColumn = new ColumnExpression(tvpExp, column.type, column.propertyName, column.columnName, false, true, column.columnMeta.columnType);
                 tvpExp.columns.push(newValueColumn);
                 const rel = new StrictEqualExpression(column, newValueColumn);
-                relation = relation ? new AndExpression(relation, rel) : rel;
+                relation.operands.push(rel);
             }
 
             selectExp.paramExps.push(tvpExp);
             const valueSelectExp = new SelectExpression(tvpExp);
             valueSelectExp.selects = tvpExp.columns;
             valueSelectExp.isSubSelect = true;
-            selectExp.addJoin(valueSelectExp, relation, "INNER");
+            selectExp.addJoin(valueSelectExp, relation.asOperand(), "INNER");
 
             results.push(...this.getSelectQuery(selectExp, option, context.parameters));
         }
@@ -1126,13 +1130,13 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         const selectExp = new SelectExpression(projectedEntity);
         selectExp.selects.length = 0;
 
-        let pkFilter: IExpression<boolean>;
+        const pkFilter = new AndExpression();
         for (const col of deleteExp.entity.primaryColumns) {
             const subCol = projectedEntity.primaryColumns.find(o => o.propertyName == col.propertyName);
             const exp = new StrictEqualExpression(subCol, col);
-            pkFilter = pkFilter ? new AndExpression(pkFilter, exp) : exp;
+            pkFilter.operands.push(exp);
         }
-        selectExp.addWhere(pkFilter);
+        selectExp.addWhere(pkFilter.asOperand());
         const entityString = `${this.newLine(1)}${this.toSelectString(selectExp, context)}${this.newLine(-1)}`;
 
         let deleteQuery = `DELETE FROM ${this.entityName(deleteExp.entity)} AS ${this.enclose(deleteExp.entity.alias)}` +

@@ -57,6 +57,11 @@ export class IncludeRelation<TE extends object = any, TChild extends object = an
     //#region Methods
     public addRelation(parentColumn: IColumnExpression, childColumn: IColumnExpression) {
         const logicalExp = new StrictEqualExpression(parentColumn, childColumn);
+        if (this.relation instanceof AndExpression) {
+            this.relation.operands.push(logicalExp);
+            return;
+        }
+        
         this.relation = this.relation ? new AndExpression(this.relation, logicalExp) : logicalExp;
     }
     public clone(replaceMap: Map<IExpression, IExpression>) {

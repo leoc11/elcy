@@ -239,6 +239,11 @@ export class GroupByExpression<TE extends object = object, K = unknown, T = unkn
         return includeRel;
     }
     public override addWhere(expression: IExpression<boolean>) {
+        if (this.having instanceof AndExpression) {
+            this.having.operands.push(expression);
+            return;
+        }
+
         this.having = this.having ? new AndExpression(this.having, expression) : expression;
     }
     public override clone(replaceMap?: Map<IExpression, IExpression>): GroupByExpression<TE, K, T> {

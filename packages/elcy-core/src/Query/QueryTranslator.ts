@@ -9,6 +9,7 @@ import { TernaryExpression } from "../ExpressionBuilder/Expression/TernaryExpres
 import { IQueryBuilder } from "./IQueryBuilder";
 import { IQueryBuilderContext } from "./IQueryBuilderContext";
 import { IQueryTranslatorItem } from "./IQueryTranslatorItem";
+import { IMultiOperatorExpression } from "src/ExpressionBuilder/Expression/IMultiOperatorExpression";
 
 export class QueryTranslator {
     constructor(public key: symbol) { }
@@ -53,7 +54,7 @@ export class QueryTranslator {
         };
         map[methodName] = translateItem;
     }
-    public registerOperator<TExp extends IUnaryOperatorExpression | IBinaryOperatorExpression | TernaryExpression>(operator: IObjectType<TExp>, translate: (qb: IQueryBuilder, exp: TExp, context?: IQueryBuilderContext) => string, isTranslate = (exp: TExp) => false) {
+    public registerOperator<TExp extends IUnaryOperatorExpression | IBinaryOperatorExpression | IMultiOperatorExpression | TernaryExpression>(operator: IObjectType<TExp>, translate: (qb: IQueryBuilder, exp: TExp, context?: IQueryBuilderContext) => string, isTranslate = (exp: TExp) => false) {
         let map = this._map.get(operator);
         if (!map) {
             map = {};

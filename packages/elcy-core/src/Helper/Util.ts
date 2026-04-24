@@ -18,6 +18,7 @@ import { IRelationMetaData } from "src/MetaData/Interface/IRelationMetaData";
 import { NullCoalesceExpression } from "src/ExpressionBuilder/Expression/NullCoalesceExpression";
 import { ValueExpression } from "src/ExpressionBuilder/Expression/ValueExpression";
 import { JoinRelation } from "src/Queryable/Interface/JoinRelation";
+import { IMultiOperatorExpression } from "src/ExpressionBuilder/Expression/IMultiOperatorExpression";
 
 export const isIterable = (value: unknown): value is Iterable<any> => {
     return typeof (value as any)?.[Symbol.iterator] === 'function';
@@ -170,6 +171,12 @@ export const visitExpression = <T extends IExpression>(source: IExpression, find
         const unaryOperatorExp = source as IUnaryOperatorExpression;
         visitExpression(unaryOperatorExp.operand, finder);
     }
+    else if ((source as IMultiOperatorExpression).operands) {
+        const multiOperatorExp = source as IMultiOperatorExpression;
+        for (const operand of multiOperatorExp.operands) {
+            visitExpression(operand, finder);
+        }
+    }
     else if ((source as IMemberOperatorExpression).objectOperand) {
         const memberOperatorExp = source as IMemberOperatorExpression;
         visitExpression(memberOperatorExp.objectOperand, finder);
@@ -194,6 +201,12 @@ export const replaceExpression = <T extends IExpression>(source: T, finder: <TEx
     else if ((source as unknown as IUnaryOperatorExpression).operand) {
         const unaryOperatorExp = source as unknown as IUnaryOperatorExpression;
         unaryOperatorExp.operand = replaceExpression(unaryOperatorExp.operand, finder);
+    }
+    else if ((source as unknown as IMultiOperatorExpression).operands) {
+        const multiOperatorExp = source as unknown as IMultiOperatorExpression;
+        for (let i = 0, len = multiOperatorExp.operands.length; i < len; i++) {
+            multiOperatorExp.operands[i] = replaceExpression(multiOperatorExp.operands[i], finder);
+        }
     }
     else if ((source as unknown as IMemberOperatorExpression).objectOperand) {
         const memberOperatorExp = source as unknown as IMemberOperatorExpression;

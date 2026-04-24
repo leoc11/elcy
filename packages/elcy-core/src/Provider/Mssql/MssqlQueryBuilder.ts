@@ -158,11 +158,11 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
             projectedEntity.alias = updateExp.entity.alias + "_1";
             const selectExp = new SelectExpression(projectedEntity);
 
-            let relation: IExpression<boolean>;
+            const relation = new AndExpression();
             for (const column of updateExp.entity.primaryColumns) {
                 const selectColumn = projectedEntity.columns.find(o => o.propertyName == column.propertyName);
                 const equalExp = new StrictEqualExpression(column, selectColumn);
-                relation = relation ? new AndExpression(relation, equalExp) : equalExp;
+                relation.operands.push(equalExp);
             }
 
             const setQuery = selectExp.selects
@@ -172,7 +172,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
                 this.newLine() + `SET ${setQuery}` +
                 returning +
                 this.newLine() + `FROM ${this.enclose(updateExp.entity.name)} AS ${this.enclose(updateExp.entity.alias)}` +
-                this.getJoinQueryString([new JoinRelation(updateExp.select, selectExp, relation, "INNER")], context);
+                this.getJoinQueryString([new JoinRelation(updateExp.select, selectExp, relation.asOperand(), "INNER")], context);
             result.push({
                 query: updateQuery,
                 parameters: this.getParameter(context),
@@ -278,10 +278,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
             }).join(",")}`;
             upsertExp.entity.alias = originalAlias;
         }
-        let relations = upsertExp.entity.primaryColumns.reduce((r, o) => {
-            const checkExp = new StrictEqualExpression(o, tvpExp.columns.find(p => p.propertyName === o.propertyName));
-            return r ? new AndExpression(r, checkExp) : checkExp;
-        }, null as IExpression<boolean>);
+        const relations = new AndExpression(...upsertExp.entity.primaryColumns.map((o) =>  new StrictEqualExpression(o, tvpExp.columns.find(p => p.propertyName === o.propertyName))));
 
         const setQuery = Object.keys(upsertExp.setter).map((prop: StringKeyOf<TE>) => {
             const column = upsertExp.entity.columns.find((c) => c.propertyName === prop);
@@ -293,7 +290,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
             this.newLine() + `SET ${setQuery}` +
             returning +
             this.newLine() + `FROM ${this.enclose(upsertExp.entity.name)}${upsertExp.entity.alias ? ` AS ${this.enclose(upsertExp.entity.alias)}` : ""}` +
-            this.newLine() + `JOIN ${this.getEntityQueryString(tvpExp, context)} ON ${this.toString(relations)}`;
+            this.newLine() + `JOIN ${this.getEntityQueryString(tvpExp, context)} ON ${this.toString(relations.asOperand())}`;
 
         upsertExp.paramExps.push(tvpExp);
         results.push({
@@ -307,7 +304,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
         insertSelect.selects = upsertExp.insertColumns.map(col => tvpExp.columns.find(o => o.propertyName === col.propertyName));
         insertSelect.addWhere(new RawSqlExpression(Boolean, `NOT EXISTS (` +
             this.newLine(1) + `SELECT 1 FROM ${this.entityName(upsertExp.entity)}${upsertExp.entity.alias ? ` AS ${this.enclose(upsertExp.entity.alias)}` : ""} WITH (UPDLOCK, HOLDLOCK)` +
-            this.newLine() + `WHERE ${this.toString(relations)}` +
+            this.newLine() + `WHERE ${this.toString(relations.asOperand())}` +
             this.newLine(-1) + `)`));
         const selectString = this.newLine() + this.toSelectString(insertSelect, context);
         const columns = upsertExp.insertColumns.map((o) => this.enclose(o.columnName)).join(",");

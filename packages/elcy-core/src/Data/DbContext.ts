@@ -787,11 +787,11 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
         }
 
         const tvpExp = new SqlTableValueParameterExpression(new ParameterExpression<TE[]>("delete", Array), {} as any);
-        let relation: IExpression<boolean>;
+        const relation = new AndExpression();
         for (const column of entityExp.primaryColumns) {
             const newValueColumn = new ColumnExpression(tvpExp, column.type, column.propertyName, column.columnName, true, true, column.columnMeta.columnType);
             tvpExp.columns.push(newValueColumn);
-            relation = relation ? new AndExpression(relation, new StrictEqualExpression(column, newValueColumn)) : new StrictEqualExpression(column, newValueColumn);
+            relation.operands.push(new StrictEqualExpression(column, newValueColumn));
         }
 
         const paramValue: IQueryParameterValue<Partial<TE>[]> = {
@@ -815,7 +815,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             const valueSelectExp = new SelectExpression(tvpExp);
             valueSelectExp.selects = tvpExp.columns.filter((o) => !o.isPrimary);
             valueSelectExp.isSubSelect = true;
-            deleteExp.addJoin(valueSelectExp, relation, "INNER");
+            deleteExp.addJoin(valueSelectExp, relation.asOperand(), "INNER");
 
             const queryParameterMap: ISqlParameterValueMap = new Map([[tvpExp, paramValue]]);
             const deleteQuery = new DeferredQuery(this, deleteExp, queryParameterMap, (resultMap) => {
@@ -856,7 +856,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             const valueSelectExp = new SelectExpression(tvpExp);
             valueSelectExp.selects = tvpExp.columns.filter((o) => !o.isPrimary);
             valueSelectExp.isSubSelect = true;
-            updateExp.addJoin(valueSelectExp, relation, "INNER");
+            updateExp.addJoin(valueSelectExp, relation.asOperand(), "INNER");
 
             const queryParameterMap: ISqlParameterValueMap = new Map([[tvpExp, paramValue]]);
             const softDeleteQuery = new DeferredQuery(this, updateExp, queryParameterMap, (resultMap) => {
@@ -1359,7 +1359,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                 flag: BigInt
             } as any);
             const flagColumn = new ColumnExpression(tvpExp, BigInt, "__flag" as StringKeyOf<TE>, "__flag", false, false);
-            let relation: IExpression<boolean>;
+            const relation = new AndExpression();
             const setter: SetterObj<TE> = {};
             const updateableColumns: IColumnExpression<TE>[] = [];
             for (const column of Enumerable.from(entityExp.columns).orderBy([o => o.isPrimary, "DESC"])) {
@@ -1389,7 +1389,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                 if (column.isPrimary) {
                     newValueColumn.propertyName = `_ori_${column.propertyName}` as StringKeyOf<TE>;
                     newValueColumn.columnName = `_ori_${column.columnName}`;
-                    relation = relation ? new AndExpression(relation, new StrictEqualExpression(column, newValueColumn)) : new StrictEqualExpression(column, newValueColumn);
+                    relation.operands.push(new StrictEqualExpression(column, newValueColumn));
                     continue;
                 }
 
@@ -1436,7 +1436,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             const valueSelectExp = new SelectExpression(tvpExp);
             valueSelectExp.selects = tvpExp.columns.filter((o) => !o.isPrimary);
             valueSelectExp.isSubSelect = true;
-            updateExp.addJoin(valueSelectExp, relation, "INNER");
+            updateExp.addJoin(valueSelectExp, relation.asOperand(), "INNER");
 
             const paramValue: IQueryParameterValue<Partial<TE>[]> = {
                 value: [],

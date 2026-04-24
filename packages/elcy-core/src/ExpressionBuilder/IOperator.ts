@@ -122,8 +122,32 @@ export const operators: IOperator[] = [
     { identifier: "&", type: OperatorType.Binary, precedence: { precedence: 9, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new BitwiseAndExpression(op1, op2) },
     { identifier: "^", type: OperatorType.Binary, precedence: { precedence: 8, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new BitwiseXorExpression(op1, op2) },
     { identifier: "|", type: OperatorType.Binary, precedence: { precedence: 7, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new BitwiseOrExpression(op1, op2) },
-    { identifier: "&&", type: OperatorType.Binary, precedence: { precedence: 6, associativity: Associativity.Left }, expressionFactory: (op1: IExpression<boolean>, op2: IExpression<boolean>) => new AndExpression(op1, op2) },
-    { identifier: "||", type: OperatorType.Binary, precedence: { precedence: 5, associativity: Associativity.Left }, expressionFactory: (op1: IExpression<boolean>, op2: IExpression<boolean>) => new OrExpression(op1, op2) },
+    {
+        identifier: "&&", type: OperatorType.Binary, precedence: { precedence: 6, associativity: Associativity.Left }, expressionFactory: (op1: IExpression<boolean>, op2: IExpression<boolean>) => {
+            if (op1 instanceof AndExpression) {
+                op1.operands.push(op2);
+                return op1;
+            }
+            if (op2 instanceof AndExpression) {
+                op2.operands.push(op1);
+                return op2;
+            }
+            return new AndExpression(op1, op2);
+        }
+    },
+    {
+        identifier: "||", type: OperatorType.Binary, precedence: { precedence: 5, associativity: Associativity.Left }, expressionFactory: (op1: IExpression<boolean>, op2: IExpression<boolean>) => {
+            if (op1 instanceof OrExpression) {
+                op1.operands.push(op2);
+                return op1;
+            }
+            if (op2 instanceof OrExpression) {
+                op2.operands.push(op1);
+                return op2;
+            }
+            return new OrExpression(op1, op2);
+        }
+    },
     { identifier: "??", type: OperatorType.Binary, precedence: { precedence: 5, associativity: Associativity.Left }, expressionFactory: (op1: IExpression<boolean>, op2: IExpression<boolean>) => new NullCoalesceExpression(op1, op2) },
     { identifier: "?", type: OperatorType.Ternary, precedence: { precedence: 4, associativity: Associativity.Right }, expressionFactory: (op1: IExpression<boolean>, op2: IExpression, op3: IExpression) => new TernaryExpression(op1, op2, op3) },
     { identifier: "=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression, op2: IExpression) => new AssignmentExpression(op1, op2) },

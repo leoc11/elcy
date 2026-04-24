@@ -411,7 +411,7 @@ SET "string" = 'Updated',
 FROM (
 	SELECT "entity0"."id"
 	FROM "fixture"."Table1s" AS "entity0"
-	WHERE (("entity0"."deleted"=false) AND ((("entity0"."integer">$1) AND ("entity0"."real" IS NOT DISTINCT FROM $2)) AND ((COALESCE("entity0"."real", 0))=$2)))
+	WHERE (("entity0"."deleted"=false) AND ("entity0"."integer">$1) AND ("entity0"."real" IS NOT DISTINCT FROM $2) AND ((COALESCE("entity0"."real", 0))=$2))
 	ORDER BY "entity0"."id"
 	OFFSET $3 ROWS
 	FETCH NEXT $4 ROWS ONLY
@@ -739,7 +739,7 @@ SET "deleted" = true,
 FROM (
 	SELECT "entity0"."id"
 	FROM "fixture"."Table1s" AS "entity0"
-	WHERE (("entity0"."deleted"=false) AND ((("entity0"."integer">$1) AND ("entity0"."real" IS NOT DISTINCT FROM $2)) AND ((COALESCE("entity0"."real", 0))=$2)))
+	WHERE (("entity0"."deleted"=false) AND ("entity0"."integer">$1) AND ("entity0"."real" IS NOT DISTINCT FROM $2) AND ((COALESCE("entity0"."real", 0))=$2))
 	ORDER BY "entity0"."id"
 	OFFSET $3 ROWS
 	FETCH NEXT $4 ROWS ONLY
@@ -767,7 +767,7 @@ Map {
 USING (
 	SELECT "entity0"."id"
 	FROM "fixture"."Table1s" AS "entity0"
-	WHERE (("entity0"."deleted"=false) AND ((("entity0"."integer">$1) AND ("entity0"."real" IS NOT DISTINCT FROM $2)) AND ((COALESCE("entity0"."real", 0))=$2)))
+	WHERE (("entity0"."deleted"=false) AND ("entity0"."integer">$1) AND ("entity0"."real" IS NOT DISTINCT FROM $2) AND ((COALESCE("entity0"."real", 0))=$2))
 	ORDER BY "entity0"."id"
 	OFFSET $3 ROWS
 	FETCH NEXT $4 ROWS ONLY

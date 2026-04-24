@@ -232,12 +232,14 @@ export class SelectExpression<TE extends object = any, T = unknown> implements I
                 throw new Error("many-many relation not supported");
             }
 
+            const andExp = new AndExpression();
             for (const [parentColMeta, childColMeta] of relationMeta.relationMaps) {
                 const parentCol: IColumnExpression<TE, ValueType> = this.entity.columns.find((o) => o.propertyName === parentColMeta.propertyName);
                 const childCol: IColumnExpression<TChild, ValueType> = child.entity.columns.find((o) => o.propertyName === childColMeta.propertyName);
                 const logicalExp = new StrictEqualExpression(parentCol, childCol);
-                relation = relation ? new AndExpression(relation, logicalExp) : logicalExp;
+                andExp.operands.push(logicalExp);
             }
+            relation = andExp.asOperand();
             type = relationMeta.relationType;
         }
         else if (relationMetaOrRelations instanceof EmbeddedRelationMetaData) {
@@ -270,13 +272,15 @@ export class SelectExpression<TE extends object = any, T = unknown> implements I
                 throw new Error("many-many relation not supported");
             }
 
+            const andExp = new AndExpression();
             for (const [parentColMeta, childColMeta] of relationMeta.relationMaps) {
                 const parentCol: IColumnExpression<TE, ValueType> = this.entity.columns.find((o) => o.propertyName === parentColMeta.propertyName);
                 const childCol: IColumnExpression<TChild, ValueType> = child.entity.columns.find((o) => o.propertyName === childColMeta.propertyName);
 
                 const logicalExp = new StrictEqualExpression(parentCol, childCol);
-                relation = relation ? new AndExpression(relation, logicalExp) : logicalExp;
+                andExp.operands.push(logicalExp);
             }
+            relation = andExp.asOperand();
 
             if (relationMeta.relationType === "many") {
                 type = "LEFT";
@@ -320,8 +324,9 @@ export class SelectExpression<TE extends object = any, T = unknown> implements I
     public addWhere(expression: IExpression<boolean>) {
         if (this.isSubSelect) {
             if (expression instanceof AndExpression) {
-                this.addWhere(expression.leftOperand);
-                this.addWhere(expression.rightOperand);
+                for (const operand of expression.operands) {
+                    this.addWhere(operand);
+                }
                 return;
             }
 
@@ -340,6 +345,11 @@ export class SelectExpression<TE extends object = any, T = unknown> implements I
                 this.parentRelation.relation = this.parentRelation.relation ? new AndExpression(this.parentRelation.relation, expression) : expression;
                 return;
             }
+        }
+
+        if (this.where instanceof AndExpression) {
+            this.where.operands.push(expression);
+            return;
         }
 
         this.where = this.where ? new AndExpression(this.where, expression) : expression;

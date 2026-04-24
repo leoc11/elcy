@@ -230,7 +230,7 @@ export class ExpressionExecutor {
         return value;
     }
     protected executeAnd(expression: AndExpression) {
-        return this.execute(expression.leftOperand) && this.execute(expression.rightOperand);
+        return expression.operands.reduce((r, o) => r && this.execute(o), true);
     }
     protected executeArrayValue<T>(expression: ArrayValueExpression<T>): T[] {
         const result: T[] = [];
@@ -433,7 +433,7 @@ export class ExpressionExecutor {
         return result;
     }
     protected executeOr(expression: OrExpression) {
-        return this.execute(expression.leftOperand) || this.execute(expression.rightOperand);
+        return expression.operands.reduce((r, o) => r || this.execute(o), false);
     }
     protected executeNullCoalesce<T>(expression: NullCoalesceExpression<T>): T {
         return this.execute(expression.leftOperand) ?? this.execute(expression.rightOperand);

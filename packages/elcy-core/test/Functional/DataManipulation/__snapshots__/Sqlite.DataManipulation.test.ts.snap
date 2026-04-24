@@ -385,7 +385,7 @@ FROM (
 	FROM (
 		SELECT "entity0"."id"
 		FROM "fixture"."Table1s" AS "entity0"
-		WHERE (("entity0"."deleted"=false) AND ((("entity0"."integer">:param0) AND ("entity0"."real" IS :param1)) AND ((COALESCE("entity0"."real", 0))=:param1)))
+		WHERE (("entity0"."deleted"=false) AND ("entity0"."integer">:param0) AND ("entity0"."real" IS :param1) AND ((COALESCE("entity0"."real", 0))=:param1))
 		LIMIT :param3
 		OFFSET :param2
 	) AS "entity0_1"
@@ -735,7 +735,7 @@ FROM (
 	FROM (
 		SELECT "entity0"."id"
 		FROM "fixture"."Table1s" AS "entity0"
-		WHERE (("entity0"."deleted"=false) AND ((("entity0"."integer">:param0) AND ("entity0"."real" IS :param1)) AND ((COALESCE("entity0"."real", 0))=:param1)))
+		WHERE (("entity0"."deleted"=false) AND ("entity0"."integer">:param0) AND ("entity0"."real" IS :param1) AND ((COALESCE("entity0"."real", 0))=:param1))
 		LIMIT :param3
 		OFFSET :param2
 	) AS "entity0_1"
@@ -785,7 +785,7 @@ WHERE EXISTS(
 			"entity0"."createdDate",
 			"entity0"."modifiedDate"
 		FROM "fixture"."Table1s" AS "entity0"
-		WHERE (("entity0"."deleted"=false) AND ((("entity0"."integer">:param0) AND ("entity0"."real" IS :param1)) AND ((COALESCE("entity0"."real", 0))=:param1)))
+		WHERE (("entity0"."deleted"=false) AND ("entity0"."integer">:param0) AND ("entity0"."real" IS :param1) AND ((COALESCE("entity0"."real", 0))=:param1))
 		LIMIT :param3
 		OFFSET :param2
 	) AS "entity0_1"

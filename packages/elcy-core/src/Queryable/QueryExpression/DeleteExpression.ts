@@ -70,13 +70,14 @@ export class DeleteExpression<TE extends object = object> implements IQueryExpre
                 throw new Error("many-many relation not supported");
             }
 
-            relations = null;
+            const relExp = new AndExpression();
             for (const [parentColMeta, childColMeta] of relationMeta.relationMaps) {
                 const parentCol = this.entity.columns.find((o) => o.propertyName === parentColMeta.propertyName);
                 const childCol = child.entity.columns.find((o) => o.propertyName === childColMeta.propertyName);
                 const logicalExp = new StrictEqualExpression(parentCol, childCol);
-                relations = relations ? new AndExpression(relations, logicalExp) : logicalExp;
+                relExp.operands.push(logicalExp);
             }
+            relations = relExp.asOperand();
         }
         else {
             relations = relationMetaOrRelations;

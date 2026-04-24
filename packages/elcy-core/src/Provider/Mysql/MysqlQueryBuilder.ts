@@ -146,19 +146,19 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
                 const selectExp = new SelectExpression(insertExp.entity);
                 selectExp.selects = insertExp.returnings.slice(0);
                 const tvpExp = new SqlTableValueParameterExpression(new ParameterExpression<TE[]>("inserted", Array), {} as any);
-                let relation: IExpression<boolean>;
+                const relation = new AndExpression();
                 for (const column of selectExp.entity.primaryColumns) {
                     const newValueColumn = new ColumnExpression(tvpExp, column.type, column.propertyName, column.columnName, false, true, column.columnMeta.columnType);
                     tvpExp.columns.push(newValueColumn);
                     const rel = new StrictEqualExpression(column, newValueColumn);
-                    relation = relation ? new AndExpression(relation, rel) : rel;
+                    relation.operands.push(rel);
                 }
 
                 selectExp.paramExps.push(tvpExp);
                 const valueSelectExp = new SelectExpression(tvpExp);
                 valueSelectExp.selects = tvpExp.columns;
                 valueSelectExp.isSubSelect = true;
-                selectExp.addJoin(valueSelectExp, relation, "INNER");
+                selectExp.addJoin(valueSelectExp, relation.asOperand(), "INNER");
 
                 const selectParameterMap: ISqlParameterValueMap = new Map([[tvpExp, paramValue]]);
                 result.push(...this.getSelectQuery(selectExp, option, selectParameterMap));
@@ -188,11 +188,11 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
             projectedEntity.alias = updateExp.entity.alias + "_1";
             const selectExp = new SelectExpression(projectedEntity);
 
-            let relation: IExpression<boolean>;
+            const relation = new AndExpression();
             for (const column of updateExp.entity.primaryColumns) {
                 const selectColumn = projectedEntity.columns.find(o => o.propertyName == column.propertyName);
                 const equalExp = new StrictEqualExpression(column, selectColumn);
-                relation = relation ? new AndExpression(relation, equalExp) : equalExp;
+                relation.operands.push(equalExp);
             }
 
             const setQuery = selectExp.selects
@@ -200,7 +200,7 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
                 .join(", ");
 
             const updateQuery = `UPDATE ${this.entityName(updateExp.entity)} AS ${this.enclose(updateExp.entity.alias)}` +
-                this.getJoinQueryString([new JoinRelation(updateExp.select, selectExp, relation, "INNER")], context) +
+                this.getJoinQueryString([new JoinRelation(updateExp.select, selectExp, relation.asOperand(), "INNER")], context) +
                 this.newLine() + `SET ${setQuery}`;
             result.push({
                 query: updateQuery,
@@ -357,19 +357,19 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
             const selectExp = new SelectExpression(upsertExp.entity);
             selectExp.selects = upsertExp.returnings.slice(0);
             const tvpExp = new SqlTableValueParameterExpression(new ParameterExpression<TE[]>("inserted", Array), {} as any);
-            let relation: IExpression<boolean>;
+            const relation = new AndExpression();
             for (const column of selectExp.entity.primaryColumns) {
                 const newValueColumn = new ColumnExpression(tvpExp, column.type, column.propertyName, column.columnName, false, true, column.columnMeta.columnType);
                 tvpExp.columns.push(newValueColumn);
                 const rel = new StrictEqualExpression(column, newValueColumn);
-                relation = relation ? new AndExpression(relation, rel) : rel;
+                relation.operands.push(rel);
             }
 
             selectExp.paramExps.push(tvpExp);
             const valueSelectExp = new SelectExpression(tvpExp);
             valueSelectExp.selects = tvpExp.columns;
             valueSelectExp.isSubSelect = true;
-            selectExp.addJoin(valueSelectExp, relation, "INNER");
+            selectExp.addJoin(valueSelectExp, relation.asOperand(), "INNER");
 
             const selectParameterMap: ISqlParameterValueMap = new Map([[tvpExp, paramValue]]);
             result.push(...this.getSelectQuery(selectExp, option, selectParameterMap));

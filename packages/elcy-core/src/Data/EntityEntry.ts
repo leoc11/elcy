@@ -14,7 +14,6 @@ import { EntityState } from "./EntityState";
 import { IEntityEntry } from "./Interface/IEntityEntry";
 import { ArrayExtension } from "src/Extensions/ArrayExtension";
 import { QueryableChain } from "src/Queryable/Interface/QueryableChain";
-import { IExpression } from "src/ExpressionBuilder/Expression/IExpression";
 import { AndExpression } from "src/ExpressionBuilder/Expression/AndExpression";
 import { isColumnMetaData, isRelationMetaData } from "src/Helper/Util";
 import { StrictEqualExpression } from "src/ExpressionBuilder/Expression/StrictEqualExpression";
@@ -285,12 +284,12 @@ export class EntityEntry<TE extends object = any> implements IEntityEntry<TE> {
         const dbSet = this.dbSet;
         const param = new ParameterExpression("o", this.dbSet.type);
         const entityParamExp = new ParameterExpression("entity", this.dbSet.type);
-        let andExp: IExpression<boolean>;
+        let filterExp = new AndExpression();
         for (const pk of dbSet.primaryKeys) {
             const d = new StrictEqualExpression(new MemberAccessExpression(param, pk.propertyName), new MemberAccessExpression(entityParamExp, pk.propertyName));
-            andExp = andExp ? new AndExpression(andExp, d) : d;
+            filterExp.operands.push(d);
         }
-        const a = new FunctionExpression(andExp, [param]);
+        const a = new FunctionExpression(filterExp.asOperand(), [param]);
         let mainQuery = this.dbSet.parameter({ entity: this.entity }).filter(a);
 
         for (const relation of relations) {

@@ -21,7 +21,6 @@ import { SqlParameterExpression } from "src/Queryable/QueryExpression/SqlParamet
 import { JoinRelation } from "src/Queryable/Interface/JoinRelation";
 import { UpdateExpression } from "src/Queryable/QueryExpression/UpdateExpression";
 import { AndExpression } from "src/ExpressionBuilder/Expression/AndExpression";
-import { IExpression } from "src/ExpressionBuilder/Expression/IExpression";
 import { StrictEqualExpression } from "src/ExpressionBuilder/Expression/StrictEqualExpression";
 import { ProjectionEntityExpression } from "src/Queryable/QueryExpression/ProjectionEntityExpression";
 
@@ -115,13 +114,13 @@ export class SqliteQueryBuilder extends RelationalQueryBuilder {
                 this.newLine() + `SET ${setQuery}` +
                 this.newLine() + `FROM (${this.newLine(1)}${this.toSelectString(selectExp, context)}${this.newLine(-1)}) AS ${this.enclose(selectExp.entity.alias)}`;
 
-            let relation: IExpression<boolean>;
+            const relation = new AndExpression();
             for (const column of updateExp.entity.primaryColumns) {
                 const selectColumn = projectedEntity.columns.find(o => o.propertyName == column.propertyName);
                 const equalExp = new StrictEqualExpression(column, selectColumn);
-                relation = relation ? new AndExpression(relation, equalExp) : equalExp;
+                relation.operands.push(equalExp);
             }
-            updateQuery += `${this.newLine()}WHERE ${this.toLogicalString(relation)}`;
+            updateQuery += `${this.newLine()}WHERE ${this.toLogicalString(relation.asOperand())}`;
             if (updateExp.returnings.length) {
                 updateQuery += `${this.newLine()}RETURNING ${updateExp.returnings.map(o => this.enclose(o.columnName)).join(",")}`;
             }

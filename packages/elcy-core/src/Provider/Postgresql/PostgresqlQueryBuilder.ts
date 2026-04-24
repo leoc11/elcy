@@ -14,7 +14,6 @@ import { ISqlParameterValueMap } from "src/Query/IQueryParameter";
 import { UpdateExpression } from "src/Queryable/QueryExpression/UpdateExpression";
 import { SelectExpression } from "src/Queryable/QueryExpression/SelectExpression";
 import { JoinRelation } from "src/Queryable/Interface/JoinRelation";
-import { IExpression } from "src/ExpressionBuilder/Expression/IExpression";
 import { StrictEqualExpression } from "src/ExpressionBuilder/Expression/StrictEqualExpression";
 import { DeleteExpression } from "src/Queryable/QueryExpression/DeleteExpression";
 import { postgresqlQueryTranslator } from "./PostgresqlQueryTranslator";
@@ -163,13 +162,13 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
                 this.newLine() + `SET ${setQuery}` +
                 this.newLine() + `FROM ${entityString}`;
 
-            let relation: IExpression<boolean>;
+            const relation = new AndExpression();
             for (const column of updateExp.entity.primaryColumns) {
                 const selectColumn = projectedEntity.columns.find(o => o.propertyName == column.propertyName);
                 const equalExp = new StrictEqualExpression(column, selectColumn);
-                relation = relation ? new AndExpression(relation, equalExp) : equalExp;
+                relation.operands.push(equalExp);
             }
-            updateQuery += `${this.newLine()}WHERE ${this.toLogicalString(relation, context)}`;
+            updateQuery += `${this.newLine()}WHERE ${this.toLogicalString(relation.asOperand(), context)}`;
             if (updateExp.returnings.length) {
                 updateQuery += `${this.newLine()}RETURNING ${updateExp.returnings.map(o => {
                     let colStr = this.getColumnQueryString(o, context);
@@ -273,13 +272,13 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
             let deleteQuery = `DELETE FROM ${this.entityName(deleteExp.entity)}${(deleteExp.entity.alias ? " AS " + this.enclose(deleteExp.entity.alias) : "")}` +
                 this.newLine() + `USING ${entityString}`;
 
-            let relation: IExpression<boolean>;
+            const relation = new AndExpression();
             for (const column of deleteExp.entity.primaryColumns) {
                 const selectColumn = projectedEntity.columns.find(o => o.propertyName == column.propertyName);
                 const equalExp = new StrictEqualExpression(column, selectColumn);
-                relation = relation ? new AndExpression(relation, equalExp) : equalExp;
+                relation.operands.push(equalExp);
             }
-            deleteQuery += `${this.newLine()}WHERE ${this.toLogicalString(relation, context)}`;
+            deleteQuery += `${this.newLine()}WHERE ${this.toLogicalString(relation.asOperand(), context)}`;
 
             result.push({
                 query: deleteQuery,

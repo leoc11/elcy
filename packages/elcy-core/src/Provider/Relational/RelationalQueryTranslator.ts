@@ -201,18 +201,18 @@ relationalQueryTranslator.registerMethod(String.prototype, "toLocaleUpperCase", 
 const stringValueOf = <T>(qb: IQueryBuilder, exp: MethodCallExpression<T>, ontext: IQueryBuilderContext) => qb.toString(exp.objectOperand, ontext);
 relationalQueryTranslator.registerMethod(String.prototype, "toString", stringValueOf);
 relationalQueryTranslator.registerMethod(String.prototype, "valueOf", stringValueOf);
-relationalQueryTranslator.registerMethod(String.prototype, "trim", (qb, exp, param) => `RTRIM(LTRIM(${qb.toString(exp.objectOperand, param)}))`);
+relationalQueryTranslator.registerMethod(String.prototype, "trim", (qb, exp, context) => `RTRIM(LTRIM(${qb.toString(exp.objectOperand, context)}))`);
 
 /**
  * Number
  * TODO: isFinite,isInteger,isNaN,isSafeInteger, toLocaleString,toExponential,toFixed,toPrecision
  */
-relationalQueryTranslator.registerMethod(Number.prototype, "toString", (qb, exp, param) => `CAST(${qb.toString(exp.objectOperand, param)} AS nvarchar(255))`);
-relationalQueryTranslator.registerMethod(Number.prototype, "valueOf", (qb, exp, param) => qb.toString(exp.objectOperand, param));
-relationalQueryTranslator.registerMethod(Number.prototype, "toFixed", (qb, exp, param) => `ROUND(${qb.toString(exp.objectOperand, param)}, ${qb.toString(exp.params[0], param)})`, o => o.params.length === 1);
-relationalQueryTranslator.registerMethod(Number.prototype, "toPrecision", (qb, exp, param) => {
-    const ob = qb.toString(exp.objectOperand, param);
-    const paramQ = exp.params.length ? qb.toString(exp.params[0], param) : "0";
+relationalQueryTranslator.registerMethod(Number.prototype, "toString", (qb, exp, context) => `CAST(${qb.toString(exp.objectOperand, context)} AS nvarchar(255))`);
+relationalQueryTranslator.registerMethod(Number.prototype, "valueOf", (qb, exp, context) => qb.toString(exp.objectOperand, context));
+relationalQueryTranslator.registerMethod(Number.prototype, "toFixed", (qb, exp, context) => `ROUND(${qb.toString(exp.objectOperand, context)}, ${qb.toString(exp.params[0], context)})`, o => o.params.length === 1);
+relationalQueryTranslator.registerMethod(Number.prototype, "toPrecision", (qb, exp, context) => {
+    const ob = qb.toString(exp.objectOperand, context);
+    const paramQ = exp.params.length ? qb.toString(exp.params[0], context) : "0";
     return `CASE WHEN ${ob}=0 THEN 0
 ELSE ROUND(${ob}, ${paramQ} - FLOOR(LOG(10, ABS(${ob}))) - 1)
 END`;
@@ -222,8 +222,8 @@ END`;
  * BigInt
  * TODO: toLocaleString
  */
-relationalQueryTranslator.registerMethod(BigInt.prototype, "toString", (qb, exp, param) => `CAST(${qb.toString(exp.objectOperand, param)} AS nvarchar(max))`);
-relationalQueryTranslator.registerMethod(BigInt.prototype, "valueOf", (qb, exp, param) => qb.toString(exp.objectOperand, param));
+relationalQueryTranslator.registerMethod(BigInt.prototype, "toString", (qb, exp, context) => `CAST(${qb.toString(exp.objectOperand, context)} AS nvarchar(max))`);
+relationalQueryTranslator.registerMethod(BigInt.prototype, "valueOf", (qb, exp, context) => qb.toString(exp.objectOperand, context));
 
 /**
  * Symbol
@@ -234,41 +234,41 @@ relationalQueryTranslator.registerMethod(BigInt.prototype, "valueOf", (qb, exp, 
  * Boolean
  * TODO:
  */
-relationalQueryTranslator.registerMethod(Boolean.prototype, "toString" as any, (qb, exp, param) => `(CASE WHEN (${qb.toString(exp.objectOperand, param)}) THEN ${qb.valueString("true")} ELSE ${qb.valueString("false")} END)`);
+relationalQueryTranslator.registerMethod(Boolean.prototype, "toString" as any, (qb, exp, context) => `(CASE WHEN (${qb.toString(exp.objectOperand, context)}) THEN ${qb.valueString("true")} ELSE ${qb.valueString("false")} END)`);
 
 /**
  * Date
  * TODO: getTime,getTimezoneOffset,getUTCDate,getUTCDay,getUTCFullYear,getUTCHours,getUTCMilliseconds,getUTCMinutes,getUTCMonth,getUTCSeconds,getYear,setTime,setUTCDate,setUTCFullYear,setUTCHours,setUTCMilliseconds,setUTCMinutes,setUTCMonth,setUTCSeconds,toJSON,toISOString,toLocaleDateString,toLocaleTimeString,toLocaleString,toString,valueOf,toTimeString,toUTCString,toGMTString
  */
-relationalQueryTranslator.registerMethod(Date.prototype, "getDate", (qb, exp, param) => `DAY(${qb.toString(exp.objectOperand, param)})`);
-relationalQueryTranslator.registerMethod(Date.prototype, "getDay", (qb, exp, param) => `(DATEPART(weekday, ${qb.toString(exp.objectOperand, param)}) - 1)`);
-relationalQueryTranslator.registerMethod(Date.prototype, "getFullYear", (qb, exp, param) => `YEAR(${qb.toString(exp.objectOperand, param)})`);
-relationalQueryTranslator.registerMethod(Date.prototype, "getHours", (qb, exp, param) => `DATEPART(hour, ${qb.toString(exp.objectOperand, param)})`);
-relationalQueryTranslator.registerMethod(Date.prototype, "getMinutes", (qb, exp, param) => `DATEPART(minute, ${qb.toString(exp.objectOperand, param)})`);
-relationalQueryTranslator.registerMethod(Date.prototype, "getMonth", (qb, exp, param) => `(MONTH(${qb.toString(exp.objectOperand, param)}) - 1)`);
-relationalQueryTranslator.registerMethod(Date.prototype, "getSeconds", (qb, exp, param) => `DATEPART(second, ${qb.toString(exp.objectOperand, param)})`);
-relationalQueryTranslator.registerMethod(Date.prototype, "getMilliseconds", (qb, exp, param) => `DATEPART(millisecond, ${qb.toString(exp.objectOperand, param)})`);
-relationalQueryTranslator.registerMethod(Date.prototype, "setDate", (qb, exp, param) => `DATEADD(DAY, (${qb.toString(exp.params[0], param)} - DAY(${qb.toString(exp.objectOperand, param)})), ${qb.toString(exp.objectOperand, param)})`);
-relationalQueryTranslator.registerMethod(Date.prototype, "setFullYear", (qb, exp, param) => `DATEADD(YYYY, (${qb.toString(exp.params[0], param)} - YEAR(${qb.toString(exp.objectOperand, param)})), ${qb.toString(exp.objectOperand, param)})`);
-relationalQueryTranslator.registerMethod(Date.prototype, "setHours", (qb, exp, param) => `DATEADD(HH, (${qb.toString(exp.params[0], param)} - DATEPART(hour, ${qb.toString(exp.objectOperand, param)})), ${qb.toString(exp.objectOperand, param)})`);
-relationalQueryTranslator.registerMethod(Date.prototype, "setMilliseconds", (qb, exp, param) => `DATEADD(MS, (${qb.toString(exp.params[0], param)} - DATEPART(millisecond, ${qb.toString(exp.objectOperand, param)})), ${qb.toString(exp.objectOperand, param)})`);
-relationalQueryTranslator.registerMethod(Date.prototype, "setMinutes", (qb, exp, param) => `DATEADD(MI, (${qb.toString(exp.params[0], param)} - DATEPART(minute, ${qb.toString(exp.objectOperand, param)})), ${qb.toString(exp.objectOperand, param)})`);
-relationalQueryTranslator.registerMethod(Date.prototype, "setMonth", (qb, exp, param) => `DATEADD(MM, (${qb.toString(exp.params[0], param)} - (MONTH(${qb.toString(exp.objectOperand, param)}) - 1)), ${qb.toString(exp.objectOperand, param)})`);
-relationalQueryTranslator.registerMethod(Date.prototype, "setSeconds", (qb, exp, param) => `DATEADD(SS, (${qb.toString(exp.params[0], param)} - DATEPART(second, ${qb.toString(exp.objectOperand, param)})), ${qb.toString(exp.objectOperand, param)})`);
-relationalQueryTranslator.registerMethod(Date.prototype, "toDateString", (qb, exp, param) => `CONCAT(LEFT(DATENAME(WEEKDAY, ${qb.toString(exp.objectOperand, param)}), 3), ${qb.valueString(" ")}, LEFT(DATENAME(MONTH, ${qb.toString(exp.objectOperand, param)}), 3), ${qb.valueString(" ")}, RIGHT(CONCAT(${qb.valueString("0")}, RTRIM(MONTH(${qb.toString(exp.objectOperand, param)}))), 2), ${qb.valueString(" ")}, RIGHT(CONCAT(${qb.valueString("0")}, RTRIM(MONTH(${qb.toString(exp.objectOperand, param)}))), 2))`);
-relationalQueryTranslator.registerMethod(Date.prototype, "addDays", (qb, exp, param) => `DATEADD(DAY, ${qb.toString(exp.params[0], param)}, ${qb.toString(exp.objectOperand, param)})`);
-relationalQueryTranslator.registerMethod(Date.prototype, "addMonths", (qb, exp, param) => `DATEADD(MM, ${qb.toString(exp.params[0], param)}, ${qb.toString(exp.objectOperand, param)})`);
-relationalQueryTranslator.registerMethod(Date.prototype, "addYears", (qb, exp, param) => `DATEADD(YYYY, ${qb.toString(exp.params[0], param)}, ${qb.toString(exp.objectOperand, param)})`);
-relationalQueryTranslator.registerMethod(Date.prototype, "addHours", (qb, exp, param) => `DATEADD(HH, ${qb.toString(exp.params[0], param)}, ${qb.toString(exp.objectOperand, param)})`);
-relationalQueryTranslator.registerMethod(Date.prototype, "addMinutes", (qb, exp, param) => `DATEADD(MI, ${qb.toString(exp.params[0], param)}, ${qb.toString(exp.objectOperand, param)})`);
-relationalQueryTranslator.registerMethod(Date.prototype, "addSeconds", (qb, exp, param) => `DATEADD(SS, ${qb.toString(exp.params[0], param)}, ${qb.toString(exp.objectOperand, param)})`);
-relationalQueryTranslator.registerMethod(Date.prototype, "addMilliseconds", (qb, exp, param) => `DATEADD(MS, ${qb.toString(exp.params[0], param)}, ${qb.toString(exp.objectOperand, param)})`);
+relationalQueryTranslator.registerMethod(Date.prototype, "getDate", (qb, exp, context) => `DAY(${qb.toString(exp.objectOperand, context)})`);
+relationalQueryTranslator.registerMethod(Date.prototype, "getDay", (qb, exp, context) => `(DATEPART(weekday, ${qb.toString(exp.objectOperand, context)}) - 1)`);
+relationalQueryTranslator.registerMethod(Date.prototype, "getFullYear", (qb, exp, context) => `YEAR(${qb.toString(exp.objectOperand, context)})`);
+relationalQueryTranslator.registerMethod(Date.prototype, "getHours", (qb, exp, context) => `DATEPART(hour, ${qb.toString(exp.objectOperand, context)})`);
+relationalQueryTranslator.registerMethod(Date.prototype, "getMinutes", (qb, exp, context) => `DATEPART(minute, ${qb.toString(exp.objectOperand, context)})`);
+relationalQueryTranslator.registerMethod(Date.prototype, "getMonth", (qb, exp, context) => `(MONTH(${qb.toString(exp.objectOperand, context)}) - 1)`);
+relationalQueryTranslator.registerMethod(Date.prototype, "getSeconds", (qb, exp, context) => `DATEPART(second, ${qb.toString(exp.objectOperand, context)})`);
+relationalQueryTranslator.registerMethod(Date.prototype, "getMilliseconds", (qb, exp, context) => `DATEPART(millisecond, ${qb.toString(exp.objectOperand, context)})`);
+relationalQueryTranslator.registerMethod(Date.prototype, "setDate", (qb, exp, context) => `DATEADD(DAY, (${qb.toString(exp.params[0], context)} - DAY(${qb.toString(exp.objectOperand, context)})), ${qb.toString(exp.objectOperand, context)})`);
+relationalQueryTranslator.registerMethod(Date.prototype, "setFullYear", (qb, exp, context) => `DATEADD(YYYY, (${qb.toString(exp.params[0], context)} - YEAR(${qb.toString(exp.objectOperand, context)})), ${qb.toString(exp.objectOperand, context)})`);
+relationalQueryTranslator.registerMethod(Date.prototype, "setHours", (qb, exp, context) => `DATEADD(HH, (${qb.toString(exp.params[0], context)} - DATEPART(hour, ${qb.toString(exp.objectOperand, context)})), ${qb.toString(exp.objectOperand, context)})`);
+relationalQueryTranslator.registerMethod(Date.prototype, "setMilliseconds", (qb, exp, context) => `DATEADD(MS, (${qb.toString(exp.params[0], context)} - DATEPART(millisecond, ${qb.toString(exp.objectOperand, context)})), ${qb.toString(exp.objectOperand, context)})`);
+relationalQueryTranslator.registerMethod(Date.prototype, "setMinutes", (qb, exp, context) => `DATEADD(MI, (${qb.toString(exp.params[0], context)} - DATEPART(minute, ${qb.toString(exp.objectOperand, context)})), ${qb.toString(exp.objectOperand, context)})`);
+relationalQueryTranslator.registerMethod(Date.prototype, "setMonth", (qb, exp, context) => `DATEADD(MM, (${qb.toString(exp.params[0], context)} - (MONTH(${qb.toString(exp.objectOperand, context)}) - 1)), ${qb.toString(exp.objectOperand, context)})`);
+relationalQueryTranslator.registerMethod(Date.prototype, "setSeconds", (qb, exp, context) => `DATEADD(SS, (${qb.toString(exp.params[0], context)} - DATEPART(second, ${qb.toString(exp.objectOperand, context)})), ${qb.toString(exp.objectOperand, context)})`);
+relationalQueryTranslator.registerMethod(Date.prototype, "toDateString", (qb, exp, context) => `CONCAT(LEFT(DATENAME(WEEKDAY, ${qb.toString(exp.objectOperand, context)}), 3), ${qb.valueString(" ")}, LEFT(DATENAME(MONTH, ${qb.toString(exp.objectOperand, context)}), 3), ${qb.valueString(" ")}, RIGHT(CONCAT(${qb.valueString("0")}, RTRIM(MONTH(${qb.toString(exp.objectOperand, context)}))), 2), ${qb.valueString(" ")}, RIGHT(CONCAT(${qb.valueString("0")}, RTRIM(MONTH(${qb.toString(exp.objectOperand, context)}))), 2))`);
+relationalQueryTranslator.registerMethod(Date.prototype, "addDays", (qb, exp, context) => `DATEADD(DAY, ${qb.toString(exp.params[0], context)}, ${qb.toString(exp.objectOperand, context)})`);
+relationalQueryTranslator.registerMethod(Date.prototype, "addMonths", (qb, exp, context) => `DATEADD(MM, ${qb.toString(exp.params[0], context)}, ${qb.toString(exp.objectOperand, context)})`);
+relationalQueryTranslator.registerMethod(Date.prototype, "addYears", (qb, exp, context) => `DATEADD(YYYY, ${qb.toString(exp.params[0], context)}, ${qb.toString(exp.objectOperand, context)})`);
+relationalQueryTranslator.registerMethod(Date.prototype, "addHours", (qb, exp, context) => `DATEADD(HH, ${qb.toString(exp.params[0], context)}, ${qb.toString(exp.objectOperand, context)})`);
+relationalQueryTranslator.registerMethod(Date.prototype, "addMinutes", (qb, exp, context) => `DATEADD(MI, ${qb.toString(exp.params[0], context)}, ${qb.toString(exp.objectOperand, context)})`);
+relationalQueryTranslator.registerMethod(Date.prototype, "addSeconds", (qb, exp, context) => `DATEADD(SS, ${qb.toString(exp.params[0], context)}, ${qb.toString(exp.objectOperand, context)})`);
+relationalQueryTranslator.registerMethod(Date.prototype, "addMilliseconds", (qb, exp, context) => `DATEADD(MS, ${qb.toString(exp.params[0], context)}, ${qb.toString(exp.objectOperand, context)})`);
 
 /**
  * RegExp
  * TODO: exec,toString
  */
-relationalQueryTranslator.registerMethod(RegExp.prototype, "test", (qb, exp, param) => `${qb.toString(exp.params[0], param)} REGEXP ${qb.toString(exp.objectOperand, param)}`);
+relationalQueryTranslator.registerMethod(RegExp.prototype, "test", (qb, exp, context) => `${qb.toString(exp.params[0], context)} REGEXP ${qb.toString(exp.objectOperand, context)}`);
 
 /**
  * Function
@@ -289,18 +289,18 @@ const aritAssignmentTranlator = <T>(qb: IQueryBuilder, exp: IBinaryOperatorExpre
     const varString = qb.toString(exp.leftOperand, context);
     return `${varString} = ${varString}${operator}${qb.toOperandString(exp.rightOperand, context)}`;
 };
-relationalQueryTranslator.registerOperator(AdditionAssignmentExpression, (qb, exp, param) => aritAssignmentTranlator(qb, exp, "+", param));
-relationalQueryTranslator.registerOperator(SubstractionAssignmentExpression, (qb, exp, param) => aritAssignmentTranlator(qb, exp, "-", param));
-relationalQueryTranslator.registerOperator(MultiplicationAssignmentExpression, (qb, exp, param) => aritAssignmentTranlator(qb, exp, "*", param));
-relationalQueryTranslator.registerOperator(DivisionAssignmentExpression, (qb, exp, param) => aritAssignmentTranlator(qb, exp, "/", param));
-relationalQueryTranslator.registerOperator(ExponentiationAssignmentExpression, (qb, exp, param) => aritAssignmentTranlator(qb, exp, "**", param));
-relationalQueryTranslator.registerOperator(ModulusAssignmentExpression, (qb, exp, param) => aritAssignmentTranlator(qb, exp, "%", param));
-relationalQueryTranslator.registerOperator(BitwiseAndAssignmentExpression, (qb, exp, param) => aritAssignmentTranlator(qb, exp, "&", param));
-relationalQueryTranslator.registerOperator(BitwiseOrAssignmentExpression, (qb, exp, param) => aritAssignmentTranlator(qb, exp, "|", param));
-relationalQueryTranslator.registerOperator(BitwiseXorAssignmentExpression, (qb, exp, param) => aritAssignmentTranlator(qb, exp, "^", param));
-relationalQueryTranslator.registerOperator(BitwiseZeroLeftShiftAssignmentExpression, (qb, exp, param) => aritAssignmentTranlator(qb, exp, "<<", param));
-relationalQueryTranslator.registerOperator(BitwiseZeroRightShiftAssignmentExpression, (qb, exp, param) => aritAssignmentTranlator(qb, exp, ">>", param));
-relationalQueryTranslator.registerOperator(BitwiseSignedRightShiftAssignmentExpression, (qb, exp, param) => aritAssignmentTranlator(qb, exp, ">>>", param));
+relationalQueryTranslator.registerOperator(AdditionAssignmentExpression, (qb, exp, context) => aritAssignmentTranlator(qb, exp, "+", context));
+relationalQueryTranslator.registerOperator(SubstractionAssignmentExpression, (qb, exp, context) => aritAssignmentTranlator(qb, exp, "-", context));
+relationalQueryTranslator.registerOperator(MultiplicationAssignmentExpression, (qb, exp, context) => aritAssignmentTranlator(qb, exp, "*", context));
+relationalQueryTranslator.registerOperator(DivisionAssignmentExpression, (qb, exp, context) => aritAssignmentTranlator(qb, exp, "/", context));
+relationalQueryTranslator.registerOperator(ExponentiationAssignmentExpression, (qb, exp, context) => aritAssignmentTranlator(qb, exp, "**", context));
+relationalQueryTranslator.registerOperator(ModulusAssignmentExpression, (qb, exp, context) => aritAssignmentTranlator(qb, exp, "%", context));
+relationalQueryTranslator.registerOperator(BitwiseAndAssignmentExpression, (qb, exp, context) => aritAssignmentTranlator(qb, exp, "&", context));
+relationalQueryTranslator.registerOperator(BitwiseOrAssignmentExpression, (qb, exp, context) => aritAssignmentTranlator(qb, exp, "|", context));
+relationalQueryTranslator.registerOperator(BitwiseXorAssignmentExpression, (qb, exp, context) => aritAssignmentTranlator(qb, exp, "^", context));
+relationalQueryTranslator.registerOperator(BitwiseZeroLeftShiftAssignmentExpression, (qb, exp, context) => aritAssignmentTranlator(qb, exp, "<<", context));
+relationalQueryTranslator.registerOperator(BitwiseZeroRightShiftAssignmentExpression, (qb, exp, context) => aritAssignmentTranlator(qb, exp, ">>", context));
+relationalQueryTranslator.registerOperator(BitwiseSignedRightShiftAssignmentExpression, (qb, exp, context) => aritAssignmentTranlator(qb, exp, ">>>", context));
 
 const incrementTranslator = (qb: IQueryBuilder, exp: IUnaryOperatorExpression, operator: string, context: IQueryBuilderContext) => {
     if (!(exp.operand instanceof ParameterExpression)) {
@@ -309,31 +309,31 @@ const incrementTranslator = (qb: IQueryBuilder, exp: IUnaryOperatorExpression, o
     const varString = qb.toString(exp.operand, context);
     return `${varString} = ${varString}${operator}${qb.valueString(1)}`;
 };
-relationalQueryTranslator.registerOperator(LeftIncrementExpression, (qb, exp, param) => incrementTranslator(qb, exp, "+", param));
-relationalQueryTranslator.registerOperator(LeftDecrementExpression, (qb, exp, param) => incrementTranslator(qb, exp, "-", param));
-relationalQueryTranslator.registerOperator(RightIncrementExpression, (qb, exp, param) => `(${incrementTranslator(qb, exp, "+", param)}) - 1`);
-relationalQueryTranslator.registerOperator(RightDecrementExpression, (qb, exp, param) => `(${incrementTranslator(qb, exp, "-", param)}) + 1`);
+relationalQueryTranslator.registerOperator(LeftIncrementExpression, (qb, exp, context) => incrementTranslator(qb, exp, "+", context));
+relationalQueryTranslator.registerOperator(LeftDecrementExpression, (qb, exp, context) => incrementTranslator(qb, exp, "-", context));
+relationalQueryTranslator.registerOperator(RightIncrementExpression, (qb, exp, context) => `(${incrementTranslator(qb, exp, "+", context)}) - 1`);
+relationalQueryTranslator.registerOperator(RightDecrementExpression, (qb, exp, context) => `(${incrementTranslator(qb, exp, "-", context)}) + 1`);
 
 const binaryTranslator = <T>(qb: IQueryBuilder, exp: IBinaryOperatorExpression<T>, operator: string, context: IQueryBuilderContext) => `${qb.toOperandString(exp.leftOperand, context)}${operator}${qb.toOperandString(exp.rightOperand, context)}`;
-relationalQueryTranslator.registerOperator(AssignmentExpression, (qb, exp, param) => binaryTranslator(qb, exp, "=", param));
-relationalQueryTranslator.registerOperator(GreaterEqualExpression, (qb, exp, param) => binaryTranslator(qb, exp, ">=", param));
-relationalQueryTranslator.registerOperator(GreaterThanExpression, (qb, exp, param) => binaryTranslator(qb, exp, ">", param));
-relationalQueryTranslator.registerOperator(LessEqualExpression, (qb, exp, param) => binaryTranslator(qb, exp, "<=", param));
-relationalQueryTranslator.registerOperator(LessThanExpression, (qb, exp, param) => binaryTranslator(qb, exp, "<", param));
-relationalQueryTranslator.registerOperator(ModulusExpression, (qb, exp, param) => binaryTranslator(qb, exp, "%", param));
-relationalQueryTranslator.registerOperator(SubstractionExpression, (qb, exp, param) => binaryTranslator(qb, exp, "-", param));
-relationalQueryTranslator.registerOperator(MultiplicationExpression, (qb, exp, param) => binaryTranslator(qb, exp, "*", param));
-relationalQueryTranslator.registerOperator(DivisionExpression, (qb, exp, param) => binaryTranslator(qb, exp, "/", param));
-relationalQueryTranslator.registerOperator(AdditionExpression, (qb, exp, param) => {
+relationalQueryTranslator.registerOperator(AssignmentExpression, (qb, exp, context) => binaryTranslator(qb, exp, "=", context));
+relationalQueryTranslator.registerOperator(GreaterEqualExpression, (qb, exp, context) => binaryTranslator(qb, exp, ">=", context));
+relationalQueryTranslator.registerOperator(GreaterThanExpression, (qb, exp, context) => binaryTranslator(qb, exp, ">", context));
+relationalQueryTranslator.registerOperator(LessEqualExpression, (qb, exp, context) => binaryTranslator(qb, exp, "<=", context));
+relationalQueryTranslator.registerOperator(LessThanExpression, (qb, exp, context) => binaryTranslator(qb, exp, "<", context));
+relationalQueryTranslator.registerOperator(ModulusExpression, (qb, exp, context) => binaryTranslator(qb, exp, "%", context));
+relationalQueryTranslator.registerOperator(SubstractionExpression, (qb, exp, context) => binaryTranslator(qb, exp, "-", context));
+relationalQueryTranslator.registerOperator(MultiplicationExpression, (qb, exp, context) => binaryTranslator(qb, exp, "*", context));
+relationalQueryTranslator.registerOperator(DivisionExpression, (qb, exp, context) => binaryTranslator(qb, exp, "/", context));
+relationalQueryTranslator.registerOperator(AdditionExpression, (qb, exp, context) => {
     if (exp.type === String) {
-        return `CONCAT(${qb.toOperandString(exp.leftOperand, param)}, ${qb.toOperandString(exp.rightOperand, param)})`;
+        return `CONCAT(${qb.toOperandString(exp.leftOperand, context)}, ${qb.toOperandString(exp.rightOperand, context)})`;
     }
 
-    return `${qb.toOperandString(exp.leftOperand, param)}+${qb.toOperandString(exp.rightOperand, param)}`;
+    return `${qb.toOperandString(exp.leftOperand, context)}+${qb.toOperandString(exp.rightOperand, context)}`;
 });
-relationalQueryTranslator.registerOperator(BitwiseAndExpression, (qb, exp, param) => binaryTranslator(qb, exp, "&", param));
-relationalQueryTranslator.registerOperator(BitwiseOrExpression, (qb, exp, param) => binaryTranslator(qb, exp, "|", param));
-relationalQueryTranslator.registerOperator(BitwiseXorExpression, (qb, exp, param) => binaryTranslator(qb, exp, "^", param));
+relationalQueryTranslator.registerOperator(BitwiseAndExpression, (qb, exp, context) => binaryTranslator(qb, exp, "&", context));
+relationalQueryTranslator.registerOperator(BitwiseOrExpression, (qb, exp, context) => binaryTranslator(qb, exp, "|", context));
+relationalQueryTranslator.registerOperator(BitwiseXorExpression, (qb, exp, context) => binaryTranslator(qb, exp, "^", context));
 
 const equalTranslator = (qb: IQueryBuilder, exp: IBinaryOperatorExpression, context: IQueryBuilderContext) => {
     const leftExpString = qb.toOperandString(exp.leftOperand, context);
@@ -368,22 +368,22 @@ const notEqualTranslator = (qb: IQueryBuilder, exp: NotEqualExpression | StrictN
 relationalQueryTranslator.registerOperator(NotEqualExpression, notEqualTranslator);
 relationalQueryTranslator.registerOperator(StrictNotEqualExpression, notEqualTranslator);
 
-relationalQueryTranslator.registerOperator(OrExpression, (qb, exp, param) => `${qb.toLogicalString(exp.leftOperand, param)} OR ${qb.toLogicalString(exp.rightOperand, param)}`);
-relationalQueryTranslator.registerOperator(AndExpression, (qb, exp, param) => `${qb.toLogicalString(exp.leftOperand, param)} AND ${qb.toLogicalString(exp.rightOperand, param)}`);
-relationalQueryTranslator.registerOperator(NotExpression, (qb, exp, param) => `NOT(${qb.newLine(1)}${qb.toLogicalString(exp.operand, param)}${qb.newLine(-1)})`);
-relationalQueryTranslator.registerOperator(BitwiseNotExpression, (qb, exp, param) => `~(${qb.toOperandString(exp.operand, param)})`);
-relationalQueryTranslator.registerOperator(TernaryExpression, (qb, exp, param) => `(${qb.newLine(1)}CASE WHEN (${qb.toString(exp.logicalOperand, param)}) ${qb.newLine()}THEN ${qb.toOperandString(exp.trueOperand, param)}${qb.newLine()}ELSE ${qb.toOperandString(exp.falseOperand, param)}${qb.newLine()}END${qb.newLine(-1)})`);
-relationalQueryTranslator.registerOperator(NullCoalesceExpression, (qb, exp, param) => `COALESCE(${qb.toString(exp.leftOperand, param)}, ${qb.toString(exp.rightOperand, param)})`);
+relationalQueryTranslator.registerOperator(OrExpression, (qb, exp, context) => Enumerable.from(exp.operands).map(o => qb.toLogicalString(o, context)).join(" OR "));
+relationalQueryTranslator.registerOperator(AndExpression, (qb, exp, context) => Enumerable.from(exp.operands).map(o => qb.toLogicalString(o, context)).join(" AND "));
+relationalQueryTranslator.registerOperator(NotExpression, (qb, exp, context) => `NOT(${qb.newLine(1)}${qb.toLogicalString(exp.operand, context)}${qb.newLine(-1)})`);
+relationalQueryTranslator.registerOperator(BitwiseNotExpression, (qb, exp, context) => `~(${qb.toOperandString(exp.operand, context)})`);
+relationalQueryTranslator.registerOperator(TernaryExpression, (qb, exp, context) => `(${qb.newLine(1)}CASE WHEN (${qb.toString(exp.logicalOperand, context)}) ${qb.newLine()}THEN ${qb.toOperandString(exp.trueOperand, context)}${qb.newLine()}ELSE ${qb.toOperandString(exp.falseOperand, context)}${qb.newLine()}END${qb.newLine(-1)})`);
+relationalQueryTranslator.registerOperator(NullCoalesceExpression, (qb, exp, context) => `COALESCE(${qb.toString(exp.leftOperand, context)}, ${qb.toString(exp.rightOperand, context)})`);
 
 //#endregion
 
-relationalQueryTranslator.registerMethod(DbFunction, "like", (qb, exp, param) => {
+relationalQueryTranslator.registerMethod(DbFunction, "like", (qb, exp, context) => {
     let escape = "";
     if (exp.params.length > 2) {
-        escape = ` ESCAPE ${qb.toString(exp.params[2], param)}`;
+        escape = ` ESCAPE ${qb.toString(exp.params[2], context)}`;
     }
 
-    return `(${qb.toString(exp.params[0], param)} LIKE ${qb.toString(exp.params[1], param)}${escape})`;
+    return `(${qb.toString(exp.params[0], context)} LIKE ${qb.toString(exp.params[1], context)}${escape})`;
 });
 relationalQueryTranslator.registerMethod(DbFunction, "timestamp", () => "CURRENT_TIMESTAMP", () => true);
 relationalQueryTranslator.registerMethod(DbFunction, "utcTimestamp", () => "CURRENT_TIMESTAMP AT TIME ZONE 'UTC'", () => true);
@@ -394,87 +394,87 @@ if (Temporal) {
      * TODO: since, until
      */
 
-    relationalQueryTranslator.registerMethod(Temporal.Instant, "compare", (qb, exp, param) => {
-        const param1 = qb.toString(exp.params[0], param);
-        const param2 = qb.toString(exp.params[2], param);
+    relationalQueryTranslator.registerMethod(Temporal.Instant, "compare", (qb, exp, context) => {
+        const param1 = qb.toString(exp.params[0], context);
+        const param2 = qb.toString(exp.params[2], context);
         return `CASE WHEN ${param1}<${param2} THEN -1 WHEN ${param1}>${param2} THEN 1 ELSE 0 END`;
     });
-    relationalQueryTranslator.registerMethod(Temporal.PlainDate, "compare", (qb, exp, param) => {
-        const param1 = qb.toString(exp.params[0], param);
-        const param2 = qb.toString(exp.params[2], param);
+    relationalQueryTranslator.registerMethod(Temporal.PlainDate, "compare", (qb, exp, context) => {
+        const param1 = qb.toString(exp.params[0], context);
+        const param2 = qb.toString(exp.params[2], context);
         return `CASE WHEN ${param1}<${param2} THEN -1 WHEN ${param1}>${param2} THEN 1 ELSE 0 END`;
     });
-    relationalQueryTranslator.registerMethod(Temporal.PlainTime, "compare", (qb, exp, param) => {
-        const param1 = qb.toString(exp.params[0], param);
-        const param2 = qb.toString(exp.params[2], param);
+    relationalQueryTranslator.registerMethod(Temporal.PlainTime, "compare", (qb, exp, context) => {
+        const param1 = qb.toString(exp.params[0], context);
+        const param2 = qb.toString(exp.params[2], context);
         return `CASE WHEN ${param1}<${param2} THEN -1 WHEN ${param1}>${param2} THEN 1 ELSE 0 END`;
     });
 
-    relationalQueryTranslator.registerMethod(Temporal.Instant, "from", (qb, exp, param) => `CAST(${qb.toString(exp.params[0], param)} as TIMESTAMP WITH TIME ZONE)`);
-    relationalQueryTranslator.registerMethod(Temporal.Instant, "fromEpochMilliseconds", (qb, exp, param) => {
-        const value = param.parameters.get(exp.params[0] as SqlParameterExpression)?.value as number;
-        return `TIMESTAMP WITH TIME ZONE '1970-01-01 00:00:00 UTC' + INTERVAL ${qb.toString(new ValueExpression(`${value / 1_000} SECOND`), param)}`;
+    relationalQueryTranslator.registerMethod(Temporal.Instant, "from", (qb, exp, context) => `CAST(${qb.toString(exp.params[0], context)} as TIMESTAMP WITH TIME ZONE)`);
+    relationalQueryTranslator.registerMethod(Temporal.Instant, "fromEpochMilliseconds", (qb, exp, context) => {
+        const value = context.parameters.get(exp.params[0] as SqlParameterExpression)?.value as number;
+        return `TIMESTAMP WITH TIME ZONE '1970-01-01 00:00:00 UTC' + INTERVAL ${qb.toString(new ValueExpression(`${value / 1_000} SECOND`), context)}`;
     });
-    relationalQueryTranslator.registerMethod(Temporal.Instant, "fromEpochNanoseconds", (qb, exp, param) => {
-        const value = param.parameters.get(exp.params[0] as SqlParameterExpression)?.value as number;
-        return `TIMESTAMP WITH TIME ZONE '1970-01-01 00:00:00 UTC' + INTERVAL ${qb.toString(new ValueExpression(`${value / 1_000_000} SECOND`), param)}`;
+    relationalQueryTranslator.registerMethod(Temporal.Instant, "fromEpochNanoseconds", (qb, exp, context) => {
+        const value = context.parameters.get(exp.params[0] as SqlParameterExpression)?.value as number;
+        return `TIMESTAMP WITH TIME ZONE '1970-01-01 00:00:00 UTC' + INTERVAL ${qb.toString(new ValueExpression(`${value / 1_000_000} SECOND`), context)}`;
     });
-    relationalQueryTranslator.registerMember(Temporal.Instant.prototype, "epochMilliseconds", (qb, exp, param) => `CAST((${qb.toString(exp.objectOperand, param)} - TIMESTAMP '1970-01-01 00:00:00 UTC') DAY TO SECOND AS DECIMAL(20,3)) * 1000`);
-    relationalQueryTranslator.registerMember(Temporal.Instant.prototype, "epochNanoseconds", (qb, exp, param) => `CAST((${qb.toString(exp.objectOperand, param)} - TIMESTAMP '1970-01-01 00:00:00 UTC') DAY TO SECOND AS DECIMAL(20,3)) * 1000000000`);
+    relationalQueryTranslator.registerMember(Temporal.Instant.prototype, "epochMilliseconds", (qb, exp, context) => `CAST((${qb.toString(exp.objectOperand, context)} - TIMESTAMP '1970-01-01 00:00:00 UTC') DAY TO SECOND AS DECIMAL(20,3)) * 1000`);
+    relationalQueryTranslator.registerMember(Temporal.Instant.prototype, "epochNanoseconds", (qb, exp, context) => `CAST((${qb.toString(exp.objectOperand, context)} - TIMESTAMP '1970-01-01 00:00:00 UTC') DAY TO SECOND AS DECIMAL(20,3)) * 1000000000`);
 
-    relationalQueryTranslator.registerMethod(Temporal.Instant.prototype, "toString", (qb, exp, param) => `TO_CHAR(${qb.toString(exp.objectOperand, param)}, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`);
-    relationalQueryTranslator.registerMethod(Temporal.Instant.prototype, "toJSON", (qb, exp, param) => `TO_CHAR(${qb.toString(exp.objectOperand, param)}, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`);
-    relationalQueryTranslator.registerMethod(Temporal.Instant.prototype, "toZonedDateTimeISO", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)} AT TIME ZONE ${qb.toString(exp.params[0], param)}`);
-    relationalQueryTranslator.registerMethod(Temporal.Instant.prototype, "add", (qb, exp, param) => {
+    relationalQueryTranslator.registerMethod(Temporal.Instant.prototype, "toString", (qb, exp, context) => `TO_CHAR(${qb.toString(exp.objectOperand, context)}, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`);
+    relationalQueryTranslator.registerMethod(Temporal.Instant.prototype, "toJSON", (qb, exp, context) => `TO_CHAR(${qb.toString(exp.objectOperand, context)}, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`);
+    relationalQueryTranslator.registerMethod(Temporal.Instant.prototype, "toZonedDateTimeISO", (qb, exp, context) => `${qb.toString(exp.objectOperand, context)} AT TIME ZONE ${qb.toString(exp.params[0], context)}`);
+    relationalQueryTranslator.registerMethod(Temporal.Instant.prototype, "add", (qb, exp, context) => {
         const paramExp = exp.params[0] as ObjectValueExpression<Omit<Temporal.DurationLike, 'years' | 'months' | 'weeks' | 'days'>>;
         const intervalParams = [] as string[];
         if (paramExp.object.hours) {
-            intervalParams.push(`hours => ${qb.toString(paramExp.object.hours, param)}`);
+            intervalParams.push(`hours => ${qb.toString(paramExp.object.hours, context)}`);
         }
         if (paramExp.object.minutes) {
-            intervalParams.push(`mins => ${qb.toString(paramExp.object.minutes, param)}`);
+            intervalParams.push(`mins => ${qb.toString(paramExp.object.minutes, context)}`);
         }
         let secondParts = [] as string[];
         if (paramExp.object.seconds) {
-            secondParts.push(qb.toString(paramExp.object.seconds, param));
+            secondParts.push(qb.toString(paramExp.object.seconds, context));
         }
         if (paramExp.object.milliseconds) {
-            secondParts.push(`(${qb.toString(paramExp.object.milliseconds, param)} / 1000)`);
+            secondParts.push(`(${qb.toString(paramExp.object.milliseconds, context)} / 1000)`);
         }
         if (paramExp.object.nanoseconds) {
-            secondParts.push(`(${qb.toString(paramExp.object.nanoseconds, param)} / 1000000000)`);
+            secondParts.push(`(${qb.toString(paramExp.object.nanoseconds, context)} / 1000000000)`);
         }
         if (secondParts.length) {
             intervalParams.push(`secs => ${secondParts.join("+")}`);
         }
-        return `${qb.toString(exp.objectOperand, param)}) + make_interval(${intervalParams.join(",")})`;
+        return `${qb.toString(exp.objectOperand, context)}) + make_interval(${intervalParams.join(",")})`;
     });
-    relationalQueryTranslator.registerMethod(Temporal.Instant.prototype, "subtract", (qb, exp, param) => {
+    relationalQueryTranslator.registerMethod(Temporal.Instant.prototype, "subtract", (qb, exp, context) => {
         const paramExp = exp.params[0] as ObjectValueExpression<Omit<Temporal.DurationLike, 'years' | 'months' | 'weeks' | 'days'>>;
         const intervalParams = [] as string[];
         if (paramExp.object.hours) {
-            intervalParams.push(`hours => ${qb.toString(paramExp.object.hours, param)}`);
+            intervalParams.push(`hours => ${qb.toString(paramExp.object.hours, context)}`);
         }
         if (paramExp.object.minutes) {
-            intervalParams.push(`mins => ${qb.toString(paramExp.object.minutes, param)}`);
+            intervalParams.push(`mins => ${qb.toString(paramExp.object.minutes, context)}`);
         }
         let secondParts = [] as string[];
         if (paramExp.object.seconds) {
-            secondParts.push(qb.toString(paramExp.object.seconds, param));
+            secondParts.push(qb.toString(paramExp.object.seconds, context));
         }
         if (paramExp.object.milliseconds) {
-            secondParts.push(`(${qb.toString(paramExp.object.milliseconds, param)} / 1000)`);
+            secondParts.push(`(${qb.toString(paramExp.object.milliseconds, context)} / 1000)`);
         }
         if (paramExp.object.nanoseconds) {
-            secondParts.push(`(${qb.toString(paramExp.object.nanoseconds, param)} / 1000000000)`);
+            secondParts.push(`(${qb.toString(paramExp.object.nanoseconds, context)} / 1000000000)`);
         }
         if (secondParts.length) {
             intervalParams.push(`secs => ${secondParts.join("+")}`);
         }
-        return `${qb.toString(exp.objectOperand, param)}) - make_interval(${intervalParams.join(",")})`;
+        return `${qb.toString(exp.objectOperand, context)}) - make_interval(${intervalParams.join(",")})`;
     });
-    relationalQueryTranslator.registerMethod(Temporal.Instant.prototype, "equals", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)})=${qb.toString(exp.params[0], param)}`);
-    relationalQueryTranslator.registerMethod(Temporal.Instant.prototype, "round", (qb, exp, param) => {
+    relationalQueryTranslator.registerMethod(Temporal.Instant.prototype, "equals", (qb, exp, context) => `${qb.toString(exp.objectOperand, context)})=${qb.toString(exp.params[0], context)}`);
+    relationalQueryTranslator.registerMethod(Temporal.Instant.prototype, "round", (qb, exp, context) => {
         let smallestUnitParam: IExpression<Extract<Temporal.RoundTo<'hour' | 'minute' | 'second' | 'millisecond' | 'microsecond' | 'nanosecond'>, string>> = undefined;
         if (exp.params[0] instanceof ObjectValueExpression) {
             const paramExp = exp.params[0] as ObjectValueExpression<Exclude<Temporal.RoundTo<'hour' | 'minute' | 'second' | 'millisecond' | 'microsecond' | 'nanosecond'>, string>>;
@@ -491,9 +491,9 @@ if (Temporal) {
         else {
             smallestUnitParam = exp.params[0] as IExpression<Extract<Temporal.RoundTo<'hour' | 'minute' | 'second' | 'millisecond' | 'microsecond' | 'nanosecond'>, string>>;
         }
-        return `DATE_TRUNC(${qb.toString(smallestUnitParam, param)}, ${qb.toString(exp.objectOperand, param)})`;
+        return `DATE_TRUNC(${qb.toString(smallestUnitParam, context)}, ${qb.toString(exp.objectOperand, context)})`;
     });
-    relationalQueryTranslator.registerMethod(Temporal.Instant.prototype, "valueOf", (qb, exp, param) => {
+    relationalQueryTranslator.registerMethod(Temporal.Instant.prototype, "valueOf", (qb, exp, context) => {
         throw new Error(`Temporal.Instant.valueOf: not supported`);
     });
 
@@ -503,89 +503,89 @@ if (Temporal) {
      * TODO: since, until, calendarId, dayOfWeek, dayOfYear, daysInMonth, daysInWeek, daysInYear, era, eraYear, inleapYear
      * monthinyear, weekofyear, yearofweek, withCalendar()
      */
-    relationalQueryTranslator.registerMethod(Temporal.PlainDate, "from", (qb, exp, param) => `DATE ${qb.toString(exp.params[0], param)}`);
+    relationalQueryTranslator.registerMethod(Temporal.PlainDate, "from", (qb, exp, context) => `DATE ${qb.toString(exp.params[0], context)}`);
 
-    relationalQueryTranslator.registerMember(Temporal.PlainDate.prototype, "year", (qb, exp, param) => `EXTRACT(YEAR FROM ${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMember(Temporal.PlainDate.prototype, "month", (qb, exp, param) => `EXTRACT(MONTH FROM ${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMember(Temporal.PlainDate.prototype, "day", (qb, exp, param) => `EXTRACT(DAY FROM ${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMember(Temporal.PlainDate.prototype, "monthCode", (qb, exp, param) => `${qb.valueString("M")}`);
+    relationalQueryTranslator.registerMember(Temporal.PlainDate.prototype, "year", (qb, exp, context) => `EXTRACT(YEAR FROM ${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMember(Temporal.PlainDate.prototype, "month", (qb, exp, context) => `EXTRACT(MONTH FROM ${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMember(Temporal.PlainDate.prototype, "day", (qb, exp, context) => `EXTRACT(DAY FROM ${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMember(Temporal.PlainDate.prototype, "monthCode", (qb, exp, context) => `${qb.valueString("M")}`);
 
-    relationalQueryTranslator.registerMethod(Temporal.PlainDate.prototype, "toString", (qb, exp, param) => `TO_CHAR(${qb.toString(exp.objectOperand, param)}, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`);
-    relationalQueryTranslator.registerMethod(Temporal.PlainDate.prototype, "toJSON", (qb, exp, param) => `TO_CHAR(${qb.toString(exp.objectOperand, param)}, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`);
-    relationalQueryTranslator.registerMethod(Temporal.PlainDate.prototype, "add", (qb, exp, param) => {
+    relationalQueryTranslator.registerMethod(Temporal.PlainDate.prototype, "toString", (qb, exp, context) => `TO_CHAR(${qb.toString(exp.objectOperand, context)}, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`);
+    relationalQueryTranslator.registerMethod(Temporal.PlainDate.prototype, "toJSON", (qb, exp, context) => `TO_CHAR(${qb.toString(exp.objectOperand, context)}, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`);
+    relationalQueryTranslator.registerMethod(Temporal.PlainDate.prototype, "add", (qb, exp, context) => {
         const paramExp = exp.params[0] as ObjectValueExpression<Temporal.DurationLike>;
         const intervalParams = [] as string[];
         if (paramExp.object.years) {
-            intervalParams.push(`years => ${qb.toString(paramExp.object.years, param)}`);
+            intervalParams.push(`years => ${qb.toString(paramExp.object.years, context)}`);
         }
         if (paramExp.object.months) {
-            intervalParams.push(`months => ${qb.toString(paramExp.object.months, param)}`);
+            intervalParams.push(`months => ${qb.toString(paramExp.object.months, context)}`);
         }
         if (paramExp.object.weeks) {
-            intervalParams.push(`weeks => ${qb.toString(paramExp.object.weeks, param)}`);
+            intervalParams.push(`weeks => ${qb.toString(paramExp.object.weeks, context)}`);
         }
         if (paramExp.object.days) {
-            intervalParams.push(`days => ${qb.toString(paramExp.object.days, param)}`);
+            intervalParams.push(`days => ${qb.toString(paramExp.object.days, context)}`);
         }
         if (paramExp.object.hours) {
-            intervalParams.push(`hours => ${qb.toString(paramExp.object.hours, param)}`);
+            intervalParams.push(`hours => ${qb.toString(paramExp.object.hours, context)}`);
         }
         if (paramExp.object.minutes) {
-            intervalParams.push(`mins => ${qb.toString(paramExp.object.minutes, param)}`);
+            intervalParams.push(`mins => ${qb.toString(paramExp.object.minutes, context)}`);
         }
         let secondParts = [] as string[];
         if (paramExp.object.seconds) {
-            secondParts.push(qb.toString(paramExp.object.seconds, param));
+            secondParts.push(qb.toString(paramExp.object.seconds, context));
         }
         if (paramExp.object.milliseconds) {
-            secondParts.push(`(${qb.toString(paramExp.object.milliseconds, param)} / 1000)`);
+            secondParts.push(`(${qb.toString(paramExp.object.milliseconds, context)} / 1000)`);
         }
         if (paramExp.object.nanoseconds) {
-            secondParts.push(`(${qb.toString(paramExp.object.nanoseconds, param)} / 1000000000)`);
+            secondParts.push(`(${qb.toString(paramExp.object.nanoseconds, context)} / 1000000000)`);
         }
         if (secondParts.length) {
             intervalParams.push(`secs => ${secondParts.join("+")}`);
         }
-        return `${qb.toString(exp.objectOperand, param)}) + make_interval(${intervalParams.join(",")})`;
+        return `${qb.toString(exp.objectOperand, context)}) + make_interval(${intervalParams.join(",")})`;
     });
-    relationalQueryTranslator.registerMethod(Temporal.PlainDate.prototype, "subtract", (qb, exp, param) => {
+    relationalQueryTranslator.registerMethod(Temporal.PlainDate.prototype, "subtract", (qb, exp, context) => {
         const paramExp = exp.params[0] as ObjectValueExpression<Temporal.DurationLike>;
         const intervalParams = [] as string[];
         if (paramExp.object.years) {
-            intervalParams.push(`years => ${qb.toString(paramExp.object.years, param)}`);
+            intervalParams.push(`years => ${qb.toString(paramExp.object.years, context)}`);
         }
         if (paramExp.object.months) {
-            intervalParams.push(`months => ${qb.toString(paramExp.object.months, param)}`);
+            intervalParams.push(`months => ${qb.toString(paramExp.object.months, context)}`);
         }
         if (paramExp.object.weeks) {
-            intervalParams.push(`weeks => ${qb.toString(paramExp.object.weeks, param)}`);
+            intervalParams.push(`weeks => ${qb.toString(paramExp.object.weeks, context)}`);
         }
         if (paramExp.object.days) {
-            intervalParams.push(`days => ${qb.toString(paramExp.object.days, param)}`);
+            intervalParams.push(`days => ${qb.toString(paramExp.object.days, context)}`);
         }
         if (paramExp.object.hours) {
-            intervalParams.push(`hours => ${qb.toString(paramExp.object.hours, param)}`);
+            intervalParams.push(`hours => ${qb.toString(paramExp.object.hours, context)}`);
         }
         if (paramExp.object.minutes) {
-            intervalParams.push(`mins => ${qb.toString(paramExp.object.minutes, param)}`);
+            intervalParams.push(`mins => ${qb.toString(paramExp.object.minutes, context)}`);
         }
         let secondParts = [] as string[];
         if (paramExp.object.seconds) {
-            secondParts.push(qb.toString(paramExp.object.seconds, param));
+            secondParts.push(qb.toString(paramExp.object.seconds, context));
         }
         if (paramExp.object.milliseconds) {
-            secondParts.push(`(${qb.toString(paramExp.object.milliseconds, param)} / 1000)`);
+            secondParts.push(`(${qb.toString(paramExp.object.milliseconds, context)} / 1000)`);
         }
         if (paramExp.object.nanoseconds) {
-            secondParts.push(`(${qb.toString(paramExp.object.nanoseconds, param)} / 1000000000)`);
+            secondParts.push(`(${qb.toString(paramExp.object.nanoseconds, context)} / 1000000000)`);
         }
         if (secondParts.length) {
             intervalParams.push(`secs => ${secondParts.join("+")}`);
         }
-        return `${qb.toString(exp.objectOperand, param)}) - make_interval(${intervalParams.join(",")})`;
+        return `${qb.toString(exp.objectOperand, context)}) - make_interval(${intervalParams.join(",")})`;
     });
-    relationalQueryTranslator.registerMethod(Temporal.PlainDate.prototype, "equals", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)})=${qb.toString(exp.params[0], param)}`);
-    relationalQueryTranslator.registerMethod(Temporal.PlainDate.prototype, "with", (qb, exp, param) => {
+    relationalQueryTranslator.registerMethod(Temporal.PlainDate.prototype, "equals", (qb, exp, context) => `${qb.toString(exp.objectOperand, context)})=${qb.toString(exp.params[0], context)}`);
+    relationalQueryTranslator.registerMethod(Temporal.PlainDate.prototype, "with", (qb, exp, context) => {
         if (exp.params.length !== 1) {
             throw Error("Temporal.PlainDate.with: only support info");
         }
@@ -602,23 +602,23 @@ if (Temporal) {
         if (paramInfoExp.object.monthCode) {
             throw Error("Temporal.PlainDate.with: monthCode not supported");
         }
-        const objectQ = qb.toString(exp.objectOperand, param);
+        const objectQ = qb.toString(exp.objectOperand, context);
         let yearQ = `EXTRACT(YEAR FROM ${objectQ})`;
         if (paramInfoExp.object.year) {
-            yearQ = `COALESCE(${qb.toString(paramInfoExp.object.year, param)}, ${yearQ})`;
+            yearQ = `COALESCE(${qb.toString(paramInfoExp.object.year, context)}, ${yearQ})`;
         }
         let monthQ = `EXTRACT(MONTH FROM ${objectQ})`;
         if (paramInfoExp.object.month) {
-            monthQ = `COALESCE(${qb.toString(paramInfoExp.object.month, param)}, ${monthQ})`;
+            monthQ = `COALESCE(${qb.toString(paramInfoExp.object.month, context)}, ${monthQ})`;
         }
         let dayQ = `EXTRACT(DAY FROM ${objectQ})`;
         if (paramInfoExp.object.day) {
-            dayQ = `COALESCE(${qb.toString(paramInfoExp.object.day, param)}, ${dayQ})`;
+            dayQ = `COALESCE(${qb.toString(paramInfoExp.object.day, context)}, ${dayQ})`;
         }
 
         return `MAKE_DATE(CAST(${yearQ} as int), CAST(${monthQ} as int), CAST(${dayQ} as int))`;
     });
-    relationalQueryTranslator.registerMethod(Temporal.PlainDate.prototype, "valueOf", (qb, exp, param) => {
+    relationalQueryTranslator.registerMethod(Temporal.PlainDate.prototype, "valueOf", (qb, exp, context) => {
         throw new Error(`Temporal.PlainDate.valueOf: not supported`);
     });
 
@@ -627,117 +627,117 @@ if (Temporal) {
      * Temporal.PlainTime
      * TODO: since, until
      */
-    relationalQueryTranslator.registerMethod(Temporal.PlainTime, "from", (qb, exp, param) => `TIME ${qb.toString(exp.params[0], param)}`);
+    relationalQueryTranslator.registerMethod(Temporal.PlainTime, "from", (qb, exp, context) => `TIME ${qb.toString(exp.params[0], context)}`);
 
-    relationalQueryTranslator.registerMember(Temporal.PlainTime.prototype, "hour", (qb, exp, param) => `EXTRACT(HOUR FROM ${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMember(Temporal.PlainTime.prototype, "minute", (qb, exp, param) => `EXTRACT(MINUTE FROM ${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMember(Temporal.PlainTime.prototype, "second", (qb, exp, param) => `EXTRACT(SECOND FROM ${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMember(Temporal.PlainTime.prototype, "millisecond", (qb, exp, param) => `FLOOR(EXTRACT(MILLISECOND FROM ${qb.toString(exp.objectOperand, param)}))`);
-    relationalQueryTranslator.registerMember(Temporal.PlainTime.prototype, "microsecond", (qb, exp, param) => `FLOOR(EXTRACT(MICROSECOND FROM ${qb.toString(exp.objectOperand, param)}))`);
-    relationalQueryTranslator.registerMember(Temporal.PlainTime.prototype, "nanosecond", (qb, exp, param) => `FLOOR(EXTRACT(MICROSECOND FROM ${qb.toString(exp.objectOperand, param)})* 1000)`);
+    relationalQueryTranslator.registerMember(Temporal.PlainTime.prototype, "hour", (qb, exp, context) => `EXTRACT(HOUR FROM ${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMember(Temporal.PlainTime.prototype, "minute", (qb, exp, context) => `EXTRACT(MINUTE FROM ${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMember(Temporal.PlainTime.prototype, "second", (qb, exp, context) => `EXTRACT(SECOND FROM ${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMember(Temporal.PlainTime.prototype, "millisecond", (qb, exp, context) => `FLOOR(EXTRACT(MILLISECOND FROM ${qb.toString(exp.objectOperand, context)}))`);
+    relationalQueryTranslator.registerMember(Temporal.PlainTime.prototype, "microsecond", (qb, exp, context) => `FLOOR(EXTRACT(MICROSECOND FROM ${qb.toString(exp.objectOperand, context)}))`);
+    relationalQueryTranslator.registerMember(Temporal.PlainTime.prototype, "nanosecond", (qb, exp, context) => `FLOOR(EXTRACT(MICROSECOND FROM ${qb.toString(exp.objectOperand, context)})* 1000)`);
 
-    relationalQueryTranslator.registerMethod(Temporal.PlainTime.prototype, "toString", (qb, exp, param) => `TO_CHAR(${qb.toString(exp.objectOperand, param)}, 'HH24:MI:SS.US')`);
-    relationalQueryTranslator.registerMethod(Temporal.PlainTime.prototype, "toJSON", (qb, exp, param) => `TO_CHAR(${qb.toString(exp.objectOperand, param)}, 'HH24:MI:SS.US')`);
-    relationalQueryTranslator.registerMethod(Temporal.PlainTime.prototype, "add", (qb, exp, param) => {
+    relationalQueryTranslator.registerMethod(Temporal.PlainTime.prototype, "toString", (qb, exp, context) => `TO_CHAR(${qb.toString(exp.objectOperand, context)}, 'HH24:MI:SS.US')`);
+    relationalQueryTranslator.registerMethod(Temporal.PlainTime.prototype, "toJSON", (qb, exp, context) => `TO_CHAR(${qb.toString(exp.objectOperand, context)}, 'HH24:MI:SS.US')`);
+    relationalQueryTranslator.registerMethod(Temporal.PlainTime.prototype, "add", (qb, exp, context) => {
         const paramExp = exp.params[0] as ObjectValueExpression<Temporal.DurationLike>;
         const intervalParams = [] as string[];
         if (paramExp.object.years) {
-            intervalParams.push(`years => ${qb.toString(paramExp.object.years, param)}`);
+            intervalParams.push(`years => ${qb.toString(paramExp.object.years, context)}`);
         }
         if (paramExp.object.months) {
-            intervalParams.push(`months => ${qb.toString(paramExp.object.months, param)}`);
+            intervalParams.push(`months => ${qb.toString(paramExp.object.months, context)}`);
         }
         if (paramExp.object.weeks) {
-            intervalParams.push(`weeks => ${qb.toString(paramExp.object.weeks, param)}`);
+            intervalParams.push(`weeks => ${qb.toString(paramExp.object.weeks, context)}`);
         }
         if (paramExp.object.days) {
-            intervalParams.push(`days => ${qb.toString(paramExp.object.days, param)}`);
+            intervalParams.push(`days => ${qb.toString(paramExp.object.days, context)}`);
         }
         if (paramExp.object.hours) {
-            intervalParams.push(`hours => ${qb.toString(paramExp.object.hours, param)}`);
+            intervalParams.push(`hours => ${qb.toString(paramExp.object.hours, context)}`);
         }
         if (paramExp.object.minutes) {
-            intervalParams.push(`mins => ${qb.toString(paramExp.object.minutes, param)}`);
+            intervalParams.push(`mins => ${qb.toString(paramExp.object.minutes, context)}`);
         }
         let secondParts = [] as string[];
         if (paramExp.object.seconds) {
-            secondParts.push(qb.toString(paramExp.object.seconds, param));
+            secondParts.push(qb.toString(paramExp.object.seconds, context));
         }
         if (paramExp.object.milliseconds) {
-            secondParts.push(`(${qb.toString(paramExp.object.milliseconds, param)} / 1000)`);
+            secondParts.push(`(${qb.toString(paramExp.object.milliseconds, context)} / 1000)`);
         }
         if (paramExp.object.nanoseconds) {
-            secondParts.push(`(${qb.toString(paramExp.object.nanoseconds, param)} / 1000000000)`);
+            secondParts.push(`(${qb.toString(paramExp.object.nanoseconds, context)} / 1000000000)`);
         }
         if (secondParts.length) {
             intervalParams.push(`secs => ${secondParts.join("+")}`);
         }
-        return `${qb.toString(exp.objectOperand, param)}) + make_interval(${intervalParams.join(",")})`;
+        return `${qb.toString(exp.objectOperand, context)}) + make_interval(${intervalParams.join(",")})`;
     });
-    relationalQueryTranslator.registerMethod(Temporal.PlainTime.prototype, "subtract", (qb, exp, param) => {
+    relationalQueryTranslator.registerMethod(Temporal.PlainTime.prototype, "subtract", (qb, exp, context) => {
         const paramExp = exp.params[0] as ObjectValueExpression<Temporal.DurationLike>;
         const intervalParams = [] as string[];
         if (paramExp.object.years) {
-            intervalParams.push(`years => ${qb.toString(paramExp.object.years, param)}`);
+            intervalParams.push(`years => ${qb.toString(paramExp.object.years, context)}`);
         }
         if (paramExp.object.months) {
-            intervalParams.push(`months => ${qb.toString(paramExp.object.months, param)}`);
+            intervalParams.push(`months => ${qb.toString(paramExp.object.months, context)}`);
         }
         if (paramExp.object.weeks) {
-            intervalParams.push(`weeks => ${qb.toString(paramExp.object.weeks, param)}`);
+            intervalParams.push(`weeks => ${qb.toString(paramExp.object.weeks, context)}`);
         }
         if (paramExp.object.days) {
-            intervalParams.push(`days => ${qb.toString(paramExp.object.days, param)}`);
+            intervalParams.push(`days => ${qb.toString(paramExp.object.days, context)}`);
         }
         if (paramExp.object.hours) {
-            intervalParams.push(`hours => ${qb.toString(paramExp.object.hours, param)}`);
+            intervalParams.push(`hours => ${qb.toString(paramExp.object.hours, context)}`);
         }
         if (paramExp.object.minutes) {
-            intervalParams.push(`mins => ${qb.toString(paramExp.object.minutes, param)}`);
+            intervalParams.push(`mins => ${qb.toString(paramExp.object.minutes, context)}`);
         }
         let secondParts = [] as string[];
         if (paramExp.object.seconds) {
-            secondParts.push(qb.toString(paramExp.object.seconds, param));
+            secondParts.push(qb.toString(paramExp.object.seconds, context));
         }
         if (paramExp.object.milliseconds) {
-            secondParts.push(`(${qb.toString(paramExp.object.milliseconds, param)} / 1000)`);
+            secondParts.push(`(${qb.toString(paramExp.object.milliseconds, context)} / 1000)`);
         }
         if (paramExp.object.nanoseconds) {
-            secondParts.push(`(${qb.toString(paramExp.object.nanoseconds, param)} / 1000000000)`);
+            secondParts.push(`(${qb.toString(paramExp.object.nanoseconds, context)} / 1000000000)`);
         }
         if (secondParts.length) {
             intervalParams.push(`secs => ${secondParts.join("+")}`);
         }
-        return `${qb.toString(exp.objectOperand, param)}) - make_interval(${intervalParams.join(",")})`;
+        return `${qb.toString(exp.objectOperand, context)}) - make_interval(${intervalParams.join(",")})`;
     });
-    relationalQueryTranslator.registerMethod(Temporal.PlainTime.prototype, "equals", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)})=${qb.toString(exp.params[0], param)}`);
-    relationalQueryTranslator.registerMethod(Temporal.PlainTime.prototype, "with", (qb, exp, param) => {
+    relationalQueryTranslator.registerMethod(Temporal.PlainTime.prototype, "equals", (qb, exp, context) => `${qb.toString(exp.objectOperand, context)})=${qb.toString(exp.params[0], context)}`);
+    relationalQueryTranslator.registerMethod(Temporal.PlainTime.prototype, "with", (qb, exp, context) => {
         if (exp.params.length !== 1) {
             throw Error("Temporal.PlainDate.with: only support info");
         }
         const paramInfoExp = exp.params[0] as ObjectValueExpression<Temporal.PlainTimeLike>;
-        const objectQ = qb.toString(exp.objectOperand, param);
+        const objectQ = qb.toString(exp.objectOperand, context);
         let hourQ = `EXTRACT(HOUR FROM ${objectQ})`;
         if (paramInfoExp.object.hour) {
-            hourQ = `COALESCE(${qb.toString(paramInfoExp.object.hour, param)}, ${hourQ})`;
+            hourQ = `COALESCE(${qb.toString(paramInfoExp.object.hour, context)}, ${hourQ})`;
         }
         let minuteQ = `EXTRACT(MINUTE FROM ${objectQ})`;
         if (paramInfoExp.object.minute) {
-            minuteQ = `COALESCE(${qb.toString(paramInfoExp.object.minute, param)}, ${minuteQ})`;
+            minuteQ = `COALESCE(${qb.toString(paramInfoExp.object.minute, context)}, ${minuteQ})`;
         }
         let secondQ = `EXTRACT(SECOND FROM ${objectQ})`;
         const secondParts = [] as string[];
         if (paramInfoExp.object.second) {
-            secondParts.push(qb.toString(paramInfoExp.object.second, param));
+            secondParts.push(qb.toString(paramInfoExp.object.second, context));
         }
         if (paramInfoExp.object.millisecond) {
-            secondParts.push(`${qb.toString(paramInfoExp.object.second, param)}/1000.0`);
+            secondParts.push(`${qb.toString(paramInfoExp.object.second, context)}/1000.0`);
         }
         if (paramInfoExp.object.microsecond) {
-            secondParts.push(`${qb.toString(paramInfoExp.object.second, param)}/1000000.0`);
+            secondParts.push(`${qb.toString(paramInfoExp.object.second, context)}/1000000.0`);
         }
         if (paramInfoExp.object.nanosecond) {
-            secondParts.push(`${qb.toString(paramInfoExp.object.second, param)}/1000000000.0`);
+            secondParts.push(`${qb.toString(paramInfoExp.object.second, context)}/1000000000.0`);
         }
         if (secondParts.length) {
             secondQ = `COALESCE(${secondParts.join("+")}, ${secondQ})`;
@@ -745,7 +745,7 @@ if (Temporal) {
 
         return `MAKE_TIME(CAST(${hourQ} as int), CAST(${minuteQ} as int), ${secondQ})`;
     });
-    relationalQueryTranslator.registerMethod(Temporal.PlainTime.prototype, "round", (qb, exp, param) => {
+    relationalQueryTranslator.registerMethod(Temporal.PlainTime.prototype, "round", (qb, exp, context) => {
         let smallestUnitParam: IExpression<Extract<Temporal.RoundTo<'hour' | 'minute' | 'second' | 'millisecond' | 'microsecond' | 'nanosecond'>, string>> = undefined;
         if (exp.params[0] instanceof ObjectValueExpression) {
             const paramExp = exp.params[0] as ObjectValueExpression<Exclude<Temporal.RoundTo<'hour' | 'minute' | 'second' | 'millisecond' | 'microsecond' | 'nanosecond'>, string>>;
@@ -762,9 +762,9 @@ if (Temporal) {
         else {
             smallestUnitParam = exp.params[0] as IExpression<Extract<Temporal.RoundTo<'hour' | 'minute' | 'second' | 'millisecond' | 'microsecond' | 'nanosecond'>, string>>;
         }
-        return `DATE_TRUNC(${qb.toString(smallestUnitParam, param)}, ${qb.toString(exp.objectOperand, param)})`;
+        return `DATE_TRUNC(${qb.toString(smallestUnitParam, context)}, ${qb.toString(exp.objectOperand, context)})`;
     });
-    relationalQueryTranslator.registerMethod(Temporal.PlainDate.prototype, "valueOf", (qb, exp, param) => {
+    relationalQueryTranslator.registerMethod(Temporal.PlainDate.prototype, "valueOf", (qb, exp, context) => {
         throw new Error(`Temporal.PlainDate.valueOf: not supported`);
     });
 
@@ -773,34 +773,34 @@ if (Temporal) {
      * Temporal.Now
      * TODO: timeZoneId()
      */
-    relationalQueryTranslator.registerMethod(Temporal.Now, "instant", (qb, exp, param) => `CURRENT_TIMESTAMP`);
-    relationalQueryTranslator.registerMethod(Temporal.Now, "plainDateISO", (qb, exp, param) => {
+    relationalQueryTranslator.registerMethod(Temporal.Now, "instant", (qb, exp, context) => `CURRENT_TIMESTAMP`);
+    relationalQueryTranslator.registerMethod(Temporal.Now, "plainDateISO", (qb, exp, context) => {
         if (!exp.params.length) {
             return `CURRENT_DATE`;
         }
 
-        return `CAST(CURRENT_TIMESTAMP AT TIME ZONE ${qb.toString(exp.params[0], param)} as DATE)`;
+        return `CAST(CURRENT_TIMESTAMP AT TIME ZONE ${qb.toString(exp.params[0], context)} as DATE)`;
     });
-    relationalQueryTranslator.registerMethod(Temporal.Now, "plainDateTimeISO", (qb, exp, param) => {
+    relationalQueryTranslator.registerMethod(Temporal.Now, "plainDateTimeISO", (qb, exp, context) => {
         if (!exp.params.length) {
             return `CAST(CURRENT_TIMESTAMP as TIMESTAMP)`;
         }
 
-        return `CAST(CURRENT_TIMESTAMP AT TIME ZONE ${qb.toString(exp.params[0], param)} as TIMESTAMP)`;
+        return `CAST(CURRENT_TIMESTAMP AT TIME ZONE ${qb.toString(exp.params[0], context)} as TIMESTAMP)`;
     });
-    relationalQueryTranslator.registerMethod(Temporal.Now, "plainTimeISO", (qb, exp, param) => {
+    relationalQueryTranslator.registerMethod(Temporal.Now, "plainTimeISO", (qb, exp, context) => {
         if (!exp.params.length) {
             return `CURRENT_TIME`;
         }
 
-        return `CAST(CURRENT_TIMESTAMP AT TIME ZONE ${qb.toString(exp.params[0], param)} as TIME)`;
+        return `CAST(CURRENT_TIMESTAMP AT TIME ZONE ${qb.toString(exp.params[0], context)} as TIME)`;
     });
-    relationalQueryTranslator.registerMethod(Temporal.Now, "zonedDateTimeISO", (qb, exp, param) => {
+    relationalQueryTranslator.registerMethod(Temporal.Now, "zonedDateTimeISO", (qb, exp, context) => {
         if (!exp.params.length) {
             return `CURRENT_TIMESTAMP`;
         }
 
-        return `CURRENT_TIMESTAMP AT TIME ZONE ${qb.toString(exp.params[0], param)}`;
+        return `CURRENT_TIMESTAMP AT TIME ZONE ${qb.toString(exp.params[0], context)}`;
     });
 }
 
@@ -809,132 +809,132 @@ if (Decimal) {
      * Decimal
      * TODO: toSD, toSignificantDigits, static methods
      */
-    relationalQueryTranslator.registerConstructor(Decimal, (qb, exp, param) => `CAST(${qb.toString(exp.params[0], param)} as NUMERIC)`, o => o.params.length === 1);
-    relationalQueryTranslator.registerFn(Decimal, (qb, exp, param) => `CAST(${qb.toString(exp.params[0], param)} as NUMERIC)`, o => o.params.length === 1);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "plus", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}+${qb.toString(exp.params[0], param)}`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "add", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}+${qb.toString(exp.params[0], param)}`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "minus", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}-${qb.toString(exp.params[0], param)}`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "sub", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}-${qb.toString(exp.params[0], param)}`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "times", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}*${qb.toString(exp.params[0], param)}`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "mul", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}*${qb.toString(exp.params[0], param)}`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "div", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}/${qb.toString(exp.params[0], param)}`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "dividedBy", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}/${qb.toString(exp.params[0], param)}`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "pow", (qb, exp, param) => `POWER(${qb.toString(exp.objectOperand, param)},${qb.toString(exp.params[0], param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "toPower", (qb, exp, param) => `POWER(${qb.toString(exp.objectOperand, param)},${qb.toString(exp.params[0], param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "neg", (qb, exp, param) => `-${qb.toString(exp.objectOperand, param)}`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "negated", (qb, exp, param) => `-${qb.toString(exp.objectOperand, param)}`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "abs", (qb, exp, param) => `ABS(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "absoluteValue", (qb, exp, param) => `ABS(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "mod", (qb, exp, param) => `MOD(${qb.toString(exp.objectOperand, param)},${qb.toString(exp.params[0], param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "modulo", (qb, exp, param) => `MOD(${qb.toString(exp.objectOperand, param)},${qb.toString(exp.params[0], param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "sqrt", (qb, exp, param) => `SQRT(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "squareRoot", (qb, exp, param) => `SQRT(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "cbrt", (qb, exp, param) => `CBRT(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "cubeRoot", (qb, exp, param) => `CBRT(${qb.toString(exp.objectOperand, param)})`);
+    relationalQueryTranslator.registerConstructor(Decimal, (qb, exp, context) => `CAST(${qb.toString(exp.params[0], context)} as NUMERIC)`, o => o.params.length === 1);
+    relationalQueryTranslator.registerFn(Decimal, (qb, exp, context) => `CAST(${qb.toString(exp.params[0], context)} as NUMERIC)`, o => o.params.length === 1);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "plus", (qb, exp, context) => `${qb.toString(exp.objectOperand, context)}+${qb.toString(exp.params[0], context)}`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "add", (qb, exp, context) => `${qb.toString(exp.objectOperand, context)}+${qb.toString(exp.params[0], context)}`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "minus", (qb, exp, context) => `${qb.toString(exp.objectOperand, context)}-${qb.toString(exp.params[0], context)}`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "sub", (qb, exp, context) => `${qb.toString(exp.objectOperand, context)}-${qb.toString(exp.params[0], context)}`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "times", (qb, exp, context) => `${qb.toString(exp.objectOperand, context)}*${qb.toString(exp.params[0], context)}`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "mul", (qb, exp, context) => `${qb.toString(exp.objectOperand, context)}*${qb.toString(exp.params[0], context)}`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "div", (qb, exp, context) => `${qb.toString(exp.objectOperand, context)}/${qb.toString(exp.params[0], context)}`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "dividedBy", (qb, exp, context) => `${qb.toString(exp.objectOperand, context)}/${qb.toString(exp.params[0], context)}`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "pow", (qb, exp, context) => `POWER(${qb.toString(exp.objectOperand, context)},${qb.toString(exp.params[0], context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "toPower", (qb, exp, context) => `POWER(${qb.toString(exp.objectOperand, context)},${qb.toString(exp.params[0], context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "neg", (qb, exp, context) => `-${qb.toString(exp.objectOperand, context)}`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "negated", (qb, exp, context) => `-${qb.toString(exp.objectOperand, context)}`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "abs", (qb, exp, context) => `ABS(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "absoluteValue", (qb, exp, context) => `ABS(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "mod", (qb, exp, context) => `MOD(${qb.toString(exp.objectOperand, context)},${qb.toString(exp.params[0], context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "modulo", (qb, exp, context) => `MOD(${qb.toString(exp.objectOperand, context)},${qb.toString(exp.params[0], context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "sqrt", (qb, exp, context) => `SQRT(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "squareRoot", (qb, exp, context) => `SQRT(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "cbrt", (qb, exp, context) => `CBRT(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "cubeRoot", (qb, exp, context) => `CBRT(${qb.toString(exp.objectOperand, context)})`);
 
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "eq", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}=${qb.toString(exp.params[0], param)}`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "equals", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}=${qb.toString(exp.params[0], param)}`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "lt", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}<${qb.toString(exp.params[0], param)}`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "lessThan", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}<${qb.toString(exp.params[0], param)}`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "lte", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}<=${qb.toString(exp.params[0], param)}`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "lessThanOrEqualTo", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}<=${qb.toString(exp.params[0], param)}`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "gt", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}>${qb.toString(exp.params[0], param)}`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "greaterThan", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}>${qb.toString(exp.params[0], param)}`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "gte", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}>=${qb.toString(exp.params[0], param)}`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "greaterThanOrEqualTo", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}>=${qb.toString(exp.params[0], param)}`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "eq", (qb, exp, context) => `${qb.toString(exp.objectOperand, context)}=${qb.toString(exp.params[0], context)}`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "equals", (qb, exp, context) => `${qb.toString(exp.objectOperand, context)}=${qb.toString(exp.params[0], context)}`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "lt", (qb, exp, context) => `${qb.toString(exp.objectOperand, context)}<${qb.toString(exp.params[0], context)}`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "lessThan", (qb, exp, context) => `${qb.toString(exp.objectOperand, context)}<${qb.toString(exp.params[0], context)}`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "lte", (qb, exp, context) => `${qb.toString(exp.objectOperand, context)}<=${qb.toString(exp.params[0], context)}`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "lessThanOrEqualTo", (qb, exp, context) => `${qb.toString(exp.objectOperand, context)}<=${qb.toString(exp.params[0], context)}`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "gt", (qb, exp, context) => `${qb.toString(exp.objectOperand, context)}>${qb.toString(exp.params[0], context)}`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "greaterThan", (qb, exp, context) => `${qb.toString(exp.objectOperand, context)}>${qb.toString(exp.params[0], context)}`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "gte", (qb, exp, context) => `${qb.toString(exp.objectOperand, context)}>=${qb.toString(exp.params[0], context)}`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "greaterThanOrEqualTo", (qb, exp, context) => `${qb.toString(exp.objectOperand, context)}>=${qb.toString(exp.params[0], context)}`);
 
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "round", (qb, exp, param) => `ROUND(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "floor", (qb, exp, param) => `FLOOR(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "ceil", (qb, exp, param) => `CEILING(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "trunc", (qb, exp, param) => `TRUNC(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "truncated", (qb, exp, param) => `TRUNC(${qb.toString(exp.objectOperand, param)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "round", (qb, exp, context) => `ROUND(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "floor", (qb, exp, context) => `FLOOR(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "ceil", (qb, exp, context) => `CEILING(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "trunc", (qb, exp, context) => `TRUNC(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "truncated", (qb, exp, context) => `TRUNC(${qb.toString(exp.objectOperand, context)})`);
 
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "sin", (qb, exp, param) => `SIN(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "sine", (qb, exp, param) => `SIN(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "cos", (qb, exp, param) => `COS(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "cosine", (qb, exp, param) => `COS(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "tan", (qb, exp, param) => `TAN(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "tangent", (qb, exp, param) => `TAN(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "asin", (qb, exp, param) => `ASIN(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "inverseSine", (qb, exp, param) => `ASIN(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "acos", (qb, exp, param) => `ACOS(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "inverseCosine", (qb, exp, param) => `ACOS(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "atan", (qb, exp, param) => `ATAN(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "inverseTangent", (qb, exp, param) => `ATAN(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "sinh", (qb, exp, param) => `SINH(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "hyperbolicSine", (qb, exp, param) => `SINH(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "cosh", (qb, exp, param) => `COSH(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "hyperbolicCosine", (qb, exp, param) => `COSH(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "tanh", (qb, exp, param) => `TANH(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "hyperbolicTangent", (qb, exp, param) => `TANH(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "asinh", (qb, exp, param) => `ASINH(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "inverseHyperbolicSine", (qb, exp, param) => `ASINH(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "acosh", (qb, exp, param) => `ACOSH(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "inverseHyperbolicCosine", (qb, exp, param) => `ACOSH(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "atanh", (qb, exp, param) => `ATANH(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "inverseHyperbolicTangent", (qb, exp, param) => `ATANH(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "exp", (qb, exp, param) => `EXP(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "naturalExponential", (qb, exp, param) => `EXP(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "ln", (qb, exp, param) => `LN(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "naturalLogarithm", (qb, exp, param) => `LN(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "log", (qb, exp, param) => `LOG(${qb.toString(exp.objectOperand, param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "logarithm", (qb, exp, param) => `LOG(${qb.toString(exp.objectOperand, param)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "sin", (qb, exp, context) => `SIN(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "sine", (qb, exp, context) => `SIN(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "cos", (qb, exp, context) => `COS(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "cosine", (qb, exp, context) => `COS(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "tan", (qb, exp, context) => `TAN(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "tangent", (qb, exp, context) => `TAN(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "asin", (qb, exp, context) => `ASIN(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "inverseSine", (qb, exp, context) => `ASIN(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "acos", (qb, exp, context) => `ACOS(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "inverseCosine", (qb, exp, context) => `ACOS(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "atan", (qb, exp, context) => `ATAN(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "inverseTangent", (qb, exp, context) => `ATAN(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "sinh", (qb, exp, context) => `SINH(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "hyperbolicSine", (qb, exp, context) => `SINH(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "cosh", (qb, exp, context) => `COSH(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "hyperbolicCosine", (qb, exp, context) => `COSH(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "tanh", (qb, exp, context) => `TANH(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "hyperbolicTangent", (qb, exp, context) => `TANH(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "asinh", (qb, exp, context) => `ASINH(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "inverseHyperbolicSine", (qb, exp, context) => `ASINH(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "acosh", (qb, exp, context) => `ACOSH(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "inverseHyperbolicCosine", (qb, exp, context) => `ACOSH(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "atanh", (qb, exp, context) => `ATANH(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "inverseHyperbolicTangent", (qb, exp, context) => `ATANH(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "exp", (qb, exp, context) => `EXP(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "naturalExponential", (qb, exp, context) => `EXP(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "ln", (qb, exp, context) => `LN(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "naturalLogarithm", (qb, exp, context) => `LN(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "log", (qb, exp, context) => `LOG(${qb.toString(exp.objectOperand, context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "logarithm", (qb, exp, context) => `LOG(${qb.toString(exp.objectOperand, context)})`);
 
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "clamp", (qb, exp, param) => `LEAST(GREATEST(${qb.toString(exp.objectOperand, param)}, ${qb.toString(exp.params[0], param)}), ${qb.toString(exp.params[1], param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "clampedTo", (qb, exp, param) => `LEAST(GREATEST(${qb.toString(exp.objectOperand, param)}, ${qb.toString(exp.params[0], param)}), ${qb.toString(exp.params[1], param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "divToInt", (qb, exp, param) => `FLOOR(${qb.toString(exp.objectOperand, param)}/${qb.toString(exp.params[0], param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "dividedToIntegerBy", (qb, exp, param) => `FLOOR(${qb.toString(exp.objectOperand, param)}/${qb.toString(exp.params[0], param)})`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "toDP", (qb, exp, param) => `ROUND(${qb.toString(exp.objectOperand, param)}, ${qb.toString(exp.params[0], param)})`, o => o.params.length === 1);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "toDecimalPlaces", (qb, exp, param) => `ROUND(${qb.toString(exp.objectOperand, param)}, ${qb.toString(exp.params[0], param)})`, o => o.params.length === 1);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "clamp", (qb, exp, context) => `LEAST(GREATEST(${qb.toString(exp.objectOperand, context)}, ${qb.toString(exp.params[0], context)}), ${qb.toString(exp.params[1], context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "clampedTo", (qb, exp, context) => `LEAST(GREATEST(${qb.toString(exp.objectOperand, context)}, ${qb.toString(exp.params[0], context)}), ${qb.toString(exp.params[1], context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "divToInt", (qb, exp, context) => `FLOOR(${qb.toString(exp.objectOperand, context)}/${qb.toString(exp.params[0], context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "dividedToIntegerBy", (qb, exp, context) => `FLOOR(${qb.toString(exp.objectOperand, context)}/${qb.toString(exp.params[0], context)})`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "toDP", (qb, exp, context) => `ROUND(${qb.toString(exp.objectOperand, context)}, ${qb.toString(exp.params[0], context)})`, o => o.params.length === 1);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "toDecimalPlaces", (qb, exp, context) => `ROUND(${qb.toString(exp.objectOperand, context)}, ${qb.toString(exp.params[0], context)})`, o => o.params.length === 1);
 
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "toNumber", (qb, exp, param) => `CAST(${qb.toString(exp.objectOperand, param)} as DOUBLE PRECISION)`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "toNearest", (qb, exp, param) => `ROUND(${qb.toString(exp.objectOperand, param)}/${qb.toString(exp.params[0], param)})*${qb.toString(exp.params[0], param)}`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "toPrecision", (qb, exp, param) => {
-        const ob = qb.toString(exp.objectOperand, param);
-        const paramQ = exp.params.length ? qb.toString(exp.params[0], param) : "0";
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "toNumber", (qb, exp, context) => `CAST(${qb.toString(exp.objectOperand, context)} as DOUBLE PRECISION)`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "toNearest", (qb, exp, context) => `ROUND(${qb.toString(exp.objectOperand, context)}/${qb.toString(exp.params[0], context)})*${qb.toString(exp.params[0], context)}`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "toPrecision", (qb, exp, context) => {
+        const ob = qb.toString(exp.objectOperand, context);
+        const paramQ = exp.params.length ? qb.toString(exp.params[0], context) : "0";
         return `CASE WHEN ${ob}=0 THEN 0
 ELSE ROUND(${ob}, ${paramQ} - FLOOR(LOG(10, ABS(${ob}))) - 1)
 END`;
     });
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "cmp", (qb, exp, param) => {
-        const obQ = qb.toString(exp.objectOperand, param);
-        const paramQ = qb.toString(exp.params[0], param);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "cmp", (qb, exp, context) => {
+        const obQ = qb.toString(exp.objectOperand, context);
+        const paramQ = qb.toString(exp.params[0], context);
         return `CASE WHEN ${obQ}<${paramQ} THEN -1 WHEN ${obQ}>${paramQ} THEN 1 ELSE 0 END`;
     }, o => o.params.length === 1);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "comparedTo", (qb, exp, param) => {
-        const obQ = qb.toString(exp.objectOperand, param);
-        const paramQ = qb.toString(exp.params[0], param);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "comparedTo", (qb, exp, context) => {
+        const obQ = qb.toString(exp.objectOperand, context);
+        const paramQ = qb.toString(exp.params[0], context);
         return `CASE WHEN ${obQ}<${paramQ} THEN -1 WHEN ${obQ}>${paramQ} THEN 1 ELSE 0 END`;
     }, o => o.params.length === 1);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "decimalPlaces", (qb, exp, param) => {
-        const obQ = qb.toString(exp.objectOperand, param);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "decimalPlaces", (qb, exp, context) => {
+        const obQ = qb.toString(exp.objectOperand, context);
         return `CASE WHEN ${obQ}=TRUNC(${obQ}) THEN 0 ELSE CHAR_LENGTH(SUBSTRING(CAST(${obQ} as VARCHAR) FROM POSITION('.' IN CAST(${obQ} AS VARCHAR)) + 1)) END`;
     });
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "dp", (qb, exp, param) => {
-        const obQ = qb.toString(exp.objectOperand, param);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "dp", (qb, exp, context) => {
+        const obQ = qb.toString(exp.objectOperand, context);
         return `CASE WHEN ${obQ}=TRUNC(${obQ}) THEN 0 ELSE CHAR_LENGTH(SUBSTRING(CAST(${obQ} as VARCHAR) FROM POSITION('.' IN CAST(${obQ} AS VARCHAR)) + 1)) END`;
     });
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "isInt", (qb, exp, param) => {
-        const obQ = qb.toString(exp.objectOperand, param);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "isInt", (qb, exp, context) => {
+        const obQ = qb.toString(exp.objectOperand, context);
         return `${obQ}=TRUNC(${obQ})`;
     });
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "isInteger", (qb, exp, param) => {
-        const obQ = qb.toString(exp.objectOperand, param);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "isInteger", (qb, exp, context) => {
+        const obQ = qb.toString(exp.objectOperand, context);
         return `${obQ}=TRUNC(${obQ})`;
     });
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "isNeg", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}<0`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "isNegative", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}<0`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "isPos", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}>0`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "isPositive", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}>0`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "isZero", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)}=0`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "isFinite", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)} ~ '^-?[0-9]+(\.[0-9]+)?$'`);
-    relationalQueryTranslator.registerMethod(Decimal.prototype, "isNaN", (qb, exp, param) => `${qb.toString(exp.objectOperand, param)} !~ '^-?[0-9]+(\.[0-9]+)?$'`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "isNeg", (qb, exp, context) => `${qb.toString(exp.objectOperand, context)}<0`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "isNegative", (qb, exp, context) => `${qb.toString(exp.objectOperand, context)}<0`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "isPos", (qb, exp, context) => `${qb.toString(exp.objectOperand, context)}>0`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "isPositive", (qb, exp, context) => `${qb.toString(exp.objectOperand, context)}>0`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "isZero", (qb, exp, context) => `${qb.toString(exp.objectOperand, context)}=0`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "isFinite", (qb, exp, context) => `${qb.toString(exp.objectOperand, context)} ~ '^-?[0-9]+(\.[0-9]+)?$'`);
+    relationalQueryTranslator.registerMethod(Decimal.prototype, "isNaN", (qb, exp, context) => `${qb.toString(exp.objectOperand, context)} !~ '^-?[0-9]+(\.[0-9]+)?$'`);
 
-    relationalQueryTranslator.registerMethod(Decimal, "random", (qb, exp, param) => {
+    relationalQueryTranslator.registerMethod(Decimal, "random", (qb, exp, context) => {
         if (!exp.params.length) {
             return `RANDOM()`;
         }
-        const paramQ = qb.toString(exp.params[0], param);
+        const paramQ = qb.toString(exp.params[0], context);
         return `FLOOR(RANDOM()* 10^${paramQ})/10^${paramQ}`;
     });
 }

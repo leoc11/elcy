@@ -429,7 +429,7 @@ FROM [Table1s] AS [entity0]
 INNER JOIN (
 	SELECT [entity0].[id]
 	FROM [fixture].[Table1s] AS [entity0]
-	WHERE (([entity0].[deleted]=0) AND ((([entity0].[integer]>@param0) AND ([entity0].[real] IS NOT DISTINCT FROM @param1)) AND ((COALESCE([entity0].[real], 0))=@param1)))
+	WHERE (([entity0].[deleted]=0) AND ([entity0].[integer]>@param0) AND ([entity0].[real] IS NOT DISTINCT FROM @param1) AND ((COALESCE([entity0].[real], 0))=@param1))
 	ORDER BY [entity0].[id]
 	OFFSET @param2 ROWS
 	FETCH NEXT @param3 ROWS ONLY
@@ -903,7 +903,7 @@ FROM [Table1s] AS [entity0]
 INNER JOIN (
 	SELECT [entity0].[id]
 	FROM [fixture].[Table1s] AS [entity0]
-	WHERE (([entity0].[deleted]=0) AND ((([entity0].[integer]>@param0) AND ([entity0].[real] IS NOT DISTINCT FROM @param1)) AND ((COALESCE([entity0].[real], 0))=@param1)))
+	WHERE (([entity0].[deleted]=0) AND ([entity0].[integer]>@param0) AND ([entity0].[real] IS NOT DISTINCT FROM @param1) AND ((COALESCE([entity0].[real], 0))=@param1))
 	ORDER BY [entity0].[id]
 	OFFSET @param2 ROWS
 	FETCH NEXT @param3 ROWS ONLY
@@ -928,7 +928,7 @@ Map {
     "query": 
 "DELETE [entity0]
 FROM [fixture].[Table1s] AS [entity0]
-WHERE (([entity0].[deleted]=0) AND ((([entity0].[integer]>@param0) AND ([entity0].[real] IS NOT DISTINCT FROM @param1)) AND ((COALESCE([entity0].[real], 0))=@param1)))"
+WHERE (([entity0].[deleted]=0) AND ([entity0].[integer]>@param0) AND ([entity0].[real] IS NOT DISTINCT FROM @param1) AND ((COALESCE([entity0].[real], 0))=@param1))"
 ,
     "type": 2,
   },

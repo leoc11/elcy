@@ -486,17 +486,19 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
 
             const param = new ParameterExpression("o", this.type as GenericType<T & object>);
             const paramId = new ParameterExpression("id", id.constructor as GenericType);
-            let andExp: IExpression<boolean>;
+            let pkFilter: IExpression<boolean>;
             if (isValueType) {
-                andExp = new EqualExpression(new MemberAccessExpression(param, dbSet.primaryKeys?.[0]?.propertyName), paramId);
+                pkFilter = new EqualExpression(new MemberAccessExpression(param, dbSet.primaryKeys?.[0]?.propertyName), paramId);
             }
             else {
+                const andExp = new AndExpression();
                 for (const pk of dbSet.primaryKeys) {
                     const d = new EqualExpression(new MemberAccessExpression(param, pk.propertyName), new MemberAccessExpression(paramId as IExpression<object>, pk.propertyName));
-                    andExp = andExp ? new AndExpression(andExp, d) : d;
+                    andExp.operands.push(d);
                 }
+                pkFilter = andExp.asOperand();
             }
-            const a = new FunctionExpression(andExp, [param]);
+            const a = new FunctionExpression(pkFilter, [param]);
             return this.parameter({ id }).filter(a as any).deferredFind();
         }
         else {
