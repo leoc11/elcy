@@ -1,5 +1,5 @@
 import { Uuid } from "src/Data/Uuid";
-import { NullConstructor } from "../Common/Constant";
+import { Null } from "../Common/Constant";
 import { GenericType, IObjectType } from "../Common/Type";
 import { DbFunction } from "../Query/DbFunction";
 import { ArrayValueExpression } from "./Expression/ArrayValueExpression";
@@ -371,7 +371,7 @@ function getConstructor(data: unknown): GenericType {
         }
         return constructor;
     }
-    return NullConstructor;
+    return Null;
 }
 function createKeywordExpression(param: SyntaticParameter, token: ILexicalToken): IExpression {
     throw new Error(`keyword ${token.data} not supported`);

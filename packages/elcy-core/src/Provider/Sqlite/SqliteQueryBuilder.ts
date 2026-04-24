@@ -1,18 +1,14 @@
 import { Enumerable, isNull } from "@elcy/enumerable";
 import { QueryType } from "../../Common/Enum";
-import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
-import { GenericType, StringKeyOf, ValueType } from "../../Common/Type";
+import { StringKeyOf, ValueType } from "../../Common/Type";
 import { Version } from "../../Common/Version";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
-import { TimeSpan } from "../../Data/TimeSpan";
-import { Uuid } from "../../Data/Uuid";
 import { IQuery } from "../../Query/IQuery";
 import { IQueryBuilderContext } from "../../Query/IQueryBuilderContext";
 import { IQueryOption } from "../../Query/IQueryOption";
 import { ISqlParameterValueMap } from "../../Query/IQueryParameter";
 import { UpsertExpression } from "../../Queryable/QueryExpression/UpsertExpression";
 import { RelationalQueryBuilder } from "../Relational/RelationalQueryBuilder";
-import { SqliteColumnType } from "./SqliteColumnType";
 import { sqliteQueryTranslator } from "./SqliteQueryTranslator";
 import { SelectExpression } from "src/Queryable/QueryExpression/SelectExpression";
 import { IEntityExpression } from "src/Queryable/QueryExpression/IEntityExpression";
@@ -31,15 +27,6 @@ export class SqliteQueryBuilder extends RelationalQueryBuilder {
         maxQueryLength: 1000000
     };
     public override translator = sqliteQueryTranslator;
-    public valueTypeMap = new Map<GenericType, (value?: unknown) => ICompleteColumnType<SqliteColumnType>>([
-        [TimeSpan, () => ({ columnType: "text" })],
-        [BigInt, () => ({ columnType: "integer", group: "BigInt" })],
-        [Date, () => ({ columnType: "text" })],
-        [String, () => ({ columnType: "text" })],
-        [Number, () => ({ columnType: "numeric", group: "Real" })],
-        [Boolean, () => ({ columnType: "integer" })],
-        [Uuid, () => ({ columnType: "text" })]
-    ]);
     protected override getPagingQueryString(select: SelectExpression, context?: IQueryBuilderContext): string {
         let result = "";
         if (select.paging.take) {

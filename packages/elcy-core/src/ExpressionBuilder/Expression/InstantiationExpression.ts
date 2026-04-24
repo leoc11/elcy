@@ -1,4 +1,4 @@
-import { NullConstructor } from "../../Common/Constant";
+import { Null } from "../../Common/Constant";
 import { IObjectType } from "../../Common/Type";
 import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 import { IExpression } from "./IExpression";
@@ -9,7 +9,7 @@ export class InstantiationExpression<T = unknown> implements IExpression<T> {
             return this.typeOperand.value;
         }
         catch {
-            return NullConstructor;
+            return Null;
         }
     }
     constructor(public typeOperand: ValueExpression<IObjectType<T>>, public params: IExpression[]) { }

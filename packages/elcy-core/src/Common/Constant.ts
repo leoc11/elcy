@@ -1,4 +1,4 @@
-import { GenericType } from "./Type";
+import { GenericType, PrimitiveType } from "./Type";
 
 export const ClassBase = Object.getPrototypeOf(Function) as GenericType;
-export const NullConstructor: () => null = () => null;
+export const Null: PrimitiveType<null> = () => null;

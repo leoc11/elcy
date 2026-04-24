@@ -11,9 +11,20 @@ import { QueryTranslator } from "../../Query/QueryTranslator";
 import { relationalQueryTranslator } from "../Relational/RelationalQueryTranslator";
 import { IExpression } from "src/ExpressionBuilder/Expression/IExpression";
 import { isNonNullExp } from "src/Helper/Util";
+import { Null } from "src/Common/Constant";
+import { Uuid } from "src/Data/Uuid";
+import { Temporal } from "src/Data/Temporal";
+import { Decimal } from "src/Data/Decimal";
 
 export const sqliteQueryTranslator = new QueryTranslator(Symbol("sqlite"));
 sqliteQueryTranslator.registerFallbacks(relationalQueryTranslator);
+
+sqliteQueryTranslator.registerColumnType(Null, { columnType: "text", group: "String" });
+sqliteQueryTranslator.registerColumnType(String, { columnType: "text", group: "String" });
+sqliteQueryTranslator.registerColumnType(Date, { columnType: "text", group: "String" });
+sqliteQueryTranslator.registerColumnType(BigInt, { columnType: "integer", group: "BigInt" });
+sqliteQueryTranslator.registerColumnType(Number, { columnType: "real", group: "String" });
+sqliteQueryTranslator.registerColumnType(Uuid, { columnType: "text", group: "String" });
 
 const equalTranslator = (qb: IQueryBuilder, exp: IBinaryOperatorExpression, context: IQueryBuilderContext) => {
     const leftExpString = qb.toOperandString(exp.leftOperand, context);
@@ -181,3 +192,14 @@ sqliteQueryTranslator.registerOperator(AdditionExpression, (qb, exp, param) => `
  */
 sqliteQueryTranslator.registerMethod(DbFunction, "timestamp", () => "STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW', 'LOCALTIME')");
 sqliteQueryTranslator.registerMethod(DbFunction, "utcTimestamp", () => "STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW')");
+
+
+if (Temporal) {
+    sqliteQueryTranslator.registerColumnType(Temporal.Instant, { columnType: "text", group: "String" });
+    sqliteQueryTranslator.registerColumnType(Temporal.PlainDate, { columnType: "text", group: "String" });
+    sqliteQueryTranslator.registerColumnType(Temporal.PlainTime, { columnType: "text", group: "String" });
+}
+
+if (Decimal) {
+    sqliteQueryTranslator.registerColumnType(Decimal, { columnType: "real", group: "String" });
+}

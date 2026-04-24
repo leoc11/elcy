@@ -8544,9 +8544,9 @@ exports[`Mssql QUERYABLE ARRAY PARAMETER should work in select (Relation/Array) 
         "query": 
 "CREATE TABLE [#ad_1]
 (
-	[__index] decimal(18, 0),
+	[__index] decimal(18, 6),
 	[table1Id] bigint,
-	[integer] decimal(18, 0)
+	[integer] decimal(18, 6)
 )"
 ,
         "type": 36,
@@ -8591,9 +8591,9 @@ WHERE (([entity0].[deleted]=0) AND ([entity0].[decimalNumber]<=20000))"
 
 CREATE TABLE [#ad_1]
 (
-	[__index] decimal(18, 0),
+	[__index] decimal(18, 6),
 	[table1Id] bigint,
-	[integer] decimal(18, 0)
+	[integer] decimal(18, 6)
 );
 
 INSERT INTO [#ad_1]([__index], [table1Id], [integer])

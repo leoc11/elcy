@@ -1,10 +1,7 @@
 import { Enumerable, IEnumerable, isNull } from "@elcy/enumerable";
 import { IQuery } from "src/Query/IQuery";
-import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
 import { GenericType, StringKeyOf } from "../../Common/Type";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
-import { TimeSpan } from "../../Data/TimeSpan";
-import { Uuid } from "../../Data/Uuid";
 import { RelationalQueryBuilder } from "../Relational/RelationalQueryBuilder";
 import { IQueryBuilderContext } from "src/Query/IQueryBuilderContext";
 import { SqlParameterExpression } from "src/Queryable/QueryExpression/SqlParameterExpression";
@@ -29,16 +26,6 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
         maxParameters: 34464
     };
     public override translator = postgresqlQueryTranslator;
-    public valueTypeMap = new Map<GenericType, (value?: unknown) => ICompleteColumnType>([
-        [Uuid, () => ({ columnType: "uuid", group: "Identifier" })],
-        [BigInt, () => ({ columnType: "bigint", group: "BigInt" })],
-        [TimeSpan, () => ({ columnType: "time", group: "Time" })],
-        [Date, () => ({ columnType: "datetime", group: "DateTime" })],
-        [String, (val: string) => ({ columnType: "nvarchar", group: "String", option: { length: Math.ceil(val.length / 50) * 50 } })],
-        [Number, () => ({ columnType: "decimal", group: "Decimal" })],
-        [Boolean, () => ({ columnType: "bit", group: "Boolean" })]
-    ]);
-
     public override enclose(identity: string) {
         let requireEscape = this.namingStrategy.enableEscape;
         if (!requireEscape) {
@@ -118,8 +105,7 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
                     valueType = itemType;
                 }
                 if (!columnType) {
-                    const colTypeFactory = this.valueTypeMap.get(valueType);
-                    const colType = colTypeFactory();
+                    const colType = this.translator.resolveColumnType(valueType);
                     columnType = this.columnTypeString(colType);
                 }
                 return `$${index + i}::${columnType}[]`

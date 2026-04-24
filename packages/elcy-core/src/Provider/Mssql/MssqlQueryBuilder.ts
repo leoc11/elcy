@@ -1,9 +1,6 @@
 import { QueryType } from "../../Common/Enum";
-import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
 import { GenericType, IObjectType, SetterObj, StringKeyOf } from "../../Common/Type";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
-import { TimeSpan } from "../../Data/TimeSpan";
-import { Uuid } from "../../Data/Uuid";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 import { isColumnExp, isNotNull, isNull } from "../../Helper/Util";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
@@ -17,7 +14,6 @@ import { InsertExpression } from "../../Queryable/QueryExpression/InsertExpressi
 import { SqlParameterExpression } from "../../Queryable/QueryExpression/SqlParameterExpression";
 import { UpdateExpression } from "../../Queryable/QueryExpression/UpdateExpression";
 import { RelationalQueryBuilder } from "../Relational/RelationalQueryBuilder";
-import { MssqlColumnType } from "./MssqlColumnType";
 import { mssqlQueryTranslator } from "./MssqlQueryTranslator";
 import { Enumerable } from "@elcy/enumerable";
 import { IExpression } from "src/ExpressionBuilder/Expression/IExpression";
@@ -42,8 +38,6 @@ import { SelectExpression } from "src/Queryable/QueryExpression/SelectExpression
 import { DeleteExpression } from "src/Queryable/QueryExpression/DeleteExpression";
 import { UpsertExpression } from "src/Queryable/QueryExpression/UpsertExpression";
 import { RawSqlExpression } from "src/Queryable/QueryExpression/RawSqlExpression";
-import { Temporal } from "src/Data/Temporal";
-import { Decimal } from "src/Data/Decimal";
 import { ArrayExtension } from "src/Extensions/ArrayExtension";
 
 export class MssqlQueryBuilder extends RelationalQueryBuilder {
@@ -52,20 +46,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
         maxQueryLength: 67108864
     };
     public override translator = mssqlQueryTranslator;
-    public valueTypeMap = new Map<GenericType, (value?: unknown) => ICompleteColumnType<MssqlColumnType>>([
-        [Uuid, () => ({ columnType: "uniqueidentifier", group: "Identifier" })],
-        [BigInt, () => ({ columnType: "bigint", group: "BigInt" })],
-        [TimeSpan, () => ({ columnType: "time", group: "Time" })],
-        [Date, () => ({ columnType: "datetime", group: "DateTime" })],
-        [String, () => ({ columnType: "nvarchar", group: "String", option: { length: 255 } })],
-        [Number, () => ({ columnType: "decimal", group: "Decimal", option: { precision: 18, scale: 0 } })],
-        [Boolean, () => ({ columnType: "bit", group: "Boolean" })],
-        [Uint8Array, () => ({ columnType: "varbinary", group: "Binary" })],
-        [Temporal.PlainDate, () => ({ columnType: "date", group: "Date" })],
-        [Temporal.Instant, () => ({ columnType: "datetime2", group: "DateTime" })],
-        [Temporal.PlainTime, () => ({ columnType: "time", group: "Time" })],
-        [Decimal, () => ({ columnType: "decimal", group: "Decimal" })]
-    ]);
+    
     public override encloseIdentifier(identity: string) {
         return `[${identity}]`;
     }
@@ -367,9 +348,6 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
         }
         return super.toPropertyValue(input, column);
     }
-    protected override booleanString(value: boolean) {
-        return value ? "1" : "0";
-    }
     protected override getParameter(context: IQueryBuilderContext) {
         const paramObj = new Map<string, any>();
         let qparams = this.getQueryParameters(context);
@@ -408,8 +386,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
                     valueType = itemType;
                 }
                 if (!columnType) {
-                    const colTypeFactory = this.valueTypeMap.get(valueType);
-                    const colType = colTypeFactory();
+                    const colType = this.translator.resolveColumnType(valueType);
                     columnType = this.columnTypeString(colType);
                 }
                 return `${this.enclose(col.columnName)} ${columnType} '$.${col.propertyName}'`;
@@ -426,9 +403,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
             type: QueryType.DDL
         });
         const columnDefinition = tvpExp.columns.map((c) => {
-            const colTypeFactory = this.valueTypeMap.get(c.type);
-            const maxValue = Enumerable.from(values).map((o) => (o[c.propertyName] as string)?.length).max();
-            const colType = colTypeFactory(maxValue);
+            const colType = this.translator.resolveColumnType(c.type);
             return `${this.enclose(c.columnName)} ${this.columnTypeString(colType)}`;
         }).join("," + this.newLine(1, false));
 

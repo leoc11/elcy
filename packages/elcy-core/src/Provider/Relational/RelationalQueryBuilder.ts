@@ -1,7 +1,7 @@
 import { QueryType } from "../../Common/Enum";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
 import { TimeZoneHandling } from "../../Common/StringType";
-import { ArrayView, GenericType, MethodKey, MethodReturnType, SetterObj, StringKeyOf, ValueType } from "../../Common/Type";
+import { GenericType, MethodKey, MethodReturnType, SetterObj, StringKeyOf, ValueType } from "../../Common/Type";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
 import { TimeSpan } from "../../Data/TimeSpan";
 import { Uuid } from "../../Data/Uuid";
@@ -23,7 +23,7 @@ import { TernaryExpression } from "../../ExpressionBuilder/Expression/TernaryExp
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
 import { ExpressionExecutor } from "../../ExpressionBuilder/ExpressionExecutor";
-import { fillZero, isColumnExp, isEntityExp, isNotNull, isNull, isValue, mapReplaceExp, toDateTimeString, toHexaString, toTimeString } from "../../Helper/Util";
+import { fillZero, isColumnExp, isEntityExp, isNotNull, isNull, isValue, mapReplaceExp } from "../../Helper/Util";
 import { DateTimeColumnMetaData } from "../../MetaData/DateTimeColumnMetaData";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaData";
@@ -69,6 +69,7 @@ import { Decimal } from "src/Data/Decimal";
 import { SerializeColumnMetaData } from "src/MetaData/SerializeColumnMetaData";
 import { IQueryIncludeRelation } from "src/Queryable/QueryExpression/IQueryIncludeRelation";
 import { IMultiOperatorExpression } from "src/ExpressionBuilder/Expression/IMultiOperatorExpression";
+import { Null } from "src/Common/Constant";
 
 export abstract class RelationalQueryBuilder implements IQueryBuilder {
     public get lastInsertIdQuery() {
@@ -80,7 +81,6 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
     public namingStrategy: NamingStrategy;
     public abstract queryLimit: IQueryLimit;
     public translator = relationalQueryTranslator;
-    public abstract valueTypeMap: Map<GenericType, (value?: unknown) => ICompleteColumnType>;
 
     //#region Formatting
     protected indent = 0;
@@ -431,60 +431,18 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
     //#endregion
 
     //#region Value
-    public valueString(value: ValueType): string {
-        if (isNull(value)) {
-            return this.nullString();
+    public valueString<T extends ValueType>(value: T): string {
+        const type = (isNull(value) || (typeof value === "number" && !Number.isFinite(value))
+            ? Null : value.constructor) as GenericType<T>;
+
+        const valueTranslation = this.translator.resolveValue(type);
+        if (!valueTranslation) {
+            throw new Error(`type "${type.name}" not supported`);
         }
 
-        switch (value.constructor) {
-            case Number:
-                return this.numberString(value as number);
-            case BigInt:
-                return this.bigIntString(value as bigint);
-            case Boolean:
-                return this.booleanString(value as boolean);
-            case String:
-                return this.stringString(value as string);
-            case Date:
-                return this.dateTimeString(value as Date);
-            case TimeSpan:
-                return this.timeString(value as TimeSpan);
-            case Uuid:
-                return this.identifierString(value as Uuid);
-            case ArrayBuffer:
-            case Uint8Array:
-            case Uint16Array:
-            case Uint32Array:
-            case Int8Array:
-            case Int16Array:
-            case Int32Array:
-            case Uint8ClampedArray:
-            case Float32Array:
-            case Float64Array:
-            case DataView:
-                return toHexaString(value as (ArrayBuffer | ArrayView));
-            case Temporal.Instant: {
-                return this.stringString((value as Temporal.Instant).toString());
-            }
-            case Temporal.PlainDate: {
-                return this.stringString((value as Temporal.PlainDate).toString());
-            }
-            case Temporal.PlainTime: {
-                return this.stringString((value as Temporal.PlainTime).toString());
-            }
-            case Decimal: {
-                return this.stringString((value as Decimal).toFixed());
-            }
-            default:
-                throw new Error(`type "${value.constructor.name}" not supported`);
-        }
+        return valueTranslation(value);
     }
-    protected booleanString(value: boolean): string {
-        return value ? "true" : "false";
-    }
-    protected dateTimeString(value: Date): string {
-        return this.stringString(toDateTimeString(value));
-    }
+
     //#endregion
 
     //#region refactor
@@ -933,9 +891,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             type: QueryType.DDL
         });
         const columnDefinition = tvpExp.columns.map((c) => {
-            const colTypeFactory = this.valueTypeMap.get(c.type);
-            const maxValue = Enumerable.from(values).map((o) => (o[c.propertyName] as string)?.length).max();
-            const colType = colTypeFactory(maxValue);
+            const colType = this.translator.resolveColumnType(c.type);
             return `${this.enclose(c.columnName)} ${this.columnTypeString(colType)}`;
         }).join("," + this.newLine(1, false));
 
@@ -1151,35 +1107,12 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         result.push(...includedDeletes);
         return result;
     }
-    protected identifierString(value: Uuid): string {
-        return this.stringString(value.toString());
-    }
     protected isSimpleSelect(exp: SelectExpression) {
         return !(exp instanceof GroupByExpression) && !exp.where && exp.joins.length === 0
             && (!exp.parentRelation || exp.parentRelation instanceof JoinRelation && exp.parentRelation.childColumns.every((c) => exp.entity.columns.includes(c)))
             && !exp.paging.skip && !exp.paging.take
             && exp.selects.every((c) => !c.alias);
     }
-    protected nullString() {
-        return "NULL";
-    }
-    protected numberString(value: number) {
-        if (!Number.isFinite(value)) {
-            return this.nullString();
-        }
-
-        return value.toString();
-    }
-    protected bigIntString(value: bigint) {
-        return value.toString();
-    }
-    protected stringString(value: string) {
-        return "'" + value.replace(/'/ig, "''") + "'";
-    }
-    protected timeString(value: TimeSpan): string {
-        return this.stringString(toTimeString(value));
-    }
-
     //#endregion
 
     //#region IExpression

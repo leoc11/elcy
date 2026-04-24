@@ -20,6 +20,12 @@ import { ObjectValueExpression } from "src/ExpressionBuilder/Expression/ObjectVa
 
 export const mssqlQueryTranslator = new QueryTranslator(Symbol("mssql"));
 mssqlQueryTranslator.registerFallbacks(relationalQueryTranslator);
+
+mssqlQueryTranslator.registerColumnType(Uuid, { columnType: "uniqueidentifier", group: "Identifier" });
+mssqlQueryTranslator.registerColumnType(Date, { columnType: "datetime2", group: "Identifier" });
+mssqlQueryTranslator.registerColumnType(Boolean, { columnType: "bit", group: "Boolean" });
+mssqlQueryTranslator.registerValue(Boolean, (val) => val ? "1" : "0");
+
 mssqlQueryTranslator.registerMethod(Uuid, "new", () => "newid()", () => true);
 
 mssqlQueryTranslator.registerConstructor(Date, (qb, exp, param) => "getdate()", (exp: InstantiationExpression) => exp.params.length <= 0);
@@ -135,6 +141,8 @@ if (Decimal) {
 }
 
 if (Temporal) {
+    mssqlQueryTranslator.registerColumnType(Temporal.Instant, { columnType: "datetime2", group: "DateTime" });
+
     mssqlQueryTranslator.registerMember(Temporal.PlainDate.prototype, "year", (qb, exp, param) => `YEAR(${qb.toString(exp.objectOperand, param)})`);
     mssqlQueryTranslator.registerMember(Temporal.PlainDate.prototype, "month", (qb, exp, param) => `MONTH(${qb.toString(exp.objectOperand, param)})`);
     mssqlQueryTranslator.registerMember(Temporal.PlainDate.prototype, "day", (qb, exp, param) => `DAY(${qb.toString(exp.objectOperand, param)})`);

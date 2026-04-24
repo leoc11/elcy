@@ -10,11 +10,14 @@ import { IQueryBuilder } from "./IQueryBuilder";
 import { IQueryBuilderContext } from "./IQueryBuilderContext";
 import { IQueryTranslatorItem } from "./IQueryTranslatorItem";
 import { IMultiOperatorExpression } from "src/ExpressionBuilder/Expression/IMultiOperatorExpression";
+import { ICompleteColumnType } from "src/Common/ICompleteColumnType";
 
 export class QueryTranslator {
     constructor(public key: symbol) { }
     protected fallbacks: QueryTranslator[] = [];
     private _map = new Map<any, { [key: string]: IQueryTranslatorItem }>();
+    private _valueMap = new Map<GenericType, (value: unknown) => string>();
+    private _valueColumnTypeMap = new Map<GenericType, ICompleteColumnType>();
     public registerFallbacks(...fallbacks: QueryTranslator[]) {
         this.fallbacks.push(...fallbacks);
     }
@@ -68,7 +71,7 @@ export class QueryTranslator {
     }
     public registerConstructor<T, TExp extends InstantiationExpression<T>>(type: PrimitiveType<T>, translate: (qb: IQueryBuilder, exp: TExp, context?: IQueryBuilderContext) => string, isTranslate?: (exp: TExp) => boolean): void;
     public registerConstructor<T, TExp extends InstantiationExpression<T>>(type: GenericType<T>, translate: (qb: IQueryBuilder, exp: TExp, context?: IQueryBuilderContext) => string, isTranslate?: (exp: TExp) => boolean): void;
-    public registerConstructor<T, TExp extends InstantiationExpression<T>>(type: GenericType<T>, translate: (qb: IQueryBuilder, exp: TExp, context?: IQueryBuilderContext) => string, isTranslate:(exp: TExp) => boolean = (exp: TExp) => false) {
+    public registerConstructor<T, TExp extends InstantiationExpression<T>>(type: GenericType<T>, translate: (qb: IQueryBuilder, exp: TExp, context?: IQueryBuilderContext) => string, isTranslate: (exp: TExp) => boolean = (exp: TExp) => false) {
         let map = this._map.get(type);
         if (!map) {
             map = {};
@@ -93,5 +96,41 @@ export class QueryTranslator {
             }
         }
         return item;
+    }
+    public registerValue<T>(type: PrimitiveType<T>, translate: (value: T) => string): void;
+    public registerValue<T>(type: IObjectType<T>, translate: (value: T) => string): void;
+    public registerValue<T>(type: GenericType<T>, translate: (value: T) => string) {
+        this._valueMap.set(type, translate);
+    }
+    public registerColumnType<T>(type: PrimitiveType<T>, columnType: ICompleteColumnType): void;
+    public registerColumnType<T>(type: IObjectType<T>, columnType: ICompleteColumnType): void;
+    public registerColumnType<T>(type: GenericType<T>, columnType: ICompleteColumnType) {
+        this._valueColumnTypeMap.set(type, columnType);
+    }
+    public resolveValue<T>(type: GenericType<T>): (val: T) => string {
+        let translator = this._valueMap.get(type);
+        if (translator === undefined) {
+            for (const fallback of this.fallbacks) {
+                translator = fallback.resolveValue(type);
+                if (translator) {
+                    break;
+                }
+            }
+        }
+
+        return translator;
+    }
+    public resolveColumnType<T>(type: GenericType<T>) {
+        let columnType = this._valueColumnTypeMap.get(type);
+        if (columnType === undefined) {
+            for (const fallback of this.fallbacks) {
+                columnType = fallback.resolveColumnType(type);
+                if (columnType) {
+                    break;
+                }
+            }
+        }
+
+        return columnType;
     }
 }

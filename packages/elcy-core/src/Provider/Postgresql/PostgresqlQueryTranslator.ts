@@ -4,9 +4,13 @@ import { relationalQueryTranslator } from "../Relational/RelationalQueryTranslat
 import { ObjectValueExpression } from "src/ExpressionBuilder/Expression/ObjectValueExpression";
 import { IExpression } from "src/ExpressionBuilder/Expression/IExpression";
 import { Temporal } from "src/Data/Temporal";
+import { Null } from "src/Common/Constant";
 
 export const postgresqlQueryTranslator = new QueryTranslator(Symbol("postgresql"));
 postgresqlQueryTranslator.registerFallbacks(relationalQueryTranslator);
+
+postgresqlQueryTranslator.registerColumnType(Null, { columnType: "text", group: "String" });
+postgresqlQueryTranslator.registerColumnType(String, { columnType: "text", group: "String" });
 
 relationalQueryTranslator.registerFn(String, (qb, exp, param) => `CAST(${qb.toString(exp.params[0], param)} AS text)`);
 relationalQueryTranslator.registerMethod(BigInt.prototype, "toString", (qb, exp, param) => `CAST(${qb.toString(exp.objectOperand, param)} AS text)`);

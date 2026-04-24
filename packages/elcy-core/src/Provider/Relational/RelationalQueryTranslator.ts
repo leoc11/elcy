@@ -52,10 +52,56 @@ import { IExpression } from "src/ExpressionBuilder/Expression/IExpression";
 import { ObjectValueExpression } from "src/ExpressionBuilder/Expression/ObjectValueExpression";
 import { ValueExpression } from "src/ExpressionBuilder/Expression/ValueExpression";
 import { SqlParameterExpression } from "src/Queryable/QueryExpression/SqlParameterExpression";
-import { isEntityExp, isNonNullExp } from "src/Helper/Util";
+import { isEntityExp, isNonNullExp, toDateTimeString, toHexaString } from "src/Helper/Util";
 import { NullCoalesceExpression } from "src/ExpressionBuilder/Expression/NullCoalesceExpression";
+import { Null } from "src/Common/Constant";
+import { TimeSpan } from "src/Data/TimeSpan";
+import { Uuid } from "src/Data/Uuid";
 
 export const relationalQueryTranslator = new QueryTranslator(Symbol("relational"));
+
+//#region Value Translator
+relationalQueryTranslator.registerValue(Null, _ => "NULL");
+relationalQueryTranslator.registerValue(String, val => `'${val.replace(/'/ig, "''")}'`);
+relationalQueryTranslator.registerValue(Number, val => String(val));
+relationalQueryTranslator.registerValue(BigInt, val => String(val));
+relationalQueryTranslator.registerValue(Boolean, val => val ? "true" : "false");
+relationalQueryTranslator.registerValue<Date>(Date, val => `'${toDateTimeString(val)}'`);
+relationalQueryTranslator.registerValue(TimeSpan, val => `'${val}'`);
+relationalQueryTranslator.registerValue(Uuid, val => `'${val}'`);
+relationalQueryTranslator.registerValue(ArrayBuffer, toHexaString);
+relationalQueryTranslator.registerValue(Uint8Array, toHexaString);
+relationalQueryTranslator.registerValue(Uint16Array, toHexaString);
+relationalQueryTranslator.registerValue(Uint32Array, toHexaString);
+relationalQueryTranslator.registerValue(Int8Array, toHexaString);
+relationalQueryTranslator.registerValue(Int16Array, toHexaString);
+relationalQueryTranslator.registerValue(Int32Array, toHexaString);
+relationalQueryTranslator.registerValue(Uint8ClampedArray, toHexaString);
+relationalQueryTranslator.registerValue(Float32Array, toHexaString);
+relationalQueryTranslator.registerValue(Float64Array, toHexaString);
+relationalQueryTranslator.registerValue(DataView, toHexaString);
+
+relationalQueryTranslator.registerColumnType(Null, { columnType: "nvarchar", option: { length: 255 }, group: "String" });
+relationalQueryTranslator.registerColumnType(String, { columnType: "nvarchar", option: { length: 255 }, group: "String" });
+relationalQueryTranslator.registerColumnType(Number, { columnType: "decimal", option: { precision: 18, scale: 6 }, group: "Decimal" });
+relationalQueryTranslator.registerColumnType(BigInt, { columnType: "bigint", group: "BigInt" });
+relationalQueryTranslator.registerColumnType(Boolean, { columnType: "boolean", group: "Boolean" });
+relationalQueryTranslator.registerColumnType(Date, { columnType: "datetime", group: "DateTime" });
+relationalQueryTranslator.registerColumnType(TimeSpan, { columnType: "time", group: "Time" });
+relationalQueryTranslator.registerColumnType(Uuid, { columnType: "uuid", group: "Identifier" });
+relationalQueryTranslator.registerColumnType(ArrayBuffer, { columnType: "varbinary", group: "Binary" });
+relationalQueryTranslator.registerColumnType(Uint8Array, { columnType: "varbinary", group: "Binary" });
+relationalQueryTranslator.registerColumnType(Uint16Array, { columnType: "varbinary", group: "Binary" });
+relationalQueryTranslator.registerColumnType(Uint32Array, { columnType: "varbinary", group: "Binary" });
+relationalQueryTranslator.registerColumnType(Int8Array, { columnType: "varbinary", group: "Binary" });
+relationalQueryTranslator.registerColumnType(Int16Array, { columnType: "varbinary", group: "Binary" });
+relationalQueryTranslator.registerColumnType(Int32Array, { columnType: "varbinary", group: "Binary" });
+relationalQueryTranslator.registerColumnType(Uint8ClampedArray, { columnType: "varbinary", group: "Binary" });
+relationalQueryTranslator.registerColumnType(Float32Array, { columnType: "varbinary", group: "Binary" });
+relationalQueryTranslator.registerColumnType(Float64Array, { columnType: "varbinary", group: "Binary" });
+relationalQueryTranslator.registerColumnType(DataView, { columnType: "varbinary", group: "Binary" });
+
+//#endregion
 
 //#region Function
 
@@ -393,6 +439,13 @@ if (Temporal) {
      * Temporal.Instant
      * TODO: since, until
      */
+    relationalQueryTranslator.registerValue(Temporal.Instant, (val) => `'${val}'`);
+    relationalQueryTranslator.registerValue(Temporal.PlainDate, (val) => `'${val}'`);
+    relationalQueryTranslator.registerValue(Temporal.PlainTime, (val) => `'${val}'`);
+
+    relationalQueryTranslator.registerColumnType(Temporal.Instant, { columnType: "datetime", group: "DateTime" });
+    relationalQueryTranslator.registerColumnType(Temporal.PlainDate, { columnType: "date", group: "Date" });
+    relationalQueryTranslator.registerColumnType(Temporal.PlainTime, { columnType: "time", group: "Date" });
 
     relationalQueryTranslator.registerMethod(Temporal.Instant, "compare", (qb, exp, context) => {
         const param1 = qb.toString(exp.params[0], context);
@@ -805,6 +858,9 @@ if (Temporal) {
 }
 
 if (Decimal) {
+    relationalQueryTranslator.registerValue(Decimal, (val) => val.toFixed());
+    relationalQueryTranslator.registerColumnType(Decimal, { columnType: "decimal", option: { precision: 18, scale: 6 }, group: "Decimal" });
+
     /**
      * Decimal
      * TODO: toSD, toSignificantDigits, static methods

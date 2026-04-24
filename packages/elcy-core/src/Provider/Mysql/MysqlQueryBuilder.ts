@@ -6,13 +6,9 @@ import { IQueryOption } from "src/Query/IQueryOption";
 import { IQueryParameterValue, ISqlParameterValueMap } from "src/Query/IQueryParameter";
 import { InsertExpression } from "src/Queryable/QueryExpression/InsertExpression";
 import { SqlParameterExpression } from "src/Queryable/QueryExpression/SqlParameterExpression";
-import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
 import { GenericType, SetterObj, StringKeyOf, ValueType } from "../../Common/Type";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
-import { TimeSpan } from "../../Data/TimeSpan";
-import { Uuid } from "../../Data/Uuid";
 import { RelationalQueryBuilder } from "../Relational/RelationalQueryBuilder";
-import { MysqlColumnType } from "./MysqlColumnType";
 import { EntityExpression } from "src/Queryable/QueryExpression/EntityExpression";
 import { IntegerColumnMetaData } from "src/MetaData/IntegerColumnMetaData";
 import { StrictEqualExpression } from "src/ExpressionBuilder/Expression/StrictEqualExpression";
@@ -39,16 +35,7 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
         maxParameters: 65535,
         maxQueryLength: 8388608
     };
-    public valueTypeMap = new Map<GenericType, (value?: unknown) => ICompleteColumnType<MysqlColumnType>>([
-        [Uuid, () => ({ columnType: "binary", option: { size: 16 } })],
-        [BigInt, () => ({ columnType: "bigint", group: "BigInt" })],
-        [TimeSpan, () => ({ columnType: "time" })],
-        [Date, () => ({ columnType: "datetime" })],
-        [String, (val: string) => ({ columnType: "varchar", option: { length: 255 + (Math.ceil(Math.max(val.length - 255, 0) / 50) * 50) } })],
-        [Number, () => ({ columnType: "decimal", option: { precision: 18, scale: 0 } })],
-        [Boolean, () => ({ columnType: "bit" })]
-    ]);
-
+    
     //#endregion
     protected override getInsertQuery<TE extends object>(insertExp: InsertExpression<TE>, option: IQueryOption, parameters: ISqlParameterValueMap): IQuery[] {
         if (insertExp.values.length <= 0) {
@@ -393,9 +380,7 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
             type: QueryType.DDL
         });
         const columnDefinition = tvpExp.columns.map((c) => {
-            const colTypeFactory = this.valueTypeMap.get(c.type);
-            const maxValue = Enumerable.from(values).map((o) => (o[c.propertyName] as string)?.length).max();
-            const colType = colTypeFactory(maxValue);
+            const colType = this.translator.resolveColumnType(c.type);
             return `${this.enclose(c.columnName)} ${this.columnTypeString(colType)}`;
         }).join("," + this.newLine(1, false));
 
@@ -470,8 +455,7 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
                     valueType = itemType;
                 }
                 if (!columnType) {
-                    const colTypeFactory = this.valueTypeMap.get(valueType);
-                    const colType = colTypeFactory();
+                    const colType = this.translator.resolveColumnType(valueType);
                     columnType = this.columnTypeString(colType);
                 }
                 return `${this.enclose(col.columnName)} ${columnType} PATH '$.${col.propertyName}'`;

@@ -8481,9 +8481,9 @@ exports[`Postgresql QUERYABLE ARRAY PARAMETER should work in select (Relation/Ar
         "query": 
 "CREATE TEMPORARY TABLE pg_temp."ad_1"
 (
-	"__index" decimal,
+	"__index" decimal(18, 6),
 	"table1Id" bigint,
-	"integer" decimal
+	"integer" decimal(18, 6)
 )"
 ,
         "type": 36,
@@ -8527,9 +8527,9 @@ WHERE (("entity0"."deleted"=false) AND ("entity0"."decimalNumber"<=20000))"
 
 CREATE TEMPORARY TABLE pg_temp."ad_1"
 (
-	"__index" decimal,
+	"__index" decimal(18, 6),
 	"table1Id" bigint,
-	"integer" decimal
+	"integer" decimal(18, 6)
 );
 
 INSERT INTO pg_temp."ad_1" AS "entity1"("__index","table1Id","integer") VALUES

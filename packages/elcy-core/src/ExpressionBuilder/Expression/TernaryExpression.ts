@@ -1,6 +1,6 @@
 import type { GenericType } from "../../Common/Type";
 import type { IExpression } from "./IExpression";
-import { NullConstructor } from "../../Common/Constant";
+import { Null } from "../../Common/Constant";
 import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
 
 export class TernaryExpression<T = unknown> implements IExpression<T> {
@@ -8,10 +8,10 @@ export class TernaryExpression<T = unknown> implements IExpression<T> {
         if (this.trueOperand.type === this.falseOperand.type) {
             return this.trueOperand.type;
         }
-        else if (this.trueOperand.type === NullConstructor) {
+        else if (this.trueOperand.type === Null) {
             return this.falseOperand.type;
         }
-        else if (this.falseOperand.type === NullConstructor) {
+        else if (this.falseOperand.type === Null) {
             return this.trueOperand.type;
         }
 

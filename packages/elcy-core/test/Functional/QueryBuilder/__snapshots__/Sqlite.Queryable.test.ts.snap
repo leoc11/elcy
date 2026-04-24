@@ -6317,9 +6317,9 @@ exports[`Sqlite QUERYABLE ARRAY PARAMETER should work in select (Relation/Array)
     "query": 
 "CREATE TEMPORARY TABLE temp."ad_1"
 (
-	"__index" numeric,
+	"__index" real,
 	"table1Id" integer,
-	"integer" numeric
+	"integer" real
 )"
 ,
     "type": 36,

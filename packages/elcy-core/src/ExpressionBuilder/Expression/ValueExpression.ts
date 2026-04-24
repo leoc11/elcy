@@ -1,4 +1,4 @@
-import { NullConstructor } from "../../Common/Constant";
+import { Null } from "../../Common/Constant";
 import { GenericType } from "../../Common/Type";
 import { hashCode } from "../../Helper/Util";
 import { IExpression } from "./IExpression";
@@ -6,7 +6,7 @@ import { IExpression } from "./IExpression";
 export class ValueExpression<T = unknown> implements IExpression<T> {
     public get type(): GenericType<T> {
         if (this.value === null || this.value === undefined) {
-            return NullConstructor;
+            return Null;
         }
         return this.value.constructor as GenericType<T>;
     }
