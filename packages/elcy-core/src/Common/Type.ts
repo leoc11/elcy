@@ -2,8 +2,6 @@ import type { QueryableChain } from "src/Queryable/Interface/QueryableChain";
 import type { TimeSpan } from "../Data/TimeSpan";
 import type { Uuid } from "../Data/Uuid";
 import type { IExpression } from "../ExpressionBuilder/Expression/IExpression";
-import type { Temporal } from "@js-temporal/polyfill";
-import type Decimal from "decimal.js";
 
 export type StringKeyOf<T> = Extract<keyof T, string>;
 export type PrimitiveType<T = unknown, TArgs extends readonly unknown[] = unknown[]> = { (...values: TArgs): T; };
@@ -25,7 +23,23 @@ export type KeysExceptType<TE, TVal> = { [P in StringKeyOf<TE>]: TE[P] extends T
 export type KeysType<TE, TVal> = { [P in StringKeyOf<TE>]: TE[P] extends TVal ? P : never }[StringKeyOf<TE>];
 export type KeyValue<TE, TVal = ValueType> = Extract<TE[keyof TE], TVal>;
 export type TypeItem<T> = (T extends Array<(infer U)> ? U : T);
-export type ValueType = number | bigint | string | boolean | Date | TimeSpan | Uuid | ArrayBufferView | ArrayBuffer | Temporal.Instant | Temporal.PlainDate | Temporal.PlainTime | Decimal;
+
+declare global {
+    interface ValueTypeRegistry {
+        number: number;
+        ArrayBufferLike: ArrayBufferLike;
+        bigint: bigint;
+        string: string;
+        boolean: boolean;
+        Date: Date;
+        TimeSpan: TimeSpan;
+        Uuid: Uuid;
+        ArrayBufferView: ArrayBufferView;
+        ArrayBuffer: ArrayBuffer;
+    }
+}
+
+export type ValueType = ValueTypeRegistry[keyof ValueTypeRegistry];
 export type ArrayView = Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array
     | Uint32Array | Uint8ClampedArray | Float32Array | Float64Array | ArrayBufferView;
 export type ElementType<T> = T extends (infer K)[] ? K : never;

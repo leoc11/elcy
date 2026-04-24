@@ -1,7 +1,6 @@
 import { Decimal } from "src/Data/Decimal";
 import { ArrayView, GenericType, IObjectType, PrimitiveType, ValueType } from "../Common/Type";
 import { TimeSpan } from "../Data/TimeSpan";
-import { Uuid } from "../Data/Uuid";
 import { IBinaryOperatorExpression } from "../ExpressionBuilder/Expression/IBinaryOperatorExpression";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { IMemberOperatorExpression } from "../ExpressionBuilder/Expression/IMemberOperatorExpression";
@@ -19,6 +18,7 @@ import { NullCoalesceExpression } from "src/ExpressionBuilder/Expression/NullCoa
 import { ValueExpression } from "src/ExpressionBuilder/Expression/ValueExpression";
 import { JoinRelation } from "src/Queryable/Interface/JoinRelation";
 import { IMultiOperatorExpression } from "src/ExpressionBuilder/Expression/IMultiOperatorExpression";
+import { Null } from "src/Common/Constant";
 
 export const isIterable = (value: unknown): value is Iterable<any> => {
     return typeof (value as any)?.[Symbol.iterator] === 'function';
@@ -254,37 +254,13 @@ export const isRelationMetaData = <TE extends object>(entityMeta: IEntityMetaDat
     return entityMeta.relations.includes(data as IRelationMetaData<TE>);
 };
 
+const VALUE_TYPES = new Set<GenericType>();
 export const isValueType = (type: GenericType) => {
-    switch (true) {
-        case type === Number:
-        case type === BigInt:
-        case type === String:
-        case type === Date:
-        case type === TimeSpan:
-        case type === Uuid:
-        case type === Boolean:
-        case type === ArrayBuffer:
-        // TypedArray
-        case type === Uint8Array:
-        case type === Uint16Array:
-        case type === Uint32Array:
-        case type === Int8Array:
-        case type === Int16Array:
-        case type === Int32Array:
-        case type === Uint8ClampedArray:
-        case type === Float32Array:
-        case type === Float64Array:
-        case type === DataView:
-        case Decimal && type === Decimal:
-        case Temporal && type === Temporal.Instant:
-        case Temporal && type === Temporal.PlainDate:
-        case Temporal && type === Temporal.PlainTime:
-            return true;
-        default: {
-            return false;
-        }
-    }
+    return type !== Null && VALUE_TYPES.has(type);
 };
+export const registerValueType = (type: GenericType) =>{
+    VALUE_TYPES.add(type);
+}
 export const isNotNull = <T>(value: T | null | undefined): value is T => value != null;
 export const isNull = (value: any): value is null => {
     return value == null;

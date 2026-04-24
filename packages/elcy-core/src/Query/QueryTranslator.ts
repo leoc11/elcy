@@ -11,6 +11,7 @@ import { IQueryBuilderContext } from "./IQueryBuilderContext";
 import { IQueryTranslatorItem } from "./IQueryTranslatorItem";
 import { IMultiOperatorExpression } from "src/ExpressionBuilder/Expression/IMultiOperatorExpression";
 import { ICompleteColumnType } from "src/Common/ICompleteColumnType";
+import { registerValueType } from "src/Helper/Util";
 
 export class QueryTranslator {
     constructor(public key: symbol) { }
@@ -106,6 +107,7 @@ export class QueryTranslator {
     public registerColumnType<T>(type: IObjectType<T>, columnType: ICompleteColumnType): void;
     public registerColumnType<T>(type: GenericType<T>, columnType: ICompleteColumnType) {
         this._valueColumnTypeMap.set(type, columnType);
+        registerValueType(type);
     }
     public resolveValue<T>(type: GenericType<T>): (val: T) => string {
         let translator = this._valueMap.get(type);

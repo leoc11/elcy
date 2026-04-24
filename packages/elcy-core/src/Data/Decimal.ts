@@ -1,4 +1,11 @@
 import type { Decimal as DecimalModule } from "decimal.js";
+
+declare global {
+    interface ValueTypeRegistry {
+        Decimal: Decimal;
+    }
+}
+
 let module: typeof import("decimal.js").default;
 
 try {

@@ -18,3 +18,11 @@ export namespace Temporal {
     export type RoundTo<T extends TemporalModule.DateTimeUnit> = TemporalModule.RoundTo<T>;
     export type SmallestUnit<T extends TemporalModule.DateTimeUnit> = TemporalModule.SmallestUnit<T>;
 }
+
+declare global {
+    interface ValueTypeRegistry {
+        Temporal_Instant: Temporal.Instant;
+        Temporal_PlainDate: Temporal.PlainDate;
+        Temporal_PlainTime: Temporal.PlainTime;
+    }
+}
