@@ -5,10 +5,11 @@
   "version": "0.2.0",
   "description": "ORM for Typescript and Javascript with Linq-like query syntax.",
   "scripts": {
+    "test": "bun run test:unit",
+    "test:unit": "bun test ./test --reporter=dots --coverage",
+    "test:watch": "bun test --include ./test/*.{test-d,test}.ts --watch",
     "tsc": "tsc --noEmit",
     "tsc:watch": "tsc --noEmit --watch",
-    "test": "vitest run",
-    "test:watch": "vitest",
     "lint": "eslint ./src",
     "lint-fix": "eslint ./src --fix"
   },
@@ -37,7 +38,9 @@
   },
   "peerDependencies": {
     "@js-temporal/polyfill": "^0.5.1",
-    "decimal.js": "^10.6.0"
+    "decimal.js": "^10.6.0",
+    "fast-xml-builder": "^1.1.5",
+    "fast-xml-parser": "^5.7.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.28.0",
