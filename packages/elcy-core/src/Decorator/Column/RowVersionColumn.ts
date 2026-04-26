@@ -17,6 +17,11 @@ export function RowVersionColumn<TE extends object>(optionOrName?: IRowVersionCo
         }
     }
 
+    if (option.columnType === "xmin") {
+        option.columnName = "xmin";
+        option.isSystemColumn = true;
+    }
+
     option.isReadOnly = true;
     const columnDecorator = Column<TE, number | Uint8Array>(Uint8Array, RowVersionColumnMetaData, option);
     return (target: undefined | ClassAccessor<bigint | Uint8Array>, context: ClassFieldDecoratorContext<TE, bigint | Uint8Array> | ClassAccessorDecoratorContext<TE, bigint | Uint8Array>) => {

@@ -19,6 +19,7 @@ export interface IColumnOption<T = any> {
     indexed?: boolean;
     isProjected?: boolean;
     isReadOnly?: boolean;
+    isSystemColumn?: boolean;
     nullable?: boolean;
     type?: GenericType<T>;
 }
