@@ -2,10 +2,7 @@
   "name": "elcy",
   "version": "0.2.0",
   "description": "",
-  "main": "index.js",
-  "scripts": {
-    "build": "pnpm -r build"
-  },
+  "workspaces": ["packages/*"],
   "keywords": [],
   "author": "",
   "license": "ISC"
