@@ -10,7 +10,7 @@ describe("POOLED CONNECTION MANAGER", () => {
         if (!option) {
             option = {};
         }
-        option = Object.assign({ maxConnection: 3, idleTimeout: 100, max: 2, min: 0, queueType: "fifo", acquireTimeout: 2000 }, option);
+        option = Object.assign({ maxConnection: 3, idleTimeout: 10, max: 2, min: 0, queueType: "fifo", acquireTimeout: 20 }, option);
         const manager = new PooledConnectionManager(new MockDriver({ allowPooling: true }), option);
         return manager;
     };
@@ -30,18 +30,22 @@ describe("POOLED CONNECTION MANAGER", () => {
         const con2 = await connectionManager.getConnection();
         const con3 = await connectionManager.getConnection();
 
-        await expect(connectionManager.getConnection()).rejects.toBeInstanceOf(ConnectionError);
+        expect(connectionManager.getConnection()).rejects.toBeInstanceOf(ConnectionError);
 
-		await con1.close();
-		await con2.close();
-		await con3.close();
+        await con1.close();
+
+        const con4 = await connectionManager.getConnection();
+        expect(con4).toBe(con1);
+
+        await con2.close();
+        await con3.close();
     });
     it("should release idle connection after exceed idle timeout", async () => {
         const connectionManager = getManager();
         const con1 = await connectionManager.getConnection();
         await con1.close();
         await new Promise<void>((resolve) => {
-            setTimeout(resolve, 101);
+            setTimeout(resolve, connectionManager.poolOption.idleTimeout + 1);
         });
         const con2 = await connectionManager.getConnection();
         await con2.close();
@@ -87,9 +91,9 @@ describe("POOLED CONNECTION MANAGER", () => {
         const con1 = await connectionManager.getConnection();
         const con2 = await connectionManager.getConnection();
         const con3 = await connectionManager.getConnection();
-        
-		await expect(connectionManager.getConnection()).rejects.toBeInstanceOf(ConnectionError);
-		
+
+        await expect(connectionManager.getConnection()).rejects.toBeInstanceOf(ConnectionError);
+
         await con1.close();
         await con2.close();
         await con3.close();
