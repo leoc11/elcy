@@ -230,6 +230,8 @@ relationalQueryTranslator.registerColumnType(SerializeColumnMetaData, { columnTy
 
 //#endregion
 
+relationalQueryTranslator.registerConstructor(Date, () => `CURRENT_TIMESTAMP`, exp => exp.params.length === 0);
+
 //#region Function
 
 relationalQueryTranslator.registerFn(parseInt, (qb, exp, context) => `CAST(${qb.toString(exp.params[0], context)} AS INT)`);
