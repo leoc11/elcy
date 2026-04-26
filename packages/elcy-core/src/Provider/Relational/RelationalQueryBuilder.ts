@@ -1,10 +1,7 @@
 import { QueryType } from "../../Common/Enum";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
-import { TimeZoneHandling } from "../../Common/StringType";
 import { GenericType, MethodKey, MethodReturnType, SetterObj, StringKeyOf, ValueType } from "../../Common/Type";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
-import { TimeSpan } from "../../Data/TimeSpan";
-import { Uuid } from "../../Data/Uuid";
 import { Enumerable, IEnumerable, IObjectType } from "@elcy/enumerable";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { ArrayValueExpression } from "../../ExpressionBuilder/Expression/ArrayValueExpression";
@@ -23,11 +20,8 @@ import { TernaryExpression } from "../../ExpressionBuilder/Expression/TernaryExp
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
 import { ExpressionExecutor } from "../../ExpressionBuilder/ExpressionExecutor";
-import { fillZero, isColumnExp, isEntityExp, isNotNull, isNull, isValue, mapReplaceExp } from "../../Helper/Util";
-import { DateTimeColumnMetaData } from "../../MetaData/DateTimeColumnMetaData";
+import { isColumnExp, isEntityExp, isNotNull, isNull, mapReplaceExp } from "../../Helper/Util";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
-import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaData";
-import { TimeColumnMetaData } from "../../MetaData/TimeColumnMetaData";
 import { BatchedQuery } from "../../Query/BatchedQuery";
 import { DbFunction } from "../../Query/DbFunction";
 import { IQuery } from "../../Query/IQuery";
@@ -64,13 +58,9 @@ import { relationalQueryTranslator } from "./RelationalQueryTranslator";
 import { ArrayExtension } from "src/Extensions/ArrayExtension";
 import { RawEntityExpression } from "src/Queryable/QueryExpression/RawEntityExpression";
 import { ConcatExpression } from "src/Queryable/QueryExpression/ConcatExpression";
-import { Temporal } from "src/Data/Temporal";
-import { Decimal } from "src/Data/Decimal";
-import { SerializeColumnMetaData } from "src/MetaData/SerializeColumnMetaData";
 import { IQueryIncludeRelation } from "src/Queryable/QueryExpression/IQueryIncludeRelation";
 import { IMultiOperatorExpression } from "src/ExpressionBuilder/Expression/IMultiOperatorExpression";
 import { Null } from "src/Common/Constant";
-import { DateExtension } from "src/Extensions/DateExtension";
 
 export abstract class RelationalQueryBuilder implements IQueryBuilder {
     public get lastInsertIdQuery() {
@@ -200,166 +190,47 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
     public toOperandString(expression: IExpression, context?: IQueryBuilderContext): string {
         return this.toString(expression, context);
     }
-    public toParameterValue(input: any, column: IColumnMetaData): any {
-        if (!isNotNull(input)) {
-            return null;
-        }
-        let result = input;
-        const type = column ? column.type : input.constructor;
-        switch (type) {
-            case Date: {
-                const timeZoneHandling: TimeZoneHandling = column instanceof DateTimeColumnMetaData ? column.timeZoneHandling : "none";
-                if (timeZoneHandling !== "none") {
-                    result = DateExtension.getUTCDate(result as Date);
-                }
-                break;
-            }
-            case TimeSpan: {
-                result = typeof input === "number" ? new TimeSpan(input) : TimeSpan.parse(input);
-                const timeZoneHandling: TimeZoneHandling = column instanceof TimeColumnMetaData ? column.timeZoneHandling : "none";
-                if (timeZoneHandling !== "none") {
-                    result = (result as TimeSpan).addMinutes((new Date(result.totalMilliSeconds())).getTimezoneOffset());
-                }
-                break;
-            }
-            case ArrayBuffer:
-            case Uint8Array:
-            case Uint16Array:
-            case Uint32Array:
-            case Int8Array:
-            case Int16Array:
-            case Int32Array:
-            case Uint8ClampedArray:
-            case Float32Array:
-            case Float64Array:
-            case DataView: {
-                result = new Uint8Array(input.buffer ? input.buffer : input);
-                if (column instanceof ColumnExpression && column.columnMeta instanceof RowVersionColumnMetaData) {
-                    return new DataView(result.buffer).getUint32(0);
-                }
-                break;
-            }
-        }
-        return result;
-    }
-
     //#endregion
 
     //#region Value Convert
-    public toPropertyValue<T>(input: any, column: IColumnMetaData<any, T>): T {
-        let result: any;
-        if (isNull(input) && column.nullable) {
+
+    public persistValue(value: any, column?: IColumnMetaData): any {
+        if (typeof value === "number" && !Number.isFinite(value)) {
+            value = null;
+        }
+
+        if (column?.nullable !== false && isNull(value)) {
             return null;
         }
-        if (column instanceof SerializeColumnMetaData) {
-            let data: any;
-            try {
-                data = JSON.parse(input);
-            } catch {
-                return null;
-            }
 
-            try {
-                const obj = new column.type();
-                const keys = Enumerable.from(Object.entries(obj))
-                    .filter(o => typeof o[1] !== "function" && (isNull(o[1]) || isValue(o[1])))
-                    .map(o => o[0])
-                    .union(Object.keys(data));
-
-                for (const key of keys) {
-                    obj[key] = data[key];
-                }
-
-                return obj;
-            }
-            catch {
-                return data;
-            }
+        const columnConfig = this.translator.resolveColumnType(column?.constructor as IObjectType<IColumnMetaData>);
+        if (columnConfig) {
+            return columnConfig.persist(value, column, this.translator);
         }
 
-        const type = column.type as GenericType;
-        switch (true) {
-            case type === Boolean:
-                result = Boolean(input);
-                break;
-            case type === BigInt: {
-                result = BigInt(input);
-                break;
-            }
-            case type === Number:
-                result = Number.parseFloat(input);
-                if (!isFinite(result)) {
-                    result = column.nullable ? null : 0;
-                }
-                break;
-            case type === String:
-                result = input ? input.toString() : input;
-                break;
-            case type === Date: {
-                result = new Date(input);
-                const timeZoneHandling: TimeZoneHandling = column instanceof DateTimeColumnMetaData ? column.timeZoneHandling : "none";
-                if (timeZoneHandling === "utc") {
-                    result = new Date(`${result.getFullYear()}-${fillZero(result.getMonth() + 1)}-${fillZero(result.getDate())}T${fillZero(result.getHours())}:${fillZero(result.getMinutes())}:${fillZero(result.getSeconds())}.${fillZero(result.getMilliseconds(), 3)}Z`);
-                }
-                break;
-            }
-            case type === TimeSpan: {
-                result = typeof input === "number" ? new TimeSpan(input) : TimeSpan.parse(input);
-                const timeZoneHandling: TimeZoneHandling = column instanceof TimeColumnMetaData ? column.timeZoneHandling : "none";
-                if (timeZoneHandling !== "none") {
-                    result = result.addMinutes(-(new Date(result.totalMilliSeconds())).getTimezoneOffset());
-                }
-                break;
-            }
-            case type === Uuid: {
-                result = input ? new Uuid(input.toString()) : Uuid.empty;
-                break;
-            }
-            case type === ArrayBuffer: {
-                result = input.buffer ? input.buffer : input;
-                break;
-            }
-            case type === Uint8Array:
-            case type === Uint16Array:
-            case type === Uint32Array:
-            case type === Int8Array:
-            case type === Int16Array:
-            case type === Int32Array:
-            case type === Uint8ClampedArray:
-            case type === Float32Array:
-            case type === Float64Array:
-            case type === DataView: {
-                if (typeof input === "number") {
-                    const dataView = new DataView(new ArrayBuffer(4));
-                    dataView.setUint32(0, input);
-                    input = dataView.buffer;
-                }
+        const valueConfig = this.translator.resolveValueType(column?.type ?? value?.constructor ?? Null);
+        return valueConfig.persist(value);
+    }
 
-                result = new (column.type as any)(input.buffer ? input.buffer : input);
-                break;
-            }
-            case Temporal && type === Temporal?.Instant: {
-                const date = new Date(input);
-                result = Temporal.Instant.fromEpochMilliseconds(date.getTime());
-                break;
-            }
-            case Temporal && type === Temporal?.PlainDate: {
-                const date = new Date(input);
-                result = new Temporal.PlainDate(date.getFullYear(), date.getMonth() + 1, date.getDate());
-                break;
-            }
-            case Temporal && type === Temporal.PlainTime: {
-                result = Temporal.PlainTime.from(String(input));
-                break;
-            }
-            case Decimal && type === Decimal: {
-                result = new Decimal(String(input));
-                break;
-            }
-            default:
-                throw new Error(`${column.type.name} not supported`);
+    public hydrateValue<T>(value: any, column: IColumnMetaData<any, T>): T {
+        if (typeof value === "number" && !Number.isFinite(value)) {
+            value = null;
         }
-        return result;
+        if (column.nullable && isNull(value)) {
+            return null;
+        }
+
+        const columnConfig = this.translator.resolveColumnType<T>(column.constructor as IObjectType<IColumnMetaData<any, T>>);
+        if (columnConfig) {
+            return columnConfig.hydrate(value, column, this.translator);
+        }
+
+        const valueConfig = this.translator.resolveValueType(column.type as GenericType<Extract<T, ValueType>>);
+        if (!valueConfig) {
+            throw new Error(`${column.type.name} not supported`);
+        }
+
+        return valueConfig.hydrate(value);
     }
 
     //#region Query
@@ -436,12 +307,12 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         const type = (isNull(value) || (typeof value === "number" && !Number.isFinite(value))
             ? Null : value.constructor) as GenericType<T>;
 
-        const valueTranslation = this.translator.resolveValue(type);
-        if (!valueTranslation) {
+        const valueTypeConfig = this.translator.resolveValueType(type);
+        if (!valueTypeConfig) {
             throw new Error(`type "${type.name}" not supported`);
         }
 
-        return valueTranslation(value);
+        return valueTypeConfig.toQueryValue(value);
     }
 
     //#endregion
@@ -892,8 +763,8 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             type: QueryType.DDL
         });
         const columnDefinition = tvpExp.columns.map((c) => {
-            const colType = this.translator.resolveColumnType(c.type);
-            return `${this.enclose(c.columnName)} ${this.columnTypeString(colType)}`;
+            const colType = this.translator.resolveValueType(c.type) ?? this.translator.resolveValueType(Null);
+            return `${this.enclose(c.columnName)} ${this.columnTypeString(colType.columnType)}`;
         }).join("," + this.newLine(1, false));
 
         const query = `CREATE TEMPORARY TABLE ${this.entityName(tvpExp)}` +

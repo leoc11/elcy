@@ -1,5 +1,5 @@
 import { InstantiationExpression } from "src/ExpressionBuilder/Expression/InstantiationExpression";
-import { GenericType, IObjectType, MethodKey, PrimitiveType, StringKeyOf } from "../Common/Type";
+import { DbValue, GenericType, IObjectType, MethodKey, PrimitiveType, StringKeyOf, ValueType } from "../Common/Type";
 import { FunctionCallExpression } from "../ExpressionBuilder/Expression/FunctionCallExpression";
 import { IBinaryOperatorExpression } from "../ExpressionBuilder/Expression/IBinaryOperatorExpression";
 import { IUnaryOperatorExpression } from "../ExpressionBuilder/Expression/IUnaryOperatorExpression";
@@ -12,13 +12,28 @@ import { IQueryTranslatorItem } from "./IQueryTranslatorItem";
 import { IMultiOperatorExpression } from "src/ExpressionBuilder/Expression/IMultiOperatorExpression";
 import { ICompleteColumnType } from "src/Common/ICompleteColumnType";
 import { registerValueType } from "src/Helper/Util";
+import { IColumnMetaData } from "src/MetaData/Interface/IColumnMetaData";
+
+type ValueTypeConfig<T extends ValueType = any> = {
+    hydrate(value: DbValue): T;
+    persist(value: T): DbValue;
+    toQueryValue(value: T): string;
+    columnType: ICompleteColumnType;
+};
+type ColumnTypeConfig<T = any> = {
+    hydrate(value: DbValue, meta: IColumnMetaData<any, T>, t: QueryTranslator): T;
+    persist(value: T, meta: IColumnMetaData<any, T>, t: QueryTranslator): ValueType;
+    columnType: ICompleteColumnType;
+};
 
 export class QueryTranslator {
     constructor(public key: symbol) { }
     protected fallbacks: QueryTranslator[] = [];
     private _map = new Map<any, { [key: string]: IQueryTranslatorItem }>();
-    private _valueMap = new Map<GenericType, (value: unknown) => string>();
-    private _valueColumnTypeMap = new Map<GenericType, ICompleteColumnType>();
+
+    private _valueTypeConfig = new Map<GenericType, ValueTypeConfig>();
+    private _columnTypeConfig = new Map<GenericType<IColumnMetaData<any, any, any>>, ColumnTypeConfig>();
+
     public registerFallbacks(...fallbacks: QueryTranslator[]) {
         this.fallbacks.push(...fallbacks);
     }
@@ -98,41 +113,65 @@ export class QueryTranslator {
         }
         return item;
     }
-    public registerValue<T>(type: PrimitiveType<T>, translate: (value: T) => string): void;
-    public registerValue<T>(type: IObjectType<T>, translate: (value: T) => string): void;
-    public registerValue<T>(type: GenericType<T>, translate: (value: T) => string) {
-        this._valueMap.set(type, translate);
+
+    public resolveValueType<T extends ValueType>(type: GenericType<T>): ValueTypeConfig<T> {
+        let config = this._valueTypeConfig.get(type);
+        if (config === undefined) {
+            for (const fallback of this.fallbacks) {
+                config = fallback.resolveValueType(type);
+                if (config) {
+                    break;
+                }
+            }
+        }
+
+        return config;
     }
-    public registerColumnType<T>(type: PrimitiveType<T>, columnType: ICompleteColumnType): void;
-    public registerColumnType<T>(type: IObjectType<T>, columnType: ICompleteColumnType): void;
-    public registerColumnType<T>(type: GenericType<T>, columnType: ICompleteColumnType) {
-        this._valueColumnTypeMap.set(type, columnType);
+    public registerValueType<T extends ValueType>(type: PrimitiveType<T>, columnType?: ICompleteColumnType, hydrate?: (value: DbValue) => T, persist?: (value: T) => DbValue, queryValue?: (value: T) => string): void;
+    public registerValueType<T extends ValueType>(type: IObjectType<T>, columnType?: ICompleteColumnType, hydrate?: (value: DbValue) => T, persist?: (value: T) => DbValue, queryValue?: (value: T) => string): void;
+    public registerValueType<T extends ValueType>(type: GenericType<T>, columnType?: ICompleteColumnType, hydrate?: (value: DbValue) => T, persist?: (value: T) => DbValue, queryValue?: (value: T) => string) {
+        const baseConfig = this.resolveValueType(type);
+        let config: ValueTypeConfig<T> = {
+            columnType: columnType ?? baseConfig?.columnType,
+            toQueryValue: queryValue ?? baseConfig?.toQueryValue ?? ((value: T) => `'${value?.toString().replace(/'/ig, "''")}'`),
+            persist: persist ?? baseConfig?.persist ?? ((value: T) => String(value)),
+            hydrate: hydrate ?? baseConfig?.hydrate ?? ((value: DbValue) => value as T)
+        };
+
+        if (!config.columnType || !config.persist || !config.toQueryValue) {
+            throw "missing parameter";
+        }
+
         registerValueType(type);
+        this._valueTypeConfig.set(type, config);
     }
-    public resolveValue<T>(type: GenericType<T>): (val: T) => string {
-        let translator = this._valueMap.get(type);
-        if (translator === undefined) {
+
+    public resolveColumnType<T>(columnMeta: IObjectType<IColumnMetaData<any, T>>): ColumnTypeConfig<T> {
+        let config = this._columnTypeConfig.get(columnMeta);
+        if (config === undefined) {
             for (const fallback of this.fallbacks) {
-                translator = fallback.resolveValue(type);
-                if (translator) {
+                config = fallback.resolveColumnType(columnMeta);
+                if (config) {
                     break;
                 }
             }
         }
 
-        return translator;
+        return config;
     }
-    public resolveColumnType<T>(type: GenericType<T>) {
-        let columnType = this._valueColumnTypeMap.get(type);
-        if (columnType === undefined) {
-            for (const fallback of this.fallbacks) {
-                columnType = fallback.resolveColumnType(type);
-                if (columnType) {
-                    break;
-                }
-            }
+
+    public registerColumnType<TMeta extends IColumnMetaData<any, any, any>, T extends (TMeta extends IColumnMetaData<any, infer U, any> ? U : never) = (TMeta extends IColumnMetaData<any, infer U, any> ? U : never)>(columnMeta: IObjectType<TMeta>, columnType?: ICompleteColumnType, hydrate?: (value: DbValue, meta: TMeta, t: QueryTranslator) => T, persist?: (value: T, meta: TMeta, t: QueryTranslator) => ValueType) {
+        const baseConfig = this.resolveColumnType(columnMeta);
+        let config: ColumnTypeConfig<T> = {
+            columnType: columnType ?? baseConfig?.columnType,
+            hydrate: hydrate ?? baseConfig?.hydrate ?? ((value, meta, t) => t.resolveValueType(meta.type).hydrate(value)),
+            persist: persist ?? baseConfig?.persist ?? ((value, meta, t) => t.resolveValueType(meta.type).persist(value))
+        };
+
+        if (!config.columnType || !config.hydrate || !config.persist) {
+            throw "missing parameter";
         }
 
-        return columnType;
+        this._columnTypeConfig.set(columnMeta, config);
     }
 }

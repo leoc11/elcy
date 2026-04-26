@@ -1,6 +1,6 @@
 import { Enumerable, IEnumerable, isNull } from "@elcy/enumerable";
 import { IQuery } from "src/Query/IQuery";
-import { GenericType, StringKeyOf } from "../../Common/Type";
+import { GenericType, StringKeyOf, ValueType } from "../../Common/Type";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
 import { RelationalQueryBuilder } from "../Relational/RelationalQueryBuilder";
 import { IQueryBuilderContext } from "src/Query/IQueryBuilderContext";
@@ -20,6 +20,7 @@ import { BatchedQuery } from "src/Query/BatchedQuery";
 import { ProjectionEntityExpression } from "src/Queryable/QueryExpression/ProjectionEntityExpression";
 import { AndExpression } from "src/ExpressionBuilder/Expression/AndExpression";
 import { UpsertExpression } from "src/Queryable/QueryExpression/UpsertExpression";
+import { Null } from "src/Common/Constant";
 
 export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
     public queryLimit: IQueryLimit = {
@@ -96,7 +97,7 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
             return `UNNEST(${expression.columns.map((col, i) => {
                 const itemType = expression.itemSchema?.[col.propertyName];
                 let columnType: string;
-                let valueType: GenericType;
+                let valueType: GenericType<ValueType>;
                 if (typeof itemType !== "function") {
                     valueType = itemType.type;
                     columnType = itemType.columnType;
@@ -105,8 +106,8 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
                     valueType = itemType;
                 }
                 if (!columnType) {
-                    const colType = this.translator.resolveColumnType(valueType);
-                    columnType = this.columnTypeString(colType);
+                    const colTypeConfig = this.translator.resolveValueType(valueType) ?? this.translator.resolveValueType(Null);
+                    columnType = this.columnTypeString(colTypeConfig.columnType);
                 }
                 return `$${index + i}::${columnType}[]`
             }).join(",")}) AS ${this.enclose(expression.alias)}(${expression.columns.map(o => o.columnName).join(", ")})`;

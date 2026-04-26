@@ -7,7 +7,7 @@ import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { IColumnMetaData } from "./Interface/IColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 
-export abstract class ColumnMetaData<TE extends object = any, T = ValueType> implements IColumnMetaData<TE, T> {
+export abstract class ColumnMetaData<TE extends object = any, T = ValueType, DbValue = unknown> implements IColumnMetaData<TE, T, DbValue> {
     public get default() {
         return this._default;
     }

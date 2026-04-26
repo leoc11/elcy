@@ -52,54 +52,181 @@ import { IExpression } from "src/ExpressionBuilder/Expression/IExpression";
 import { ObjectValueExpression } from "src/ExpressionBuilder/Expression/ObjectValueExpression";
 import { ValueExpression } from "src/ExpressionBuilder/Expression/ValueExpression";
 import { SqlParameterExpression } from "src/Queryable/QueryExpression/SqlParameterExpression";
-import { isEntityExp, isNonNullExp, toDateTimeString, toHexaString } from "src/Helper/Util";
+import { fillZero, isEntityExp, isNonNullExp, isNull, isValue, toDateTimeString, toHexaString } from "src/Helper/Util";
 import { NullCoalesceExpression } from "src/ExpressionBuilder/Expression/NullCoalesceExpression";
 import { Null } from "src/Common/Constant";
 import { TimeSpan } from "src/Data/TimeSpan";
 import { Uuid } from "src/Data/Uuid";
+import { BigIntColumnMetaData, BinaryColumnMetaData, BooleanColumnMetaData, DateColumnMetaData, DateTimeColumnMetaData, DecimalColumnMetaData, EnumColumnMetaData, IdentifierColumnMetaData, IntegerColumnMetaData, RealColumnMetaData, RowVersionColumnMetaData, SerializeColumnMetaData, StringColumnMetaData, TimeColumnMetaData } from "src/MetaData";
+import { XMLParser } from "src/Extensions/FastXmlParser";
+import { XMLBuilder } from "src/Extensions/FastXmlBuilder";
 
 export const relationalQueryTranslator = new QueryTranslator(Symbol("relational"));
 
-//#region Value Translator
-relationalQueryTranslator.registerValue(Null, _ => "NULL");
-relationalQueryTranslator.registerValue(String, val => `'${val.replace(/'/ig, "''")}'`);
-relationalQueryTranslator.registerValue(Number, val => String(val));
-relationalQueryTranslator.registerValue(BigInt, val => String(val));
-relationalQueryTranslator.registerValue(Boolean, val => val ? "true" : "false");
-relationalQueryTranslator.registerValue<Date>(Date, val => `'${toDateTimeString(val)}'`);
-relationalQueryTranslator.registerValue(TimeSpan, val => `'${val}'`);
-relationalQueryTranslator.registerValue(Uuid, val => `'${val}'`);
-relationalQueryTranslator.registerValue(ArrayBuffer, toHexaString);
-relationalQueryTranslator.registerValue(Uint8Array, toHexaString);
-relationalQueryTranslator.registerValue(Uint16Array, toHexaString);
-relationalQueryTranslator.registerValue(Uint32Array, toHexaString);
-relationalQueryTranslator.registerValue(Int8Array, toHexaString);
-relationalQueryTranslator.registerValue(Int16Array, toHexaString);
-relationalQueryTranslator.registerValue(Int32Array, toHexaString);
-relationalQueryTranslator.registerValue(Uint8ClampedArray, toHexaString);
-relationalQueryTranslator.registerValue(Float32Array, toHexaString);
-relationalQueryTranslator.registerValue(Float64Array, toHexaString);
-relationalQueryTranslator.registerValue(DataView, toHexaString);
+//#region Value Type
+relationalQueryTranslator.registerValueType<null>(Null, { columnType: "nvarchar", option: { length: 255 }, group: "String" }, _ => null, _ => null, _ => "NULL");
+relationalQueryTranslator.registerValueType(String, { columnType: "nvarchar", option: { length: 255 }, group: "String" }, (value) => String(value), value => value);
+relationalQueryTranslator.registerValueType(Number, { columnType: "real", group: "Real" }, (value) => Number(value), value => value, value => String(value));
+relationalQueryTranslator.registerValueType(BigInt, { columnType: "bigint", group: "BigInt" }, (value: bigint | string | number) => BigInt(value), value => value, value => String(value));
+relationalQueryTranslator.registerValueType(Boolean, { columnType: "boolean", group: "Boolean" }, (value: boolean | number) => Boolean(value), value => value, value => value ? "true" : "false");
+relationalQueryTranslator.registerValueType<Date>(Date, { columnType: "datetime", group: "DateTime" }, (value: string | Date) => typeof value === "string" ? new Date(value) : value, value => value, value => `'${toDateTimeString(value)}'`);
+relationalQueryTranslator.registerValueType(TimeSpan, { columnType: "time", group: "Time" }, (value: string | Date) => value instanceof Date ? DbFunction.getTime(value) : TimeSpan.parse(value));
+relationalQueryTranslator.registerValueType(Uuid, { columnType: "uuid", group: "Identifier" }, (value: Uint8Array) => new Uuid(value), value => value);
 
-relationalQueryTranslator.registerColumnType(Null, { columnType: "nvarchar", option: { length: 255 }, group: "String" });
-relationalQueryTranslator.registerColumnType(String, { columnType: "nvarchar", option: { length: 255 }, group: "String" });
-relationalQueryTranslator.registerColumnType(Number, { columnType: "decimal", option: { precision: 18, scale: 6 }, group: "Decimal" });
-relationalQueryTranslator.registerColumnType(BigInt, { columnType: "bigint", group: "BigInt" });
-relationalQueryTranslator.registerColumnType(Boolean, { columnType: "boolean", group: "Boolean" });
-relationalQueryTranslator.registerColumnType(Date, { columnType: "datetime", group: "DateTime" });
-relationalQueryTranslator.registerColumnType(TimeSpan, { columnType: "time", group: "Time" });
-relationalQueryTranslator.registerColumnType(Uuid, { columnType: "uuid", group: "Identifier" });
-relationalQueryTranslator.registerColumnType(ArrayBuffer, { columnType: "varbinary", group: "Binary" });
-relationalQueryTranslator.registerColumnType(Uint8Array, { columnType: "varbinary", group: "Binary" });
-relationalQueryTranslator.registerColumnType(Uint16Array, { columnType: "varbinary", group: "Binary" });
-relationalQueryTranslator.registerColumnType(Uint32Array, { columnType: "varbinary", group: "Binary" });
-relationalQueryTranslator.registerColumnType(Int8Array, { columnType: "varbinary", group: "Binary" });
-relationalQueryTranslator.registerColumnType(Int16Array, { columnType: "varbinary", group: "Binary" });
-relationalQueryTranslator.registerColumnType(Int32Array, { columnType: "varbinary", group: "Binary" });
-relationalQueryTranslator.registerColumnType(Uint8ClampedArray, { columnType: "varbinary", group: "Binary" });
-relationalQueryTranslator.registerColumnType(Float32Array, { columnType: "varbinary", group: "Binary" });
-relationalQueryTranslator.registerColumnType(Float64Array, { columnType: "varbinary", group: "Binary" });
-relationalQueryTranslator.registerColumnType(DataView, { columnType: "varbinary", group: "Binary" });
+const toUint8Array = (value: DataView | ArrayBufferView) => new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+relationalQueryTranslator.registerValueType<Uint8Array>(Uint8Array, { columnType: "varbinary", group: "Binary" }, (value: Uint8Array) => value, value => value, toHexaString);
+relationalQueryTranslator.registerValueType<ArrayBuffer>(ArrayBuffer, { columnType: "varbinary", group: "Binary" }, (value: Uint8Array) => value.buffer as ArrayBuffer, (value) => new Uint8Array(value), toHexaString);
+relationalQueryTranslator.registerValueType<Uint16Array>(Uint16Array, { columnType: "varbinary", group: "Binary" }, (value: Uint8Array) => new Uint16Array(value.buffer, value.byteOffset, value.byteLength), toUint8Array, toHexaString);
+relationalQueryTranslator.registerValueType<Uint32Array>(Uint32Array, { columnType: "varbinary", group: "Binary" }, (value: Uint8Array) => new Uint32Array(value.buffer, value.byteOffset, value.byteLength), toUint8Array, toHexaString);
+relationalQueryTranslator.registerValueType<Int8Array>(Int8Array, { columnType: "varbinary", group: "Binary" }, (value: Uint8Array) => new Int8Array(value.buffer, value.byteOffset, value.byteLength), toUint8Array, toHexaString);
+relationalQueryTranslator.registerValueType<Int16Array>(Int16Array, { columnType: "varbinary", group: "Binary" }, (value: Uint8Array) => new Int16Array(value.buffer, value.byteOffset, value.byteLength), toUint8Array, toHexaString);
+relationalQueryTranslator.registerValueType<Int32Array>(Int32Array, { columnType: "varbinary", group: "Binary" }, (value: Uint8Array) => new Int32Array(value.buffer, value.byteOffset, value.byteLength), toUint8Array, toHexaString);
+relationalQueryTranslator.registerValueType<Uint8ClampedArray>(Uint8ClampedArray, { columnType: "varbinary", group: "Binary" }, (value: Uint8Array) => new Uint8ClampedArray(value.buffer, value.byteOffset, value.byteLength), toUint8Array, toHexaString);
+relationalQueryTranslator.registerValueType<Float32Array>(Float32Array, { columnType: "varbinary", group: "Binary" }, (value: Uint8Array) => new Float32Array(value.buffer, value.byteOffset, value.byteLength), toUint8Array, toHexaString);
+relationalQueryTranslator.registerValueType<Float64Array>(Float64Array, { columnType: "varbinary", group: "Binary" }, (value: Uint8Array) => new Float64Array(value.buffer, value.byteOffset, value.byteLength), toUint8Array, toHexaString);
+relationalQueryTranslator.registerValueType<DataView>(DataView, { columnType: "varbinary", group: "Binary" }, (value: Uint8Array) => new DataView(value.buffer, value.byteOffset, value.byteLength), toUint8Array, toHexaString);
+
+//#endregion
+
+//#region Column Type
+relationalQueryTranslator.registerColumnType(StringColumnMetaData, { columnType: "nvarchar", option: { length: 255 }, group: "String" });
+relationalQueryTranslator.registerColumnType(BooleanColumnMetaData, { columnType: "boolean", group: "Boolean" });
+relationalQueryTranslator.registerColumnType(IntegerColumnMetaData, { columnType: "int", group: "Integer" }, (value: number) => Math.trunc(value), (value: number) => Math.trunc(Math.round(value * 100) / 100));
+relationalQueryTranslator.registerColumnType(BigIntColumnMetaData, { columnType: "bigint", group: "BigInt" });
+relationalQueryTranslator.registerColumnType(RealColumnMetaData, { columnType: "real", group: "Real" });
+relationalQueryTranslator.registerColumnType(DecimalColumnMetaData, { columnType: "decimal", option: { precision: 18, scale: 6 }, group: "Decimal" });
+relationalQueryTranslator.registerColumnType(BinaryColumnMetaData, { columnType: "blob", group: "Binary" });
+relationalQueryTranslator.registerColumnType(DateColumnMetaData, { columnType: "date", group: "Date" });
+relationalQueryTranslator.registerColumnType(TimeColumnMetaData, { columnType: "time", group: "Time" },
+    (value: string | Date, meta) => {
+        let time = value instanceof Date ? DbFunction.getTime(value) : TimeSpan.parse(value);
+        if (meta.timeZoneHandling === "utc") {
+            time = time.addMinutes(-new Date(0).getTimezoneOffset());
+        }
+
+        switch (meta.type) {
+            case Temporal?.PlainTime: {
+                return Temporal.PlainTime.from(time.toString());
+            }
+            case TimeSpan: {
+                return time;
+            }
+            case String:
+            default: {
+                return time.toString();
+            }
+        }
+    },
+    (value, meta) => {
+        let time = value instanceof Date ? DbFunction.getTime(value) : TimeSpan.parse(String(value));
+        if (meta.timeZoneHandling === "utc") {
+            time = time.addMinutes(new Date(0).getTimezoneOffset());
+        }
+
+        return value.toString();
+    });
+relationalQueryTranslator.registerColumnType(DateTimeColumnMetaData, { columnType: "timestamp", group: "DateTime" },
+    (value: string | Date, meta) => {
+        if (value instanceof Date && meta.timeZoneHandling === "utc") {
+            value = `${value.getFullYear()}-${fillZero(value.getMonth() + 1)}-${fillZero(value.getDate())}T${fillZero(value.getHours())}:${fillZero(value.getMinutes())}:${fillZero(value.getSeconds())}.${fillZero(value.getMilliseconds(), 3)}Z`;
+        }
+
+        switch (meta.type) {
+            case Temporal?.Instant: {
+                return value instanceof Date ? Temporal.Instant.fromEpochMilliseconds(value.getTime()) : Temporal.Instant.from(value);
+            }
+            default: {
+                return value instanceof Date ? value : new Date(value);
+            }
+        }
+    },
+    (value, meta: DateTimeColumnMetaData) => {
+        if (value instanceof Temporal?.Instant) {
+            return value.toString();
+        }
+
+        return meta.timeZoneHandling === "utc" ? value.toISOString() : value;
+    });
+relationalQueryTranslator.registerColumnType(EnumColumnMetaData, { columnType: "nvarchar", option: { length: 50 }, group: "Enum" },
+    (value: string, meta) => {
+        switch (meta.type) {
+            case Number: {
+                return Number(meta.options[value]);
+            }
+            default: {
+                return value;
+            }
+        }
+    },
+    (value, meta) => {
+        if (typeof value === "number") {
+            return meta.options[value];
+        }
+
+        return value;
+    });
+relationalQueryTranslator.registerColumnType(IdentifierColumnMetaData, { columnType: "varbinary", option: { length: 16 }, group: "Identifier" });
+relationalQueryTranslator.registerColumnType(RowVersionColumnMetaData, { columnType: "int", group: "RowVersion" },
+    (value: number | Uint8Array, meta, t) => {
+        if (meta.type === Uint8Array && typeof value === "number") {
+            throw "unexpected";
+        }
+
+        return t.resolveValueType(meta.type).hydrate(value);
+    });
+
+let xmlParser: XMLParser;
+let xmlBuilder: XMLBuilder;
+relationalQueryTranslator.registerColumnType(SerializeColumnMetaData, { columnType: "json", group: "Serialize" },
+    (value: string, meta) => {
+        let valueObj: Record<string, unknown>;
+        switch (meta.columnType) {
+            case "json":
+            case "jsonb": {
+                valueObj = JSON.parse(value);
+                break;
+            }
+            case "xml": {
+                if (!xmlParser) {
+                    if (!XMLParser) {
+                        throw "require fast-xml-parser";
+                    }
+                    xmlParser = new XMLParser();
+                }
+
+                valueObj = xmlParser.parse(value);
+            }
+        }
+        const obj = new meta.type() as Record<string, unknown>;
+        const keys = Enumerable.from(Object.entries(obj))
+            .filter(o => typeof o[1] !== "function" && (isNull(o[1]) || isValue(o[1])))
+            .map(o => o[0])
+            .union(Object.keys(valueObj));
+
+        for (const key of keys) {
+            obj[key] = valueObj[key];
+        }
+
+        return obj;
+    },
+    (value, meta) => {
+        switch (meta.columnType) {
+            case "json":
+            case "jsonb": {
+                return JSON.stringify(value);
+            }
+            case "xml": {
+                if (!xmlBuilder) {
+                    if (!XMLBuilder) {
+                        throw "require fast-xml-parser";
+                    }
+                    xmlBuilder = new XMLBuilder();
+                }
+
+                return xmlBuilder.build(value);
+            }
+        }
+    });
 
 //#endregion
 
@@ -465,13 +592,24 @@ if (Temporal) {
      * Temporal.Instant
      * TODO: since, until
      */
-    relationalQueryTranslator.registerValue(Temporal.Instant, (val) => `'${val}'`);
-    relationalQueryTranslator.registerValue(Temporal.PlainDate, (val) => `'${val}'`);
-    relationalQueryTranslator.registerValue(Temporal.PlainTime, (val) => `'${val}'`);
-
-    relationalQueryTranslator.registerColumnType(Temporal.Instant, { columnType: "datetime", group: "DateTime" });
-    relationalQueryTranslator.registerColumnType(Temporal.PlainDate, { columnType: "date", group: "Date" });
-    relationalQueryTranslator.registerColumnType(Temporal.PlainTime, { columnType: "time", group: "Date" });
+    relationalQueryTranslator.registerValueType(Temporal.Instant, { columnType: "datetime", group: "DateTime" }, (value: string | Date) => value instanceof Date ? Temporal.Instant.fromEpochMilliseconds(value.getTime()) : Temporal.Instant.from(value));
+    relationalQueryTranslator.registerValueType(Temporal.PlainDate, { columnType: "date", group: "Date" }, (value: string | Date) => {
+        let option: string | Temporal.PlainDateLike = typeof value === "string" ? value : {
+            year: value.getFullYear(),
+            month: value.getMonth() + 1,
+            day: value.getDate()
+        };
+        return Temporal.PlainDate.from(option);
+    }, (value) => new Date(value.year, value.month - 1, value.day));
+    relationalQueryTranslator.registerValueType(Temporal.PlainTime, { columnType: "time", group: "Date" }, (value: string | Date) => {
+        let option: string | Temporal.PlainTimeLike = typeof value === "string" ? value : {
+            hour: value.getHours(),
+            minute: value.getMinutes(),
+            second: value.getSeconds(),
+            millisecond: value.getMilliseconds()
+        };
+        return Temporal.PlainTime.from(option);
+    });
 
     relationalQueryTranslator.registerMethod(Temporal.Instant, "compare", (qb, exp, context) => {
         const param1 = qb.toString(exp.params[0], context);
@@ -884,8 +1022,7 @@ if (Temporal) {
 }
 
 if (Decimal) {
-    relationalQueryTranslator.registerValue(Decimal, (val) => val.toFixed());
-    relationalQueryTranslator.registerColumnType(Decimal, { columnType: "decimal", option: { precision: 18, scale: 6 }, group: "Decimal" });
+    relationalQueryTranslator.registerValueType(Decimal, { columnType: "decimal", option: { precision: 18, scale: 6 }, group: "Decimal" }, (value: string | number) => new Decimal(String(value)), (value) => value.toFixed(), (value) => value.toFixed());
 
     /**
      * Decimal

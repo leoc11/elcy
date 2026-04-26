@@ -28,6 +28,7 @@ import { JoinRelation } from "src/Queryable/Interface/JoinRelation";
 import { ProjectionEntityExpression } from "src/Queryable/QueryExpression/ProjectionEntityExpression";
 import { DeleteExpression } from "src/Queryable/QueryExpression/DeleteExpression";
 import { UpsertExpression } from "src/Queryable/QueryExpression/UpsertExpression";
+import { Null } from "src/Common/Constant";
 
 export class MysqlQueryBuilder extends RelationalQueryBuilder {
     //#region column type map
@@ -35,7 +36,7 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
         maxParameters: 65535,
         maxQueryLength: 8388608
     };
-    
+
     //#endregion
     protected override getInsertQuery<TE extends object>(insertExp: InsertExpression<TE>, option: IQueryOption, parameters: ISqlParameterValueMap): IQuery[] {
         if (insertExp.values.length <= 0) {
@@ -380,8 +381,8 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
             type: QueryType.DDL
         });
         const columnDefinition = tvpExp.columns.map((c) => {
-            const colType = this.translator.resolveColumnType(c.type);
-            return `${this.enclose(c.columnName)} ${this.columnTypeString(colType)}`;
+            const colTypeConfig = this.translator.resolveValueType(c.type) ?? this.translator.resolveValueType(Null);
+            return `${this.enclose(c.columnName)} ${this.columnTypeString(colTypeConfig.columnType)}`;
         }).join("," + this.newLine(1, false));
 
         const query = `CREATE TEMPORARY TABLE ${this.entityName(tvpExp)}` +
@@ -446,7 +447,7 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
             const column = expression.columns.map((col) => {
                 const itemType = expression.itemSchema?.[col.propertyName];
                 let columnType: string;
-                let valueType: GenericType;
+                let valueType: GenericType<ValueType>;
                 if (typeof itemType !== "function") {
                     valueType = itemType.type;
                     columnType = itemType.columnType;
@@ -455,8 +456,8 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
                     valueType = itemType;
                 }
                 if (!columnType) {
-                    const colType = this.translator.resolveColumnType(valueType);
-                    columnType = this.columnTypeString(colType);
+                    const colTypeConfig = this.translator.resolveValueType(valueType) ?? this.translator.resolveValueType(Null);
+                    columnType = this.columnTypeString(colTypeConfig.columnType);
                 }
                 return `${this.enclose(col.columnName)} ${columnType} PATH '$.${col.propertyName}'`;
             }).join(`,${this.newLine(1, false)}`);

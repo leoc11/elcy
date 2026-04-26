@@ -327,7 +327,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
         let i = 0;
         for (const [key, p] of deferredQueries.flatMap((o) => Array.from(o.parameters.entries()))) {
             p.name = paramPrefix + i++;
-            p.value = queryBuilder.toParameterValue(p.value, key.column);
+            p.value = key instanceof SqlTableValueParameterExpression ? p.value : queryBuilder.persistValue(p.value, key.column);
         }
 
         const queries = deferredQueries.flatMap((o) => o.buildQuery(queryBuilder));
@@ -602,7 +602,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                         for (const prop in data) {
                             const column = entityMeta.columns.find((o) => o.columnName === prop);
                             if (column) {
-                                entityEntry.entity[column.propertyName] = this.queryBuilder.toPropertyValue(data[prop], column);
+                                entityEntry.entity[column.propertyName] = this.queryBuilder.hydrateValue(data[prop], column);
                             }
                         }
                     }
@@ -639,7 +639,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                         for (const prop in data) {
                             const column = entityMeta.columns.find((o) => o.columnName === prop);
                             if (column) {
-                                entityEntry.entity[column.propertyName] = this.queryBuilder.toPropertyValue(data[prop], column);
+                                entityEntry.entity[column.propertyName] = this.queryBuilder.hydrateValue(data[prop], column);
                             }
                         }
                     }
@@ -845,8 +845,8 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             if (entityMeta.modifiedDateColumn) {
                 setter[entityMeta.modifiedDateColumn.propertyName] = entityMeta.modifiedDateColumn.defaultExp.body as IExpression<TE[keyof TE]>;
             }
-            if (entityMeta.versionColumn && entityMeta.versionColumn.columnType === "bigint") {
-                setter[entityMeta.versionColumn.propertyName] = new AdditionExpression(entityExp.versionColumn, new ValueExpression(1n));
+            if (entityMeta.versionColumn && entityMeta.versionColumn.columnType === "int") {
+                setter[entityMeta.versionColumn.propertyName] = new AdditionExpression(entityExp.versionColumn as IColumnExpression<TE, number>, new ValueExpression(1)) as unknown as IExpression<TE[keyof TE]>;
             }
 
             const updateExp = new UpdateExpression(entityExp, setter);
@@ -917,8 +917,8 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                         if (target.modifiedDateColumn) {
                             setter[target.modifiedDateColumn.propertyName] = target.modifiedDateColumn.defaultExp.body as IExpression<TE[keyof TE]>;
                         }
-                        if (target.versionColumn && target.versionColumn.columnType === "bigint") {
-                            setter[target.versionColumn.propertyName] = new AdditionExpression(childEntityExp.versionColumn, new ValueExpression(1n));
+                        if (target.versionColumn && target.versionColumn.columnType === "int") {
+                            setter[target.versionColumn.propertyName] = new AdditionExpression(childEntityExp.versionColumn as IColumnExpression<TE, number>, new ValueExpression(1));
                         }
                         const childUpdateExp = new UpdateExpression(childEntityExp, setter);
                         childUpdateExp.addWhere(new StrictEqualExpression(childEntityExp.deleteColumn, new ValueExpression(false)));
@@ -946,8 +946,8 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                         if (target.modifiedDateColumn) {
                             setter[target.modifiedDateColumn.propertyName] = target.modifiedDateColumn.defaultExp.body as IExpression<TE[keyof TE]>;
                         }
-                        if (target.versionColumn && target.versionColumn.columnType === "bigint") {
-                            setter[target.versionColumn.propertyName] = new AdditionExpression(childEntityExp.versionColumn, new ValueExpression(1n));
+                        if (target.versionColumn && target.versionColumn.columnType === "int") {
+                            setter[target.versionColumn.propertyName] = new AdditionExpression(childEntityExp.versionColumn as IColumnExpression<TE, number>, new ValueExpression(1));
                         }
                         const childUpdateExp = new UpdateExpression(childEntityExp, setter);
                         if (parentExp.parentRelation) {
@@ -970,8 +970,8 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                         if (target.modifiedDateColumn) {
                             setter[target.modifiedDateColumn.propertyName] = target.modifiedDateColumn.defaultExp.body as IExpression<TE[keyof TE]>;
                         }
-                        if (target.versionColumn && target.versionColumn.columnType === "bigint") {
-                            setter[target.versionColumn.propertyName] = new AdditionExpression(childEntityExp.versionColumn, new ValueExpression(1n));
+                        if (target.versionColumn && target.versionColumn.columnType === "int") {
+                            setter[target.versionColumn.propertyName] = new AdditionExpression(childEntityExp.versionColumn as IColumnExpression<TE, number>, new ValueExpression(1));
                         }
                         const childUpdateExp = new UpdateExpression(childEntityExp, setter);
                         if (parentExp.parentRelation) {
@@ -1372,8 +1372,8 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                         }
                     }
                     if (column.columnMeta === entityMeta.versionColumn) {
-                        if (entityMeta.versionColumn && entityMeta.versionColumn.columnType === "bigint") {
-                            setter[entityMeta.versionColumn.propertyName] = new AdditionExpression(entityExp.versionColumn, new ValueExpression(1n));
+                        if (entityMeta.versionColumn && entityMeta.versionColumn.columnType === "int") {
+                            setter[entityMeta.versionColumn.propertyName] = new AdditionExpression(entityExp.versionColumn as IColumnExpression<TE, number>, new ValueExpression(1)) as unknown as IExpression<TE[keyof TE]>;
                         }
 
                         if (entityMeta.concurrencyMode === "OPTIMISTIC VERSION") {
@@ -1679,8 +1679,8 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             if (entityMeta.modifiedDateColumn) {
                 setterBase[entityMeta.modifiedDateColumn.propertyName] = entityMeta.modifiedDateColumn.defaultExp.body as IExpression<TE[keyof TE]>;
             }
-            if (entityMeta.versionColumn?.columnType === "bigint") {
-                setterBase[entityMeta.versionColumn.propertyName] = new AdditionExpression(entityExp.versionColumn, new ValueExpression(1n));
+            if (entityMeta.versionColumn?.columnType === "int") {
+                setterBase[entityMeta.versionColumn.propertyName] = new AdditionExpression(entityExp.versionColumn as IColumnExpression<TE, number>, new ValueExpression(1)) as unknown as IExpression<TE[keyof TE]>;
             }
 
             for (const entry of entries) {

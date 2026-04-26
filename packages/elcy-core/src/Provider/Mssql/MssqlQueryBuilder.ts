@@ -1,15 +1,12 @@
 import { QueryType } from "../../Common/Enum";
-import { GenericType, IObjectType, SetterObj, StringKeyOf } from "../../Common/Type";
+import { GenericType, SetterObj, StringKeyOf, ValueType } from "../../Common/Type";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
 import { isColumnExp, isNotNull, isNull } from "../../Helper/Util";
-import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
-import { RowVersionColumnMetaData } from "../../MetaData/RowVersionColumnMetaData";
 import { IQuery } from "../../Query/IQuery";
 import { IQueryBuilderContext } from "../../Query/IQueryBuilderContext";
 import { IQueryOption } from "../../Query/IQueryOption";
 import { ISqlParameterValueMap } from "../../Query/IQueryParameter";
-import { ColumnExpression } from "../../Queryable/QueryExpression/ColumnExpression";
 import { InsertExpression } from "../../Queryable/QueryExpression/InsertExpression";
 import { SqlParameterExpression } from "../../Queryable/QueryExpression/SqlParameterExpression";
 import { UpdateExpression } from "../../Queryable/QueryExpression/UpdateExpression";
@@ -39,6 +36,7 @@ import { DeleteExpression } from "src/Queryable/QueryExpression/DeleteExpression
 import { UpsertExpression } from "src/Queryable/QueryExpression/UpsertExpression";
 import { RawSqlExpression } from "src/Queryable/QueryExpression/RawSqlExpression";
 import { ArrayExtension } from "src/Extensions/ArrayExtension";
+import { Null } from "src/Common/Constant";
 
 export class MssqlQueryBuilder extends RelationalQueryBuilder {
     public queryLimit: IQueryLimit = {
@@ -46,7 +44,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
         maxQueryLength: 67108864
     };
     public override translator = mssqlQueryTranslator;
-    
+
     public override encloseIdentifier(identity: string) {
         return `[${identity}]`;
     }
@@ -259,7 +257,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
             }).join(",")}`;
             upsertExp.entity.alias = originalAlias;
         }
-        const relations = new AndExpression(...upsertExp.entity.primaryColumns.map((o) =>  new StrictEqualExpression(o, tvpExp.columns.find(p => p.propertyName === o.propertyName))));
+        const relations = new AndExpression(...upsertExp.entity.primaryColumns.map((o) => new StrictEqualExpression(o, tvpExp.columns.find(p => p.propertyName === o.propertyName))));
 
         const setQuery = Object.keys(upsertExp.setter).map((prop: StringKeyOf<TE>) => {
             const column = upsertExp.entity.columns.find((c) => c.propertyName === prop);
@@ -333,21 +331,6 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
         return result;
     }
 
-    public override toParameterValue(input: any, column: IColumnMetaData): any {
-        if (isNull(input)) {
-            return null;
-        }
-        if (column instanceof ColumnExpression && column.columnMeta instanceof RowVersionColumnMetaData) {
-            return new Uint8Array(input.buffer ? input.buffer : input);
-        }
-        return super.toParameterValue(input, column);
-    }
-    public override toPropertyValue<T>(input: any, column: IColumnMetaData<any, T>): T {
-        if (column instanceof RowVersionColumnMetaData) {
-            return new (column.type as IObjectType<T>)(input.buffer ? input.buffer : input);
-        }
-        return super.toPropertyValue(input, column);
-    }
     protected override getParameter(context: IQueryBuilderContext) {
         const paramObj = new Map<string, any>();
         let qparams = this.getQueryParameters(context);
@@ -377,7 +360,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
             const column = expression.columns.map((col, i) => {
                 const itemType = expression.itemSchema?.[col.propertyName];
                 let columnType: string;
-                let valueType: GenericType;
+                let valueType: GenericType<ValueType>;
                 if (typeof itemType !== "function") {
                     valueType = itemType.type;
                     columnType = itemType.columnType;
@@ -386,8 +369,8 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
                     valueType = itemType;
                 }
                 if (!columnType) {
-                    const colType = this.translator.resolveColumnType(valueType);
-                    columnType = this.columnTypeString(colType);
+                    const colTypeConfig = this.translator.resolveValueType(valueType) ?? this.translator.resolveValueType(Null);
+                    columnType = this.columnTypeString(colTypeConfig.columnType);
                 }
                 return `${this.enclose(col.columnName)} ${columnType} '$.${col.propertyName}'`;
             }).join(`,${this.newLine(1, false)}`);
@@ -403,8 +386,8 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
             type: QueryType.DDL
         });
         const columnDefinition = tvpExp.columns.map((c) => {
-            const colType = this.translator.resolveColumnType(c.type);
-            return `${this.enclose(c.columnName)} ${this.columnTypeString(colType)}`;
+            const colTypeConfig = this.translator.resolveValueType(c.type) ?? this.translator.resolveValueType(Null);
+            return `${this.enclose(c.columnName)} ${this.columnTypeString(colTypeConfig.columnType)}`;
         }).join("," + this.newLine(1, false));
 
         const query = `CREATE TABLE ${this.entityName(tvpExp)}` +

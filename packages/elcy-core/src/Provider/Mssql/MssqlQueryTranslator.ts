@@ -1,7 +1,6 @@
 import { Decimal } from "src/Data/Decimal";
 import { Uuid } from "../../Data/Uuid";
 import { AdditionExpression } from "../../ExpressionBuilder/Expression/AdditionExpression";
-import { InstantiationExpression } from "../../ExpressionBuilder/Expression/InstantiationExpression";
 import { DbFunction } from "../../Query/DbFunction";
 import { QueryTranslator } from "../../Query/QueryTranslator";
 import { relationalQueryTranslator } from "../Relational/RelationalQueryTranslator";
@@ -21,14 +20,11 @@ import { ObjectValueExpression } from "src/ExpressionBuilder/Expression/ObjectVa
 export const mssqlQueryTranslator = new QueryTranslator(Symbol("mssql"));
 mssqlQueryTranslator.registerFallbacks(relationalQueryTranslator);
 
-mssqlQueryTranslator.registerColumnType(Uuid, { columnType: "uniqueidentifier", group: "Identifier" });
-mssqlQueryTranslator.registerColumnType(Date, { columnType: "datetime2", group: "Identifier" });
-mssqlQueryTranslator.registerColumnType(Boolean, { columnType: "bit", group: "Boolean" });
-mssqlQueryTranslator.registerValue(Boolean, (val) => val ? "1" : "0");
+mssqlQueryTranslator.registerValueType(Boolean, { columnType: "bit", group: "Boolean" }, undefined, undefined, value => value ? "1" : "0");
+mssqlQueryTranslator.registerValueType(Uuid, { columnType: "uniqueidentifier", group: "Identifier" });
+mssqlQueryTranslator.registerValueType(Date, { columnType: "datetime2", group: "Identifier" });
 
 mssqlQueryTranslator.registerMethod(Uuid, "new", () => "newid()", () => true);
-
-mssqlQueryTranslator.registerConstructor(Date, (qb, exp, param) => "getdate()", (exp: InstantiationExpression) => exp.params.length <= 0);
 
 mssqlQueryTranslator.registerMethod(Number.prototype, "toExponential", (qb, exp, param) => {
     let value = 12;
@@ -168,7 +164,7 @@ if (Decimal) {
 }
 
 if (Temporal) {
-    mssqlQueryTranslator.registerColumnType(Temporal.Instant, { columnType: "datetime2", group: "DateTime" });
+    mssqlQueryTranslator.registerValueType(Temporal.Instant, { columnType: "datetime2", group: "DateTime" });
 
     mssqlQueryTranslator.registerMethod(Temporal.Instant.prototype, "add", (qb, exp, context) => {
         let dateExp = qb.toString(exp.objectOperand, context);

@@ -75,7 +75,7 @@ export class EntityExpression<TE extends object = object> implements IEntityExpr
     }
     public get versionColumn() {
         if (typeof this._versionColumn === "undefined") {
-            this._versionColumn = !this.metaData || !this.metaData.versionColumn ? null : this.columns.find((o) => o.propertyName === this.metaData.versionColumn.propertyName) as IColumnExpression<TE, bigint>;
+            this._versionColumn = !this.metaData || !this.metaData.versionColumn ? null : this.columns.find((o) => o.propertyName === this.metaData.versionColumn.propertyName) as IColumnExpression<TE, number | Uint8Array>;
         }
         return this._versionColumn;
     }
@@ -99,7 +99,7 @@ export class EntityExpression<TE extends object = object> implements IEntityExpr
     private _metaData: IEntityMetaData<TE>;
     private _modifiedColumn: IColumnExpression<TE, Date>;
     private _primaryColumns: IColumnExpression<TE>[];
-    private _versionColumn: IColumnExpression<TE, bigint>;
+    private _versionColumn: IColumnExpression<TE, number | Uint8Array>;
     public clone(replaceMap?: Map<IExpression, IExpression>): EntityExpression<TE> {
         if (!replaceMap) {
             replaceMap = new Map();

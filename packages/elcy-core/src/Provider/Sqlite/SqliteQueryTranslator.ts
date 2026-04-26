@@ -19,12 +19,12 @@ import { Decimal } from "src/Data/Decimal";
 export const sqliteQueryTranslator = new QueryTranslator(Symbol("sqlite"));
 sqliteQueryTranslator.registerFallbacks(relationalQueryTranslator);
 
-sqliteQueryTranslator.registerColumnType(Null, { columnType: "text", group: "String" });
-sqliteQueryTranslator.registerColumnType(String, { columnType: "text", group: "String" });
-sqliteQueryTranslator.registerColumnType(Date, { columnType: "text", group: "String" });
-sqliteQueryTranslator.registerColumnType(BigInt, { columnType: "integer", group: "BigInt" });
-sqliteQueryTranslator.registerColumnType(Number, { columnType: "real", group: "String" });
-sqliteQueryTranslator.registerColumnType(Uuid, { columnType: "text", group: "String" });
+sqliteQueryTranslator.registerValueType(Null, { columnType: "text", group: "String" });
+sqliteQueryTranslator.registerValueType(String, { columnType: "text", group: "String" });
+sqliteQueryTranslator.registerValueType(Date, { columnType: "text", group: "String" });
+sqliteQueryTranslator.registerValueType(BigInt, { columnType: "integer", group: "BigInt" });
+sqliteQueryTranslator.registerValueType(Number, { columnType: "real", group: "String" });
+sqliteQueryTranslator.registerValueType(Uuid, { columnType: "text", group: "String" });
 
 const equalTranslator = (qb: IQueryBuilder, exp: IBinaryOperatorExpression, context: IQueryBuilderContext) => {
     const leftExpString = qb.toOperandString(exp.leftOperand, context);
@@ -195,11 +195,11 @@ sqliteQueryTranslator.registerMethod(DbFunction, "utcTimestamp", () => "STRFTIME
 
 
 if (Temporal) {
-    sqliteQueryTranslator.registerColumnType(Temporal.Instant, { columnType: "text", group: "String" });
-    sqliteQueryTranslator.registerColumnType(Temporal.PlainDate, { columnType: "text", group: "String" });
-    sqliteQueryTranslator.registerColumnType(Temporal.PlainTime, { columnType: "text", group: "String" });
+    sqliteQueryTranslator.registerValueType(Temporal.Instant, { columnType: "text", group: "String" });
+    sqliteQueryTranslator.registerValueType(Temporal.PlainDate, { columnType: "text", group: "String" });
+    sqliteQueryTranslator.registerValueType(Temporal.PlainTime, { columnType: "text", group: "String" });
 }
 
 if (Decimal) {
-    sqliteQueryTranslator.registerColumnType(Decimal, { columnType: "real", group: "String" });
+    sqliteQueryTranslator.registerValueType(Decimal, { columnType: "real", group: "String" });
 }

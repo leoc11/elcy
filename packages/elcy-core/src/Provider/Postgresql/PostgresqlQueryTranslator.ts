@@ -5,16 +5,24 @@ import { ObjectValueExpression } from "src/ExpressionBuilder/Expression/ObjectVa
 import { IExpression } from "src/ExpressionBuilder/Expression/IExpression";
 import { Temporal } from "src/Data/Temporal";
 import { Null } from "src/Common/Constant";
+import { BinaryColumnMetaData, DateTimeColumnMetaData, IdentifierColumnMetaData, RowVersionColumnMetaData, SerializeColumnMetaData, TimeColumnMetaData } from "src/MetaData";
 
 export const postgresqlQueryTranslator = new QueryTranslator(Symbol("postgresql"));
 postgresqlQueryTranslator.registerFallbacks(relationalQueryTranslator);
 
-postgresqlQueryTranslator.registerColumnType(Null, { columnType: "text", group: "String" });
-postgresqlQueryTranslator.registerColumnType(String, { columnType: "text", group: "String" });
+postgresqlQueryTranslator.registerValueType(Null, { columnType: "text", group: "String" });
+postgresqlQueryTranslator.registerValueType(String, { columnType: "text", group: "String" });
 
-relationalQueryTranslator.registerFn(String, (qb, exp, param) => `CAST(${qb.toString(exp.params[0], param)} AS text)`);
-relationalQueryTranslator.registerMethod(BigInt.prototype, "toString", (qb, exp, param) => `CAST(${qb.toString(exp.objectOperand, param)} AS text)`);
-relationalQueryTranslator.registerConstructor(Date, () => `NOW()`, exp => exp.params.length === 0);
+postgresqlQueryTranslator.registerColumnType(BinaryColumnMetaData, { columnType: "bytea", group: "Binary" });
+postgresqlQueryTranslator.registerColumnType(BinaryColumnMetaData, { columnType: "bytea", group: "Binary" });
+postgresqlQueryTranslator.registerColumnType(DateTimeColumnMetaData, { columnType: "timestampz", group: "DateTime" });
+postgresqlQueryTranslator.registerColumnType(IdentifierColumnMetaData, { columnType: "uuid", group: "Identifier" });
+postgresqlQueryTranslator.registerColumnType(RowVersionColumnMetaData, { columnType: "xmin", group: "RowVersion" });
+postgresqlQueryTranslator.registerColumnType(SerializeColumnMetaData, { columnType: "jsonb", group: "Serialize" });
+postgresqlQueryTranslator.registerColumnType(TimeColumnMetaData, { columnType: "timetz", group: "Time" });
+
+postgresqlQueryTranslator.registerFn(String, (qb, exp, param) => `CAST(${qb.toString(exp.params[0], param)} AS text)`);
+postgresqlQueryTranslator.registerMethod(BigInt.prototype, "toString", (qb, exp, param) => `CAST(${qb.toString(exp.objectOperand, param)} AS text)`);
 
 postgresqlQueryTranslator.registerMethod(Uuid, "new", () => "uuid_generate_v4()");
 

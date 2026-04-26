@@ -18,7 +18,7 @@ export function RowVersionColumn<TE extends object>(optionOrName?: IRowVersionCo
     }
 
     option.isReadOnly = true;
-    const columnDecorator = Column<TE, bigint | Uint8Array>(Uint8Array, RowVersionColumnMetaData, option);
+    const columnDecorator = Column<TE, number | Uint8Array>(Uint8Array, RowVersionColumnMetaData, option);
     return (target: undefined | ClassAccessor<bigint | Uint8Array>, context: ClassFieldDecoratorContext<TE, bigint | Uint8Array> | ClassAccessorDecoratorContext<TE, bigint | Uint8Array>) => {
         let columnHandlers = context.metadata.columns as Array<(entityMeta: IEntityMetaData<TE>) => void>;
         if (!Array.isArray(columnHandlers)) {

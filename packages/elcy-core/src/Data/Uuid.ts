@@ -9,10 +9,13 @@ export const RandomGenerator = (res: Uuid) => {
 };
 export const CryptoGenerator = (res: Uuid) => globalThis.crypto.getRandomValues(res);
 export class Uuid extends Uint8Array {
-    constructor(uuid?: string) {
+    constructor(uuid?: string | Uint8Array) {
         super(16);
-        if (uuid) {
+        if (typeof uuid === "string") {
             this.parse(uuid);
+        }
+        if (uuid instanceof Uint8Array) {
+            this.set(uuid);
         }
     }
     public static readonly empty = new Uuid();

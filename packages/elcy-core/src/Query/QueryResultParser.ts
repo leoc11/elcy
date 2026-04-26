@@ -39,8 +39,8 @@ function getRelationKey<T extends object>(data: T, props?: Array<keyof T>) {
     return props.map((o) => data[o]).join("|");
 }
 const getColumnValue = <TE extends object, T>(column: IColumnExpression<TE, T>, data: Record<string, unknown>, dbContext?: DbContext) => {
-    const columnMeta: IColumnMetaData<any, any> = column.columnMeta ? column.columnMeta : { type: column.type, nullable: column.isNullable };
-    return dbContext.queryBuilder.toPropertyValue(data[column.dataPropertyName], columnMeta) as T;
+    const columnMeta: IColumnMetaData<any, any> = column.columnMeta ?? { type: column.type, nullable: column.isNullable };
+    return dbContext.queryBuilder.hydrateValue(data[column.dataPropertyName], columnMeta) as T;
 }
 const setEntryColumnValue = <TE extends object = object, T = ValueType>(entry: EntityEntry<TE>, column: IColumnExpression<TE, T>, data: Record<string, unknown>, dbContext?: DbContext) => {
     const value = getColumnValue(column, data, dbContext);

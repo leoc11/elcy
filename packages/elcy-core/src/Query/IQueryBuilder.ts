@@ -22,8 +22,8 @@ export interface IQueryBuilder {
     newLine(indent?: number, isAdd?: boolean): string;
     toLogicalString(exp: IExpression<boolean>, context?: IQueryBuilderContext): string;
     toOperandString(exp: IExpression, context?: IQueryBuilderContext): string;
-    toParameterValue(input: unknown, column: IColumnMetaData<any, unknown>): unknown;
-    toPropertyValue<T>(input: unknown, column: IColumnMetaData<any, T>): T;
+    persistValue(value: unknown, column: IColumnMetaData<any, unknown>): unknown;
+    hydrateValue<T>(value: unknown, column: IColumnMetaData<any, T>): T;
     toQuery<T = unknown>(queryExp: IQueryExpression<T>, parameters?: ISqlParameterValueMap, option?: IQueryOption): IQuery[];
     toString<T = unknown>(exp: IExpression<T>, context?: IQueryBuilderContext): string;
     valueString(value: ValueType): string;

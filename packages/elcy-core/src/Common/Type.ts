@@ -39,6 +39,7 @@ declare global {
     }
 }
 
+export type DbValue = string | number | boolean | null | bigint | Date | Uint8Array;
 export type ValueType = ValueTypeRegistry[keyof ValueTypeRegistry];
 export type ArrayView = Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array
     | Uint32Array | Uint8ClampedArray | Float32Array | Float64Array | ArrayBufferView;

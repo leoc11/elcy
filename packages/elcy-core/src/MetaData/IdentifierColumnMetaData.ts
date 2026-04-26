@@ -8,7 +8,7 @@ export class IdentifierColumnMetaData<TE extends object = object, T extends stri
     constructor(entity?: IEntityMetaData<TE>, type?: PrimitiveType<T>);
     constructor(entity?: IEntityMetaData<TE>, type?: GenericType<T>);
     constructor(entity?: IEntityMetaData<TE>, type?: GenericType<T>) {
-        super(entity, type);
+        super(entity, type ?? Uuid as unknown as GenericType<T>);
     }
     public override columnType: IdentifierColumnType = "uniqueidentifier";
 }
