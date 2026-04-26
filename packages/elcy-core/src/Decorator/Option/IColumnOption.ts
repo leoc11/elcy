@@ -1,20 +1,17 @@
 
+import { CustomDataMapper } from "src/MetaData";
 import { ColumnType } from "../../Common/ColumnType";
 import { ColumnGeneration } from "../../Common/Enum";
-import { GenericType } from "../../Common/Type";
+import { GenericType, ValueType } from "../../Common/Type";
+import { DbType } from "src/Common/StringType";
 
-export interface IColumnFormatter<T, TD = any> {
-    from: (source: T) => TD;
-    to: (source: TD) => T;
-}
-export interface IColumnOption<T = any> {
+export interface IColumnOption<T = ValueType, TDb = DbType> {
     charset?: string;
     collation?: string;
     columnName?: string;
     columnType?: ColumnType;
     default?: () => T;
     description?: string;
-    formatter?: IColumnFormatter<T>;
     generation?: ColumnGeneration;
     indexed?: boolean;
     isProjected?: boolean;
@@ -22,4 +19,5 @@ export interface IColumnOption<T = any> {
     isSystemColumn?: boolean;
     nullable?: boolean;
     type?: GenericType<T>;
+    customMapper?: CustomDataMapper<T, TDb>
 }

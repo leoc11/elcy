@@ -1,5 +1,5 @@
 import { ICompleteColumnType } from "../Common/ICompleteColumnType";
-import { ValueType } from "../Common/Type";
+import { DbValue, ValueType } from "../Common/Type";
 import { IQueryLimit } from "../Data/Interface/IQueryLimit";
 import { IEnumerable } from "@elcy/enumerable";
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
@@ -23,7 +23,7 @@ export interface IQueryBuilder {
     toLogicalString(exp: IExpression<boolean>, context?: IQueryBuilderContext): string;
     toOperandString(exp: IExpression, context?: IQueryBuilderContext): string;
     persistValue(value: unknown, column: IColumnMetaData<any, unknown>): unknown;
-    hydrateValue<T>(value: unknown, column: IColumnMetaData<any, T>): T;
+    hydrateValue<T>(value: DbValue, column: IColumnMetaData<any, T>): T;
     toQuery<T = unknown>(queryExp: IQueryExpression<T>, parameters?: ISqlParameterValueMap, option?: IQueryOption): IQuery[];
     toString<T = unknown>(exp: IExpression<T>, context?: IQueryBuilderContext): string;
     valueString(value: ValueType): string;

@@ -1,13 +1,13 @@
 import { ColumnType } from "../Common/ColumnType";
 import { ColumnGeneration } from "../Common/Enum";
-import { GenericType, PrimitiveType, StringKeyOf, ValueType } from "../Common/Type";
+import { DbValue, GenericType, PrimitiveType, StringKeyOf, ValueType } from "../Common/Type";
 import { IColumnOption } from "../Decorator/Option/IColumnOption";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
-import { IColumnMetaData } from "./Interface/IColumnMetaData";
+import { IColumnMetaData, CustomDataMapper } from "./Interface/IColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 
-export abstract class ColumnMetaData<TE extends object = any, T = ValueType, DbValue = unknown> implements IColumnMetaData<TE, T, DbValue> {
+export abstract class ColumnMetaData<TE extends object = any, T = ValueType, TDb = DbValue> implements IColumnMetaData<TE, T, TDb> {
     public get default() {
         return this._default;
     }
@@ -48,7 +48,10 @@ export abstract class ColumnMetaData<TE extends object = any, T = ValueType, DbV
     public propertyName?: StringKeyOf<TE>;
     public type: GenericType<T>;
     private _default?: () => T;
-    public applyOption(columnMeta: IColumnOption<T> | IColumnMetaData<TE, T>) {
+
+    public customMapper?: CustomDataMapper<T, TDb>;
+
+    public applyOption(columnMeta: IColumnOption<T, TDb> | IColumnMetaData<TE, T, TDb>) {
         if (!this.type && typeof columnMeta.type !== "undefined") {
             this.type = columnMeta.type;
         }
@@ -83,7 +86,10 @@ export abstract class ColumnMetaData<TE extends object = any, T = ValueType, DbV
             this.generation = columnMeta.generation;
         }
         if (typeof (columnMeta as IColumnOption).default !== "undefined") {
-            this.default = (columnMeta as IColumnOption).default;
+            this.default = (columnMeta as IColumnOption<T>).default;
+        }
+        if (columnMeta.customMapper) {
+            this.customMapper = columnMeta.customMapper;
         }
     }
 }

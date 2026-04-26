@@ -1,6 +1,6 @@
 import { QueryType } from "../../Common/Enum";
 import { ICompleteColumnType } from "../../Common/ICompleteColumnType";
-import { GenericType, MethodKey, MethodReturnType, SetterObj, StringKeyOf, ValueType } from "../../Common/Type";
+import { DbValue, GenericType, MethodKey, MethodReturnType, SetterObj, StringKeyOf, ValueType } from "../../Common/Type";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
 import { Enumerable, IEnumerable, IObjectType } from "@elcy/enumerable";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
@@ -194,13 +194,17 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
 
     //#region Value Convert
 
-    public persistValue(value: any, column?: IColumnMetaData): any {
+    public persistValue(value: any, column?: IColumnMetaData): DbValue {
         if (typeof value === "number" && !Number.isFinite(value)) {
             value = null;
         }
 
         if (column?.nullable !== false && isNull(value)) {
             return null;
+        }
+
+        if (column?.customMapper) {
+            return column.customMapper.persist(value) as DbValue;
         }
 
         const columnConfig = this.translator.resolveColumnType(column?.constructor as IObjectType<IColumnMetaData>);
@@ -212,7 +216,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         return valueConfig.persist(value);
     }
 
-    public hydrateValue<T>(value: any, column: IColumnMetaData<any, T>): T {
+    public hydrateValue<T>(value: DbValue, column: IColumnMetaData<any, T>): T {
         if (typeof value === "number" && !Number.isFinite(value)) {
             value = null;
         }
@@ -220,6 +224,9 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             return null;
         }
 
+        if (column.customMapper) {
+            return column.customMapper.hydrate(value);
+        }
         const columnConfig = this.translator.resolveColumnType<T>(column.constructor as IObjectType<IColumnMetaData<any, T>>);
         if (columnConfig) {
             return columnConfig.hydrate(value, column, this.translator);

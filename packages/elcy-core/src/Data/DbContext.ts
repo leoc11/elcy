@@ -2,7 +2,7 @@ import type { IQueryCacheManager } from "../Cache/IQueryCacheManager";
 import type { IResultCacheManager } from "../Cache/IResultCacheManager";
 import { ColumnGeneration, QueryType, UpsertStrategy } from "../Common/Enum";
 import type { DbType, DeleteMode, IsolationLevel } from "../Common/StringType";
-import type { FlatObjectLike, GenericType, IObjectType, RawSchema, SetterObj, StringKeyOf } from "../Common/Type";
+import type { DbValue, FlatObjectLike, GenericType, IObjectType, RawSchema, SetterObj, StringKeyOf } from "../Common/Type";
 import { DefaultConnectionManager } from "../Connection/DefaultConnectionManager";
 import type { IConnection } from "../Connection/IConnection";
 import type { IConnectionManager } from "../Connection/IConnectionManager";
@@ -597,7 +597,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                     if (entityMeta.hasIncrementPrimary) {
                         key = identityKeys.get(entityEntry);
                     }
-                    const data = updateData.get(key) as Record<string, unknown>;
+                    const data = updateData.get(key) as Record<string, DbValue>;
                     if (data) {
                         for (const prop in data) {
                             const column = entityMeta.columns.find((o) => o.columnName === prop);
@@ -634,7 +634,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                 const updateData = Enumerable.from(queries).flatMap((o) => o.value.rows).toMap((o: object) => dbSet.getKey(o), (o: object) => o);
                 const entityEntries = orderedEntityUpdate.get(entityMeta);
                 for (const entityEntry of entityEntries) {
-                    const data = updateData.get(entityEntry.key) as Record<string, unknown>;
+                    const data = updateData.get(entityEntry.key) as Record<string, DbValue>;
                     if (data) {
                         for (const prop in data) {
                             const column = entityMeta.columns.find((o) => o.columnName === prop);
@@ -1410,7 +1410,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
 
             switch (entityMeta.concurrencyMode) {
                 case "OPTIMISTIC VERSION": {
-                    const versionCol: IColumnMetaData<TE, unknown> = entityMeta.versionColumn || entityMeta.modifiedDateColumn;
+                    const versionCol: IColumnMetaData<TE, unknown, unknown> = entityMeta.versionColumn || entityMeta.modifiedDateColumn;
                     if (!versionCol) {
                         throw new Error(`${entityMeta.name} did not have version column`);
                     }

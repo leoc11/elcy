@@ -1,4 +1,4 @@
-import { IObjectType, StringKeyOf, ValueType } from "../Common/Type";
+import { DbValue, IObjectType, StringKeyOf, ValueType } from "../Common/Type";
 import { DbContext } from "../Data/DbContext";
 import { DbSet } from "../Data/DbSet";
 import { EntityEntry } from "../Data/EntityEntry";
@@ -38,11 +38,11 @@ function getRelationKey<T extends object>(data: T, props?: Array<keyof T>) {
     }
     return props.map((o) => data[o]).join("|");
 }
-const getColumnValue = <TE extends object, T>(column: IColumnExpression<TE, T>, data: Record<string, unknown>, dbContext?: DbContext) => {
+const getColumnValue = <TE extends object, T>(column: IColumnExpression<TE, T>, data: Record<string, DbValue>, dbContext?: DbContext) => {
     const columnMeta: IColumnMetaData<any, any> = column.columnMeta ?? { type: column.type, nullable: column.isNullable };
     return dbContext.queryBuilder.hydrateValue(data[column.dataPropertyName], columnMeta) as T;
 }
-const setEntryColumnValue = <TE extends object = object, T = ValueType>(entry: EntityEntry<TE>, column: IColumnExpression<TE, T>, data: Record<string, unknown>, dbContext?: DbContext) => {
+const setEntryColumnValue = <TE extends object = object, T = ValueType>(entry: EntityEntry<TE>, column: IColumnExpression<TE, T>, data: Record<string, DbValue>, dbContext?: DbContext) => {
     const value = getColumnValue(column, data, dbContext);
     if (isValue(value)) {
         entry.setOriginalValue(column.propertyName, value as TE[StringKeyOf<TE>]);
@@ -51,7 +51,7 @@ const setEntryColumnValue = <TE extends object = object, T = ValueType>(entry: E
 
     setColumnValue(entry.entity, column, data, dbContext);
 }
-const setColumnValue = <TE extends object = object, TType = TE[StringKeyOf<TE>]>(entity: TE, column: IColumnExpression<TE, TType>, data: Record<string, unknown>, dbContext?: DbContext) => {
+const setColumnValue = <TE extends object = object, TType = TE[StringKeyOf<TE>]>(entity: TE, column: IColumnExpression<TE, TType>, data: Record<string, DbValue>, dbContext?: DbContext) => {
     const value = getColumnValue(column, data, dbContext);
     entity[column.propertyName] = value as TE[StringKeyOf<TE>];
 }
@@ -112,7 +112,7 @@ class SelectExpressionParserFactory<TE extends object, T> {
     protected readonly relationMap: Map<IncludeRelation<TE>, IRelationMetaData>;
     protected readonly embeddedParserMap: Record<string, SelectExpressionParserFactory<object, unknown>>;
 
-    protected parseRow(row: Record<string, unknown>, dbContext: DbContext, dbSet: DbSet<TE>, dbEventEmitter: DBEventEmitter<TE>, parseMap: Map<SelectExpression, ParserFunction>) {
+    protected parseRow(row: Record<string, DbValue>, dbContext: DbContext, dbSet: DbSet<TE>, dbEventEmitter: DBEventEmitter<TE>, parseMap: Map<SelectExpression, ParserFunction>) {
         if (this.isValue) {
             for (const column of this.columns) {
                 return getColumnValue(column, row, dbContext);

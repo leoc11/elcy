@@ -22,7 +22,7 @@ type ValueTypeConfig<T extends ValueType = any> = {
 };
 type ColumnTypeConfig<T = any> = {
     hydrate(value: DbValue, meta: IColumnMetaData<any, T>, t: QueryTranslator): T;
-    persist(value: T, meta: IColumnMetaData<any, T>, t: QueryTranslator): ValueType;
+    persist(value: T, meta: IColumnMetaData<any, T>, t: QueryTranslator): DbValue;
     columnType: ICompleteColumnType;
 };
 
@@ -160,7 +160,7 @@ export class QueryTranslator {
         return config;
     }
 
-    public registerColumnType<TMeta extends IColumnMetaData<any, any, any>, T extends (TMeta extends IColumnMetaData<any, infer U, any> ? U : never) = (TMeta extends IColumnMetaData<any, infer U, any> ? U : never)>(columnMeta: IObjectType<TMeta>, columnType?: ICompleteColumnType, hydrate?: (value: DbValue, meta: TMeta, t: QueryTranslator) => T, persist?: (value: T, meta: TMeta, t: QueryTranslator) => ValueType) {
+    public registerColumnType<TMeta extends IColumnMetaData<any, any, any>, T extends (TMeta extends IColumnMetaData<any, infer U, any> ? U : never) = (TMeta extends IColumnMetaData<any, infer U, any> ? U : never)>(columnMeta: IObjectType<TMeta>, columnType?: ICompleteColumnType, hydrate?: (value: DbValue, meta: TMeta, t: QueryTranslator) => T, persist?: (value: T, meta: TMeta, t: QueryTranslator) => DbValue) {
         const baseConfig = this.resolveColumnType(columnMeta);
         let config: ColumnTypeConfig<T> = {
             columnType: columnType ?? baseConfig?.columnType,
