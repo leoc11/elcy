@@ -531,7 +531,7 @@ exports[`Mysql DATA MANIPULATION INSERT should bulk insert 1`] = `
     "parameters": Map {},
     "query": 
 "INSERT INTO "Table1Manies" ("name")
-SELECT (CONCAT('Detail of parent ', CAST("entity0"."id" AS text))) AS "column1"
+SELECT (CONCAT('Detail of parent ', CAST("entity0"."id" AS nvarchar(max)))) AS "column1"
 FROM "fixture"."Table1s" AS "entity0"
 LEFT JOIN (
 	SELECT "entity1"."table1Id",
@@ -843,9 +843,9 @@ exports[`Mysql DATA MANIPULATION UPDATE should update with VERSION concurrency c
 Map {
       "?0" => "Updated",
       "?1" => 1n,
-      "?2" => Instant {},
+      "?2" => "1971-01-02T00:00:00Z",
       "?3" => 1n,
-      "?4" => Instant {},
+      "?4" => "1971-01-02T00:00:00Z",
     }
 ,
     "_queries": [
@@ -854,7 +854,7 @@ Map {
 Map {
           "?0" => "Updated",
           "?1" => 1n,
-          "?2" => Instant {},
+          "?2" => "1971-01-02T00:00:00Z",
         }
 ,
         "query": 
@@ -868,7 +868,7 @@ WHERE (("entity0"."id"=?) AND ("entity0"."modifiedDate"=?))"
         "parameters": 
 Map {
           "?0" => 1n,
-          "?1" => Instant {},
+          "?1" => "1971-01-02T00:00:00Z",
         }
 ,
         "query": 

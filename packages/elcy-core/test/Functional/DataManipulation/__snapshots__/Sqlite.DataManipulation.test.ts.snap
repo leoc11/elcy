@@ -238,7 +238,7 @@ exports[`Sqlite DATA MANIPULATION INSERT should bulk insert 1`] = `
     "parameters": Map {},
     "query": 
 "INSERT INTO "Table1Manies" ("name")
-SELECT ('Detail of parent ' || CAST("entity0"."id" AS text)) AS "column1"
+SELECT ('Detail of parent ' || CAST("entity0"."id" AS nvarchar(max))) AS "column1"
 FROM "fixture"."Table1s" AS "entity0"
 LEFT JOIN (
 	SELECT "entity1"."table1Id",
@@ -451,7 +451,7 @@ exports[`Sqlite DATA MANIPULATION UPDATE should update with VERSION concurrency 
 Map {
       ":param0" => "Updated",
       ":param1" => 1n,
-      ":param2" => Instant {},
+      ":param2" => "1971-01-02T00:00:00Z",
     }
 ,
     "query": 

@@ -477,7 +477,7 @@ exports[`Postgresql DATA MANIPULATION UPDATE should update with VERSION concurre
 Map {
       "$1" => "Updated",
       "$2" => 1n,
-      "$3" => Instant {},
+      "$3" => "1971-01-02T00:00:00Z",
     }
 ,
     "query": 

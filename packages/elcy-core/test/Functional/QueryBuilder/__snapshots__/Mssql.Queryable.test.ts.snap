@@ -4270,7 +4270,7 @@ exports[`Mssql QUERYABLE FIND should work with where 1`] = `
   {
     "parameters": 
 Map {
-      "@param0" => Instant {},
+      "@param0" => "2026-01-01T00:00:00Z",
     }
 ,
     "query": 
@@ -7368,7 +7368,7 @@ exports[`Mssql QUERYABLE PARAMETERS should be computed in query 1`] = `
 	[entity0].[createdDate],
 	[entity0].[modifiedDate]
 FROM [fixture].[Table1s] AS [entity0]
-WHERE (([entity0].[deleted]=0) AND ([entity0].[dateTime]<getdate()))"
+WHERE (([entity0].[deleted]=0) AND ([entity0].[dateTime]<CURRENT_TIMESTAMP))"
 ,
     "type": 1,
   },
@@ -8544,9 +8544,9 @@ exports[`Mssql QUERYABLE ARRAY PARAMETER should work in select (Relation/Array) 
         "query": 
 "CREATE TABLE [#ad_1]
 (
-	[__index] decimal(18, 6),
+	[__index] real,
 	[table1Id] bigint,
-	[integer] decimal(18, 6)
+	[integer] real
 )"
 ,
         "type": 36,
@@ -8591,9 +8591,9 @@ WHERE (([entity0].[deleted]=0) AND ([entity0].[decimalNumber]<=20000))"
 
 CREATE TABLE [#ad_1]
 (
-	[__index] decimal(18, 6),
+	[__index] real,
 	[table1Id] bigint,
-	[integer] decimal(18, 6)
+	[integer] real
 );
 
 INSERT INTO [#ad_1]([__index], [table1Id], [integer])
