@@ -93,13 +93,20 @@ export class SqliteQueryBuilder extends RelationalQueryBuilder {
             const projectedEntity = new ProjectionEntityExpression(updateExp.select);
             projectedEntity.alias = updateExp.entity.alias + "_1";
             const selectExp = new SelectExpression(projectedEntity);
+            selectExp.selects = [];
+            selectExp.parentRelation = updateExp.parentRelation as any;
 
-            const setQuery = selectExp.selects
-                .map((o) => `${this.enclose(o.columnName)} = ${this.getColumnQueryString(o, context)}`)
-                .join(", ");
-            let updateQuery = `UPDATE ${this.entityName(updateExp.entity)} AS ${this.enclose(updateExp.entity.alias)}` +
+            const setQuery = Object.keys(updateExp.setter).map((o) => {
+                const value = updateExp.setter[o as keyof TE];
+                const valueStr = this.toOperandString(value, context);
+                const column = updateExp.entity.columns.find((c) => c.propertyName === o);
+                return `${this.enclose(column.columnName)} = ${valueStr}`;
+            }).join(`,${this.newLine(1, false)}`);
+
+            const entityString = this.isSimpleSelect(selectExp) ? this.getEntityQueryString(selectExp.entity, context) : `(${this.newLine(1)}${this.toSelectString(selectExp, context)}${this.newLine(-1)}) AS ${this.enclose(selectExp.entity.alias ?? selectExp.entity.name)}`;
+            let updateQuery = `UPDATE ${this.entityName(updateExp.entity)}${(updateExp.entity.alias ? " AS " + this.enclose(updateExp.entity.alias) : "")}` +
                 this.newLine() + `SET ${setQuery}` +
-                this.newLine() + `FROM (${this.newLine(1)}${this.toSelectString(selectExp, context)}${this.newLine(-1)}) AS ${this.enclose(selectExp.entity.alias)}`;
+                this.newLine() + `FROM ${entityString}`;
 
             const relation = new AndExpression();
             for (const column of updateExp.entity.primaryColumns) {
@@ -107,9 +114,17 @@ export class SqliteQueryBuilder extends RelationalQueryBuilder {
                 const equalExp = new StrictEqualExpression(column, selectColumn);
                 relation.operands.push(equalExp);
             }
-            updateQuery += `${this.newLine()}WHERE ${this.toLogicalString(relation.asOperand())}`;
+            updateQuery += `${this.newLine()}WHERE ${this.toLogicalString(relation.asOperand(), context)}`;
             if (updateExp.returnings.length) {
-                updateQuery += `${this.newLine()}RETURNING ${updateExp.returnings.map(o => this.enclose(o.columnName)).join(",")}`;
+                updateQuery += `${this.newLine()}RETURNING ${updateExp.returnings.map(o => {
+                    let colStr = this.getColumnQueryString(o, context);
+                    // NOTE: computed column should always has alias
+                    if (o.alias) {
+                        colStr += " AS " + this.enclose(o.alias);
+                    }
+
+                    return colStr;
+                }).join(",")}`;
             }
 
             result.push({
@@ -124,30 +139,45 @@ export class SqliteQueryBuilder extends RelationalQueryBuilder {
                 const valueStr = this.toOperandString(value, context);
                 const column = updateExp.entity.columns.find((c) => c.propertyName === o);
                 return `${this.enclose(column.columnName)} = ${valueStr}`;
-            });
+            }).join(`,${this.newLine(1, false)}`);
 
             let firstJoin: JoinRelation<TE> = null;
             const whereQueries: string[] = [];
             let joins = updateExp.joins.slice();
             if (joins.length) {
                 firstJoin = joins.shift();
+            }
+            let updateQuery = `UPDATE ${this.entityName(updateExp.entity)}${(updateExp.entity.alias ? " AS " + this.enclose(updateExp.entity.alias) : "")}` +
+                this.newLine() + `SET ${setQuery}`;
+
+            if (firstJoin) {
                 whereQueries.push(this.toLogicalString(firstJoin.relation, context));
+                const entityString = this.isSimpleSelect(firstJoin.child) ? this.getEntityQueryString(firstJoin.child.entity, context) : `(${this.newLine(1)}${this.toSelectString(firstJoin.child, context)}${this.newLine(-1)}) AS ${this.enclose(firstJoin.child.entity.alias ?? firstJoin.child.entity.name)}`;
+                updateQuery += this.newLine() + `FROM ${entityString}` +
+                    this.getJoinQueryString(joins, context) + this.getParentJoinQueryString(updateExp.parentRelation, context);
+            }
+            if (!firstJoin && updateExp.parentRelation) {
+                const parent = updateExp.parentRelation.parent;
+                whereQueries.push(this.toLogicalString(updateExp.parentRelation.relation, context));
+                const entityString = this.isSimpleSelect(parent.select) ? this.getEntityQueryString(parent.entity, context) : `(${this.newLine(1)}${this.toSelectString(parent.select, context)}${this.newLine(-1)}) AS ${this.enclose(parent.entity.alias ?? parent.entity.name)}`;
+                updateQuery += this.newLine() + `FROM ${entityString}`;
             }
             if (updateExp.where) {
                 whereQueries.push(this.toLogicalString(updateExp.where, context));
-            }
-            let updateQuery = `UPDATE ${this.entityName(updateExp.entity)} AS ${this.enclose(updateExp.entity.alias)}` +
-                this.newLine() + `SET ${setQuery.join(", ")}`;
-
-            if (firstJoin) {
-                updateQuery += this.newLine() + `FROM ${this.entityName(firstJoin.child.entity)} AS ${this.enclose(firstJoin.child.entity.alias)}` +
-                    this.getJoinQueryString(joins, context);
             }
             if (whereQueries.length) {
                 updateQuery += this.newLine() + "WHERE " + whereQueries.join(" AND ");
             }
             if (updateExp.returnings.length) {
-                updateQuery += `${this.newLine()}RETURNING ${updateExp.returnings.map(o => this.enclose(o.columnName)).join(",")}`;
+                updateQuery += `${this.newLine()}RETURNING ${updateExp.returnings.map(o => {
+                    let colStr = this.getColumnQueryString(o, context);
+                    // NOTE: computed column should always has alias
+                    if (o.alias) {
+                        colStr += " AS " + this.enclose(o.alias);
+                    }
+
+                    return colStr;
+                }).join(",")}`;
             }
 
             result.push({
