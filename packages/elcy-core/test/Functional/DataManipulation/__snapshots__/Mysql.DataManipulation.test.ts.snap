@@ -760,7 +760,7 @@ Map {
 INNER JOIN (
 	SELECT \`entity0\`.\`id\`
 	FROM \`fixture\`.\`Table1s\` AS \`entity0\`
-	WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`integer\`>?) AND (\`entity0\`.\`real\` IS NOT DISTINCT FROM ?) AND ((COALESCE(\`entity0\`.\`real\`, 0))=?))
+	WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`integer\`>?) AND (\`entity0\`.\`real\`<=>?) AND ((COALESCE(\`entity0\`.\`real\`, 0))=?))
 	ORDER BY \`entity0\`.\`id\`
 	OFFSET ? ROWS
 	FETCH NEXT ? ROWS ONLY
@@ -906,7 +906,7 @@ Map {
         "query": 
 "UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
 SET \`entity0\`.\`string\` = ?,
-	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
 WHERE ((\`entity0\`.\`id\`=?) AND (\`entity0\`.\`modifiedDate\`=?))"
 ,
         "type": 2,
@@ -932,7 +932,7 @@ WHERE ((\`entity0\`.\`id\`=?) AND (\`entity0\`.\`modifiedDate\`=?))"
     "_query": 
 "UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
 SET \`entity0\`.\`string\` = ?,
-	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
 WHERE ((\`entity0\`.\`id\`=?) AND (\`entity0\`.\`modifiedDate\`=?));
 
 SELECT \`entity0\`.\`id\`,
@@ -969,7 +969,7 @@ Map {
         "query": 
 "UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
 SET \`entity0\`.\`string\` = ?,
-	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
 WHERE (\`entity0\`.\`id\`=?)"
 ,
         "type": 2,
@@ -994,7 +994,7 @@ WHERE (\`entity0\`.\`id\`=?)"
     "_query": 
 "UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
 SET \`entity0\`.\`string\` = ?,
-	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
 WHERE (\`entity0\`.\`id\`=?);
 
 SELECT \`entity0\`.\`id\`,
@@ -1031,7 +1031,7 @@ Map {
         "query": 
 "UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
 SET \`entity0\`.\`string\` = ?,
-	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
 WHERE (\`entity0\`.\`id\`=?)"
 ,
         "type": 2,
@@ -1056,7 +1056,7 @@ WHERE (\`entity0\`.\`id\`=?)"
     "_query": 
 "UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
 SET \`entity0\`.\`string\` = ?,
-	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
 WHERE (\`entity0\`.\`id\`=?);
 
 SELECT \`entity0\`.\`id\`,
@@ -1093,7 +1093,7 @@ Map {
         "query": 
 "UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
 SET \`entity0\`.\`string\` = ?,
-	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
 WHERE (\`entity0\`.\`id\`=?)"
 ,
         "type": 2,
@@ -1118,7 +1118,7 @@ WHERE (\`entity0\`.\`id\`=?)"
     "_query": 
 "UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
 SET \`entity0\`.\`string\` = ?,
-	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
 WHERE (\`entity0\`.\`id\`=?);
 
 SELECT \`entity0\`.\`id\`,
@@ -1155,7 +1155,7 @@ Map {
         "query": 
 "UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
 SET \`entity0\`.\`string\` = ?,
-	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
 WHERE (\`entity0\`.\`id\`=?)"
 ,
         "type": 2,
@@ -1180,7 +1180,7 @@ WHERE (\`entity0\`.\`id\`=?)"
     "_query": 
 "UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
 SET \`entity0\`.\`string\` = ?,
-	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
 WHERE (\`entity0\`.\`id\`=?);
 
 SELECT \`entity0\`.\`id\`,
@@ -1367,7 +1367,7 @@ Map {
         "query": 
 "INSERT INTO \`fixture\`.\`Table1s\`(\`bigint\`,\`binary\`,\`boolean\`,\`date\`,\`plainDate\`,\`dateTime\`,\`instant\`,\`decimal\`,\`decimalNumber\`,\`decimalDecimal\`,\`deleted\`,\`identifier\`,\`identifierString\`,\`integer\`,\`real\`,\`string\`,\`time\`,\`plainTime\`) VALUES
 	(DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,?,DEFAULT,?,DEFAULT,DEFAULT) AS \`entity0\`ON DUPLICATE KEY UPDATE
-	\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC',
+	\`modifiedDate\` = UTC_TIMESTAMP(),
 	\`string\` = \`entity0\`.\`string\`
 RETURNING \`entity0\`.\`id\`,\`entity0\`.\`computed\` AS \`computed\`,\`entity0\`.\`createdDate\`,\`entity0\`.\`modifiedDate\`,\`entity0\`.\`deleted\`,\`entity0\`.\`integer\`"
 ,
@@ -1394,7 +1394,7 @@ INNER JOIN (
     "_query": 
 "INSERT INTO \`fixture\`.\`Table1s\`(\`bigint\`,\`binary\`,\`boolean\`,\`date\`,\`plainDate\`,\`dateTime\`,\`instant\`,\`decimal\`,\`decimalNumber\`,\`decimalDecimal\`,\`deleted\`,\`identifier\`,\`identifierString\`,\`integer\`,\`real\`,\`string\`,\`time\`,\`plainTime\`) VALUES
 	(DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,?,DEFAULT,?,DEFAULT,DEFAULT) AS \`entity0\`ON DUPLICATE KEY UPDATE
-	\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC',
+	\`modifiedDate\` = UTC_TIMESTAMP(),
 	\`string\` = \`entity0\`.\`string\`
 RETURNING \`entity0\`.\`id\`,\`entity0\`.\`computed\` AS \`computed\`,\`entity0\`.\`createdDate\`,\`entity0\`.\`modifiedDate\`,\`entity0\`.\`deleted\`,\`entity0\`.\`integer\`;
 
@@ -1425,7 +1425,7 @@ INNER JOIN (
 	SELECT 1 AS \`id\`
 ) AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
 SET \`entity0\`.\`deleted\` = true,
-	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
 WHERE (\`entity0\`.\`deleted\`=false)"
 ,
     "type": 2,
@@ -1460,7 +1460,7 @@ Map {
     "query": 
 "UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
 SET \`entity0\`.\`deleted\` = true,
-	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
 WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`id\`=?))"
 ,
     "type": 2,
@@ -1503,13 +1503,13 @@ Map {
 INNER JOIN (
 	SELECT \`entity0\`.\`id\`
 	FROM \`fixture\`.\`Table1s\` AS \`entity0\`
-	WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`integer\`>?) AND (\`entity0\`.\`real\` IS NOT DISTINCT FROM ?) AND ((COALESCE(\`entity0\`.\`real\`, 0))=?))
+	WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`integer\`>?) AND (\`entity0\`.\`real\`<=>?) AND ((COALESCE(\`entity0\`.\`real\`, 0))=?))
 	ORDER BY \`entity0\`.\`id\`
 	OFFSET ? ROWS
 	FETCH NEXT ? ROWS ONLY
 ) AS \`entity0_1\` ON (\`entity0\`.\`id\`=\`entity0_1\`.\`id\`)
 SET \`entity0\`.\`deleted\` = true,
-	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'"
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()"
 ,
     "type": 2,
   },
@@ -1529,7 +1529,7 @@ Map {
     "query": 
 "DELETE \`entity0\`
 FROM \`fixture\`.\`Table1s\` AS \`entity0\`
-WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`integer\`>?) AND (\`entity0\`.\`real\` IS NOT DISTINCT FROM ?) AND ((COALESCE(\`entity0\`.\`real\`, 0))=?))"
+WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`integer\`>?) AND (\`entity0\`.\`real\`<=>?) AND ((COALESCE(\`entity0\`.\`real\`, 0))=?))"
 ,
     "type": 2,
   },
@@ -1547,7 +1547,7 @@ exports[`Mysql DATA MANIPULATION DELETE should bulk delete with include (soft de
         "query": 
 "UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
 SET \`entity0\`.\`deleted\` = true,
-	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
 WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`id\`=1))"
 ,
         "type": 2,
@@ -1565,7 +1565,7 @@ WHERE (\`entity1\`.\`deleted\`=false)"
     "_query": 
 "UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
 SET \`entity0\`.\`deleted\` = true,
-	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
 WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`id\`=1));
 
 UPDATE \`Table1Manies\` AS \`entity1\`
@@ -1676,7 +1676,7 @@ INNER JOIN (
 	SELECT 1 AS \`id\`
 ) AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
 SET \`entity0\`.\`deleted\` = true,
-	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
 WHERE (\`entity0\`.\`deleted\`=false)"
 ,
     "type": 2,
@@ -1726,7 +1726,7 @@ WHERE (\`delete\`.\`id\`=1)"
 "UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
 INNER JOIN \`delete\` AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
 SET \`entity0\`.\`deleted\` = true,
-	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
 WHERE (\`entity0\`.\`deleted\`=false)"
 ,
         "type": 2,
@@ -1759,7 +1759,7 @@ WHERE (\`delete\`.\`id\`=1);
 UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
 INNER JOIN \`delete\` AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
 SET \`entity0\`.\`deleted\` = true,
-	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
 WHERE (\`entity0\`.\`deleted\`=false);
 
 UPDATE \`Table1Manies\` AS \`entity1\`
@@ -1813,7 +1813,7 @@ WHERE (\`delete\`.\`id\`=1)"
 "UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
 INNER JOIN \`delete\` AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
 SET \`entity0\`.\`deleted\` = true,
-	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
 WHERE (\`entity0\`.\`deleted\`=false)"
 ,
         "type": 2,
@@ -1845,7 +1845,7 @@ WHERE (\`delete\`.\`id\`=1);
 UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
 INNER JOIN \`delete\` AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
 SET \`entity0\`.\`deleted\` = true,
-	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
 WHERE (\`entity0\`.\`deleted\`=false);
 
 UPDATE \`Table1Manies\` AS \`entity1\`
@@ -1898,7 +1898,7 @@ WHERE (\`delete\`.\`id\`=1)"
 "UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
 INNER JOIN \`delete\` AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
 SET \`entity0\`.\`deleted\` = true,
-	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
 WHERE (\`entity0\`.\`deleted\`=false)"
 ,
         "type": 2,
@@ -1930,7 +1930,7 @@ WHERE (\`delete\`.\`id\`=1);
 UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
 INNER JOIN \`delete\` AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
 SET \`entity0\`.\`deleted\` = true,
-	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
 WHERE (\`entity0\`.\`deleted\`=false);
 
 UPDATE \`Table1Manies\` AS \`entity1\`
@@ -1951,7 +1951,7 @@ INNER JOIN (
 	SELECT 1 AS \`id\`
 ) AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
 SET \`entity0\`.\`deleted\` = true,
-	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
 WHERE (\`entity0\`.\`deleted\`=false)"
 ,
     "type": 2,

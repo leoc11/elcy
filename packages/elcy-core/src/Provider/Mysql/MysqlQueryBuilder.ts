@@ -29,6 +29,7 @@ import { ProjectionEntityExpression } from "src/Queryable/QueryExpression/Projec
 import { DeleteExpression } from "src/Queryable/QueryExpression/DeleteExpression";
 import { UpsertExpression } from "src/Queryable/QueryExpression/UpsertExpression";
 import { Null } from "src/Common/Constant";
+import { mysqlQueryTranslator } from "./MysqlQueryTranslator";
 
 export class MysqlQueryBuilder extends RelationalQueryBuilder {
     //#region column type map
@@ -36,6 +37,7 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
         maxParameters: 65535,
         maxQueryLength: 8388608
     };
+    public override translator = mysqlQueryTranslator;
 
     override encloseIdentifier(identity: string): string {
         return "`" + identity + "`";

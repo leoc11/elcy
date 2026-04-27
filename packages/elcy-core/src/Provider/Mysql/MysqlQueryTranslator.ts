@@ -10,6 +10,7 @@ import { relationalQueryTranslator } from "../Relational/RelationalQueryTranslat
 import { isNonNullExp } from "src/Helper/Util";
 import { Uuid } from "src/Data/Uuid";
 import { Null } from "src/Common/Constant";
+import { DbFunction } from "src/Query/DbFunction";
 
 export const mysqlQueryTranslator = new QueryTranslator(Symbol("mysql"));
 mysqlQueryTranslator.registerFallbacks(relationalQueryTranslator);
@@ -60,3 +61,6 @@ mysqlQueryTranslator.registerMember(Math, "LOG10E", () => "LOG10(EXP(1))", () =>
 mysqlQueryTranslator.registerMember(Math, "LOG2E", () => "LOG(2, EXP(1))", () => true);
 mysqlQueryTranslator.registerMember(String.prototype, "length", (qb, exp, param) => `CHAR_LENGTH(${qb.toString(exp.objectOperand, param)})`);
 mysqlQueryTranslator.registerMethod(Math, "ceil", (qb, exp, param) => `CEILING(${qb.toString(exp.params[0], param)})`);
+
+
+mysqlQueryTranslator.registerMethod(DbFunction, "utcTimestamp", () => "UTC_TIMESTAMP()", () => true);

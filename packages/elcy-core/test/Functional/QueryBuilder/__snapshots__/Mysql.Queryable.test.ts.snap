@@ -4862,7 +4862,7 @@ INNER JOIN (
 	FROM \`fixture\`.\`Table1s\` AS \`entity0\`
 	WHERE (\`entity0\`.\`deleted\`=false)
 	GROUP BY EXTRACT(DAY FROM \`entity0\`.\`plainDate\`)
-) AS \`entity0\` ON (\`entity0\`.\`column0\` IS NOT DISTINCT FROM EXTRACT(DAY FROM \`entity1\`.\`plainDate\`))
+) AS \`entity0\` ON (\`entity0\`.\`column0\`<=>EXTRACT(DAY FROM \`entity1\`.\`plainDate\`))
 WHERE (\`entity1\`.\`deleted\`=false)
 ORDER BY EXTRACT(DAY FROM \`entity1\`.\`plainDate\`) ASC"
 ,
@@ -4909,7 +4909,7 @@ INNER JOIN (
 	FROM \`fixture\`.\`Table1s\` AS \`entity0\`
 	WHERE (\`entity0\`.\`deleted\`=false)
 	GROUP BY EXTRACT(DAY FROM \`entity0\`.\`plainDate\`)
-) AS \`entity0\` ON (\`entity0\`.\`column0\` IS NOT DISTINCT FROM EXTRACT(DAY FROM \`entity1\`.\`plainDate\`))
+) AS \`entity0\` ON (\`entity0\`.\`column0\`<=>EXTRACT(DAY FROM \`entity1\`.\`plainDate\`))
 WHERE (\`entity1\`.\`deleted\`=false)
 ORDER BY EXTRACT(DAY FROM \`entity1\`.\`plainDate\`) ASC;
 
@@ -5595,7 +5595,7 @@ INNER JOIN (
 	WHERE ((\`rel_entity0\`.\`deleted\`=false) AND (\`rel_entity0\`.\`decimalNumber\`>20000))
 	GROUP BY DAY(\`rel_entity0\`.\`dateTime\`)
 	HAVING (COUNT(\`rel_entity0\`.*)>3)
-) AS \`rel_entity0\` ON (DAY(\`entity0\`.\`dateTime\`) IS NOT DISTINCT FROM \`rel_entity0\`.\`column0\`)
+) AS \`rel_entity0\` ON (DAY(\`entity0\`.\`dateTime\`)<=>\`rel_entity0\`.\`column0\`)
 WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`decimalNumber\`>20000))
 ORDER BY DAY(\`entity0\`.\`dateTime\`) ASC"
 ,
@@ -7290,7 +7290,7 @@ Map {
 	\`entity0\`.\`createdDate\`,
 	\`entity0\`.\`modifiedDate\`
 FROM \`fixture\`.\`Table1s\` AS \`entity0\`
-WHERE ((\`entity0\`.\`deleted\`=false) AND (DAY(\`entity0\`.\`dateTime\`) IS DISTINCT FROM ?))"
+WHERE ((\`entity0\`.\`deleted\`=false) AND (NOT(DAY(\`entity0\`.\`dateTime\`)<=>?)))"
 ,
     "type": 1,
   },
@@ -7802,7 +7802,7 @@ Map {
 	\`entity0\`.\`createdDate\`,
 	\`entity0\`.\`modifiedDate\`
 FROM \`fixture\`.\`Table1s\` AS \`entity0\`
-WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`integer\`<?) AND (\`entity0\`.\`decimalNumber\`>?) AND (\`entity0\`.\`real\` IS DISTINCT FROM ?))"
+WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`integer\`<?) AND (\`entity0\`.\`decimalNumber\`>?) AND (NOT(\`entity0\`.\`real\`<=>?)))"
 ,
     "type": 1,
   },
@@ -7842,7 +7842,7 @@ Map {
 	\`entity0\`.\`createdDate\`,
 	\`entity0\`.\`modifiedDate\`
 FROM \`fixture\`.\`Table1s\` AS \`entity0\`
-WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`integer\`<?) AND (\`entity0\`.\`decimalNumber\`>?) AND (\`entity0\`.\`real\` IS DISTINCT FROM ?))"
+WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`integer\`<?) AND (\`entity0\`.\`decimalNumber\`>?) AND (NOT(\`entity0\`.\`real\`<=>?)))"
 ,
     "type": 1,
   },
@@ -7882,7 +7882,7 @@ Map {
 	\`entity0\`.\`createdDate\`,
 	\`entity0\`.\`modifiedDate\`
 FROM \`fixture\`.\`Table1s\` AS \`entity0\`
-WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`integer\`<?) AND (\`entity0\`.\`decimalNumber\`>?) AND (\`entity0\`.\`real\` IS DISTINCT FROM ?))"
+WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`integer\`<?) AND (\`entity0\`.\`decimalNumber\`>?) AND (NOT(\`entity0\`.\`real\`<=>?)))"
 ,
     "type": 1,
   },
