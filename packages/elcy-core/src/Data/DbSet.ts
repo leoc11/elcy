@@ -21,7 +21,6 @@ import { InsertExpression } from "../Queryable/QueryExpression/InsertExpression"
 import { IQueryExpression } from "../Queryable/QueryExpression/IQueryExpression";
 import { SelectExpression } from "../Queryable/QueryExpression/SelectExpression";
 import { UpsertExpression } from "../Queryable/QueryExpression/UpsertExpression";
-import { WhereQueryable } from "../Queryable/WhereQueryable";
 import { DbContext } from "./DbContext";
 import { EntityEntry } from "./EntityEntry";
 import { getEntityMetadata } from "src/MetaData/MetaDataMapper";
@@ -73,13 +72,13 @@ export class DbSet<TE extends object = any> extends Queryable<TE> {
             const key = modeOrKeyOrPredicate;
             const pkFilter = new AndExpression();
             const paramExp = new ParameterExpression("o", this.type);
+            const keyParamExp = new ParameterExpression("key", this.type);
             for (const primaryCol of this.metaData.primaryKeys) {
                 const val = key[primaryCol.propertyName];
                 if (!val || !isValue(val)) {
-                    pkFilter.operands.length = 0;
-                    break;
+                    throw new Error("Missing Primary key to delete");
                 }
-                const valExp = new ValueExpression(val);
+                const valExp = new MemberAccessExpression(keyParamExp, primaryCol.propertyName);
                 const logicalExp = new StrictEqualExpression(new MemberAccessExpression(paramExp, primaryCol.propertyName), valExp);
                 pkFilter.operands.push(logicalExp);
             }
@@ -88,7 +87,7 @@ export class DbSet<TE extends object = any> extends Queryable<TE> {
                 throw new Error("Missing Primary key to delete");
             }
 
-            return (new WhereQueryable(this, new FunctionExpression(pkFilter.asOperand(), [paramExp]))).deferredDelete(null, mode);
+            return this.parameter({ key }).deferredDelete(new FunctionExpression(pkFilter.asOperand(), [paramExp]), mode);
         }
     }
     public deferredInsert(...items: Array<FlatObjectLike<TE>>) {
@@ -99,21 +98,25 @@ export class DbSet<TE extends object = any> extends Queryable<TE> {
         const visitor = this.dbContext.queryVisitor;
         const entityExp = new EntityExpression(this.type, visitor.newAlias());
 
-        const valueExp: Array<SetterObj<TE>> = [];
-        for (const item of items) {
+        const insertExp = new InsertExpression(entityExp, []);
+        const itemsParameterExp = new ParameterExpression<Array<TE>>(`${1}:items`);
+        for (let i = 0, len = items.length; i < len; i++) {
+            const item = items[i];
             const itemExp: SetterObj<TE> = {};
+            const itemParamExp = new MemberAccessExpression(itemsParameterExp, String(i) as any);
             for (const prop in item) {
                 const propValue = item[prop];
-                if (propValue !== undefined && !(propValue instanceof Function)) {
-                    itemExp[prop] = new ValueExpression(propValue);
+                if (propValue === undefined || typeof propValue === "function") {
+                    continue;
                 }
+
+                itemExp[prop] = insertExp.addSqlParameter<TE[StringKeyOf<TE>]>(new MemberAccessExpression(itemParamExp, prop));
             }
-            valueExp.push(itemExp);
+            insertExp.values.push(itemExp);
         }
-        const insertExp = new InsertExpression(entityExp, valueExp);
 
         const timer = Diagnostic.timer();
-        const flatParams = this.flatQueryParameter({ index: 0 });
+        const flatParams = this.parameter({ items }).flatQueryParameter({ index: 0 });
         const params = this.buildParameter(insertExp, flatParams);
         if (Diagnostic.enabled) {
             Diagnostic.trace(this, `build params time: ${timer.time()}ms`);
@@ -135,37 +138,39 @@ export class DbSet<TE extends object = any> extends Queryable<TE> {
         return query;
     }
     // simple update.
-    public override deferredUpdate(setter: { [TK in keyof TE]?: (TE[TK] & ValueType) | ((item: QueryableChain<TE>) => TE[TK] & ValueType) }) {
+    public override deferredUpdate(setter: { [TK in keyof TE]?: Extract<ValueType, TE[TK]> | ((item: QueryableChain<TE>) => Extract<ValueType, TE[TK]>) }) {
         const pkFilter = new AndExpression();
-        const setterObj: { [TK in keyof TE]?: (TE[TK] & ValueType) | ((item: QueryableChain<TE>) => TE[TK] & ValueType) } = {};
         const paramExp = new ParameterExpression("o", this.type);
+        const idParamExp = new ParameterExpression("key", this.type);
+        const pkMap = Enumerable.from(this.metaData.primaryKeys).map(o => o.propertyName).toSet();
+        const realSetter: { [TK in keyof TE]?: Extract<ValueType, TE[TK]> | ((item: QueryableChain<TE>) => Extract<ValueType, TE[TK]>) } = {};
         for (const prop in setter) {
-            const primaryCol = this.metaData.primaryKeys.find((o) => o.propertyName === prop);
-            if (primaryCol) {
-                const val = setter[primaryCol.propertyName];
-                if (!val) {
-                    continue;
-                }
-                if (!isValue(val)) {
-                    setterObj[prop] = setter[prop];
+            const setValue = setter[prop];
+
+            if (typeof setValue === "function") {
+                realSetter[prop] = setValue as any;
+                continue;
+            }
+
+            if (pkMap.has(prop)) {
+                if (isNull(setValue)) {
                     continue;
                 }
 
-                const valExp = new ValueExpression(val as TE[keyof TE]);
-                const logicalExp = new StrictEqualExpression(new MemberAccessExpression(paramExp, primaryCol.propertyName), valExp);
+                const logicalExp = new StrictEqualExpression(new MemberAccessExpression(paramExp, prop), new MemberAccessExpression(idParamExp, prop));
                 pkFilter.operands.push(logicalExp);
             }
             else {
-                setterObj[prop] = setter[prop];
+                realSetter[prop] = setValue;
             }
         }
 
+        let queryable = this.parameter({ key: setter });
         if (pkFilter.operands.length) {
-            const query = this.filter(new FunctionExpression(pkFilter.asOperand(), [paramExp]));
-            return query.deferredUpdate(setterObj);
+            queryable = queryable.filter(new FunctionExpression(pkFilter.asOperand(), [paramExp]));
         }
 
-        return super.deferredUpdate(setter);
+        return queryable.deferredUpdate(realSetter);
     }
     public deferredUpsert(item: FlatObjectLike<TE>) {
         if (!getEntityMetadata(this.type)) {
@@ -278,6 +283,14 @@ export class DbSet<TE extends object = any> extends Queryable<TE> {
         return hashCode(this.type.name);
     }
 
+    public override async delete(mode?: DeleteMode): Promise<number>;
+    public override async delete(key: ObjectLike<TE>, mode?: DeleteMode): Promise<number>;
+    public override async delete(predicate?: FunctionExpression<boolean, [TE]>, mode?: DeleteMode): Promise<number>;
+    public override async delete(predicate?: (item: QueryableChain<TE>) => boolean, mode?: DeleteMode): Promise<number>;
+    public override async delete(modeOrKeyOrPredicate?: ObjectLike<TE> | FunctionExpression<boolean, [TE]> | ((item: QueryableChain<TE>) => boolean) | DeleteMode, mode?: DeleteMode) {
+        const query = this.deferredDelete(modeOrKeyOrPredicate as FunctionExpression<boolean, [TE]>, mode);
+        return await query.execute();
+    }
     public async insert(...items: Array<FlatObjectLike<TE>>) {
         const query = this.deferredInsert(...items);
         return await query.execute();

@@ -321,6 +321,19 @@ export const dataManipulationTest = (db: ITestContext) => {
                 expect(queries).toMatchSnapshot();
                 expect(effected).toBe(1);
             });
+            it("should update entity 2", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+
+                const effected = await db.table1Ones.update({
+                    table1Id: 1n,
+                    name: "Updated",
+                    number: 11
+                });
+
+                const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+                expect(effected).toBe(1);
+            });
             it("should bulk update entity", async () => {
                 const spy = vi.spyOn(db.connection, "query");
 
@@ -639,6 +652,30 @@ export const dataManipulationTest = (db: ITestContext) => {
                 const effected = await db.saveChanges({
                     forceHardDelete: true
                 });
+                expect(spy).toHaveBeenCalledTimes(1);
+                const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+                expect(effected).toBe(1);
+            });
+            it("should delete entity with key (soft delete)", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+                const effected = await db.table1s
+                    .delete({
+                        id: 1n
+                    });
+
+                expect(spy).toHaveBeenCalledTimes(1);
+                const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+                expect(effected).toBe(1);
+            });
+            it("should delete entity with key (hard delete)", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+                const effected = await db.table1s
+                    .delete({
+                        id: 1n
+                    }, "hard");
+
                 expect(spy).toHaveBeenCalledTimes(1);
                 const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
                 expect(queries).toMatchSnapshot();

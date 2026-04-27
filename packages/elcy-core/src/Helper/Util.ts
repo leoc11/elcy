@@ -217,8 +217,9 @@ export const replaceExpression = <T extends IExpression>(source: T, finder: <TEx
 export const isEntityExp = <T>(data: IExpression<T>): data is IEntityExpression<T & object> => {
     return !!(data as IEntityExpression<T & object>)?.entityTypes;
 };
-export const isExpression = (data: IExpression): data is IExpression => {
-    return !!(data.type && data.hashCode && data.clone);
+export const isExpression = (data: unknown): data is IExpression => {
+    const dataEx = data as IExpression;
+    return !!(dataEx.type && dataEx.hashCode && dataEx.clone);
 };
 export const isGroupExp = (data: IExpression): data is GroupByExpression => {
     return !!(data as GroupByExpression).itemSelect;

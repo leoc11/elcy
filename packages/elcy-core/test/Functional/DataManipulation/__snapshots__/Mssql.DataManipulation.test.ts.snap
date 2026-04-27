@@ -3,11 +3,17 @@
 exports[`Mssql DATA MANIPULATION INSERT should insert new entity 1 1`] = `
 [
   {
-    "parameters": Map {},
+    "parameters": 
+Map {
+      "@param0" => 1n,
+      "@param1" => "TEST1",
+      "@param2" => 10,
+    }
+,
     "query": 
 "INSERT INTO [Table1One]([table1Id], [name], [number])
 VALUES
-	(1,'TEST1',10)"
+	(@param0,@param1,@param2)"
 ,
     "type": 2,
   },
@@ -385,7 +391,7 @@ Map {
     }
 ,
     "query": 
-"UPDATE [entity0]
+"UPDATE entity0
 SET [entity0].[name] = @param0
 FROM [Table1One] AS [entity0]
 WHERE ([entity0].[table1Id]=@param1)"
@@ -395,13 +401,40 @@ WHERE ([entity0].[table1Id]=@param1)"
 ]
 `;
 
+exports[`Mssql DATA MANIPULATION UPDATE should update entity 2 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "@param0" => 1n,
+      "@param1" => "Updated",
+      "@param2" => 11,
+    }
+,
+    "query": 
+"UPDATE entity0
+SET [entity0].[name] = @param1,
+	[entity0].[number] = @param2
+FROM [Table1One] AS [entity0]
+WHERE ([entity0].[table1Id]=@param0)"
+,
+    "type": 2,
+  },
+]
+`;
+
 exports[`Mssql DATA MANIPULATION UPDATE should bulk update entity 1`] = `
 [
   {
-    "parameters": Map {},
+    "parameters": 
+Map {
+      "@param0" => "Updated",
+    }
+,
     "query": 
-"UPDATE [entity0]
-SET [entity0].[name] = 'Updated', [entity0].[number] = ([entity0].[number]+100)
+"UPDATE entity0
+SET [entity0].[name] = @param0,
+	[entity0].[number] = ([entity0].[number]+100)
 FROM [Table1One] AS [entity0]
 WHERE ([entity0].[table1Id]=1)"
 ,
@@ -419,12 +452,14 @@ Map {
       "@param1" => 99.99,
       "@param2" => 100,
       "@param3" => 50,
-      "@param4" => 100.12,
+      "@param4" => "Updated",
+      "@param5" => 100.12,
     }
 ,
     "query": 
-"UPDATE [entity0]
-SET [id] = [entity0_1].[id]
+"UPDATE entity0
+SET [entity0].[string] = @param4,
+	[entity0].[real] = ([entity0].[real]+@param5)
 FROM [Table1s] AS [entity0]
 INNER JOIN (
 	SELECT [entity0].[id]
@@ -451,7 +486,7 @@ Map {
     }
 ,
     "query": 
-"UPDATE [entity0]
+"UPDATE entity0
 SET [entity0].[name] = @param0
 FROM [Table1One] AS [entity0]
 WHERE (([entity0].[table1Id]=@param1) AND ([entity0].[name]=@param2))"
@@ -478,7 +513,7 @@ Map {
     }
 ,
     "query": 
-"UPDATE [entity0]
+"UPDATE entity0
 SET [entity0].[t2Name] = @param0
 OUTPUT [INSERTED].[id],[INSERTED].[rowVersion]
 FROM [Table2s] AS [entity0]
@@ -500,8 +535,9 @@ Map {
     }
 ,
     "query": 
-"UPDATE [entity0]
-SET [entity0].[string] = @param0, [entity0].[modifiedDate] = getutcdate()
+"UPDATE entity0
+SET [entity0].[string] = @param0,
+	[entity0].[modifiedDate] = getutcdate()
 OUTPUT [INSERTED].[id],([INSERTED].[integer]+[INSERTED].[decimalNumber]) AS [computed],[INSERTED].[modifiedDate]
 FROM [Table1s] AS [entity0]
 WHERE (([entity0].[id]=@param1) AND ([entity0].[modifiedDate]=@param2))"
@@ -521,8 +557,9 @@ Map {
     }
 ,
     "query": 
-"UPDATE [entity0]
-SET [entity0].[string] = @param0, [entity0].[modifiedDate] = getutcdate()
+"UPDATE entity0
+SET [entity0].[string] = @param0,
+	[entity0].[modifiedDate] = getutcdate()
 OUTPUT [INSERTED].[id],([INSERTED].[integer]+[INSERTED].[decimalNumber]) AS [computed],[INSERTED].[modifiedDate]
 FROM [Table1s] AS [entity0]
 WHERE ([entity0].[id]=@param1)"
@@ -542,8 +579,9 @@ Map {
     }
 ,
     "query": 
-"UPDATE [entity0]
-SET [entity0].[string] = @param0, [entity0].[modifiedDate] = getutcdate()
+"UPDATE entity0
+SET [entity0].[string] = @param0,
+	[entity0].[modifiedDate] = getutcdate()
 OUTPUT [INSERTED].[id],([INSERTED].[integer]+[INSERTED].[decimalNumber]) AS [computed],[INSERTED].[modifiedDate]
 FROM [Table1s] AS [entity0]
 WHERE ([entity0].[id]=@param1)"
@@ -563,8 +601,9 @@ Map {
     }
 ,
     "query": 
-"UPDATE [entity0]
-SET [entity0].[string] = @param0, [entity0].[modifiedDate] = getutcdate()
+"UPDATE entity0
+SET [entity0].[string] = @param0,
+	[entity0].[modifiedDate] = getutcdate()
 OUTPUT [INSERTED].[id],([INSERTED].[integer]+[INSERTED].[decimalNumber]) AS [computed],[INSERTED].[modifiedDate]
 FROM [Table1s] AS [entity0]
 WHERE ([entity0].[id]=@param1)"
@@ -584,8 +623,9 @@ Map {
     }
 ,
     "query": 
-"UPDATE [entity0]
-SET [entity0].[string] = @param0, [entity0].[modifiedDate] = getutcdate()
+"UPDATE entity0
+SET [entity0].[string] = @param0,
+	[entity0].[modifiedDate] = getutcdate()
 OUTPUT [INSERTED].[id],([INSERTED].[integer]+[INSERTED].[decimalNumber]) AS [computed],[INSERTED].[modifiedDate]
 FROM [Table1s] AS [entity0]
 WHERE ([entity0].[id]=@param1)"
@@ -641,7 +681,7 @@ Map {
     }
 ,
     "query": 
-"UPDATE [entity0]
+"UPDATE entity0
 SET [entity0].[table1Id] = @param0
 OUTPUT [INSERTED].[id]
 FROM [Table1Manies] AS [entity0]
@@ -676,7 +716,7 @@ Map {
     }
 ,
     "query": 
-"UPDATE [entity1]
+"UPDATE entity1
 SET [entity1].[table1Id] = @param0
 OUTPUT [INSERTED].[id]
 FROM [Table1Manies] AS [entity1]
@@ -854,8 +894,9 @@ exports[`Mssql DATA MANIPULATION DELETE should delete entity (soft delete) + sho
   {
     "parameters": Map {},
     "query": 
-"UPDATE [entity0]
-SET [entity0].[deleted] = 1, [entity0].[modifiedDate] = getutcdate()
+"UPDATE entity0
+SET [entity0].[deleted] = 1,
+	[entity0].[modifiedDate] = getutcdate()
 FROM [Table1s] AS [entity0]
 INNER JOIN (
 	VALUES
@@ -885,6 +926,44 @@ INNER JOIN (
 ]
 `;
 
+exports[`Mssql DATA MANIPULATION DELETE should delete entity with key (soft delete) 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "@param0" => 1n,
+    }
+,
+    "query": 
+"UPDATE entity0
+SET [entity0].[deleted] = 1,
+	[entity0].[modifiedDate] = getutcdate()
+FROM [Table1s] AS [entity0]
+WHERE (([entity0].[deleted]=0) AND ([entity0].[id]=@param0))"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Mssql DATA MANIPULATION DELETE should delete entity with key (hard delete) 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "@param0" => 1n,
+    }
+,
+    "query": 
+"DELETE [entity0]
+FROM [fixture].[Table1s] AS [entity0]
+WHERE ([entity0].[id]=@param0)"
+,
+    "type": 2,
+  },
+]
+`;
+
 exports[`Mssql DATA MANIPULATION DELETE should bulk delete entity (soft delete) with paging 1`] = `
 [
   {
@@ -897,8 +976,9 @@ Map {
     }
 ,
     "query": 
-"UPDATE [entity0]
-SET [id] = [entity0_1].[id]
+"UPDATE entity0
+SET [entity0].[deleted] = 1,
+	[entity0].[modifiedDate] = getutcdate()
 FROM [Table1s] AS [entity0]
 INNER JOIN (
 	SELECT [entity0].[id]
@@ -944,8 +1024,9 @@ exports[`Mssql DATA MANIPULATION DELETE should bulk delete with include (soft de
       {
         "parameters": Map {},
         "query": 
-"UPDATE [entity0]
-SET [entity0].[deleted] = 1, [entity0].[modifiedDate] = getutcdate()
+"UPDATE entity0
+SET [entity0].[deleted] = 1,
+	[entity0].[modifiedDate] = getutcdate()
 FROM [Table1s] AS [entity0]
 WHERE (([entity0].[deleted]=0) AND ([entity0].[id]=1))"
 ,
@@ -954,7 +1035,7 @@ WHERE (([entity0].[deleted]=0) AND ([entity0].[id]=1))"
       {
         "parameters": Map {},
         "query": 
-"UPDATE [entity1]
+"UPDATE entity1
 SET [entity1].[deleted] = 1
 FROM [Table1Manies] AS [entity1]
 WHERE ([entity1].[deleted]=0)"
@@ -963,12 +1044,13 @@ WHERE ([entity1].[deleted]=0)"
       },
     ],
     "_query": 
-"UPDATE [entity0]
-SET [entity0].[deleted] = 1, [entity0].[modifiedDate] = getutcdate()
+"UPDATE entity0
+SET [entity0].[deleted] = 1,
+	[entity0].[modifiedDate] = getutcdate()
 FROM [Table1s] AS [entity0]
 WHERE (([entity0].[deleted]=0) AND ([entity0].[id]=1));
 
-UPDATE [entity1]
+UPDATE entity1
 SET [entity1].[deleted] = 1
 FROM [Table1Manies] AS [entity1]
 WHERE ([entity1].[deleted]=0)"
@@ -1072,8 +1154,9 @@ exports[`Mssql DATA MANIPULATION DELETE should not cascade delete entity when no
   {
     "parameters": Map {},
     "query": 
-"UPDATE [entity0]
-SET [entity0].[deleted] = 1, [entity0].[modifiedDate] = getutcdate()
+"UPDATE entity0
+SET [entity0].[deleted] = 1,
+	[entity0].[modifiedDate] = getutcdate()
 FROM [Table1s] AS [entity0]
 INNER JOIN (
 	VALUES
@@ -1117,8 +1200,9 @@ VALUES
       {
         "parameters": Map {},
         "query": 
-"UPDATE [entity0]
-SET [entity0].[deleted] = 1, [entity0].[modifiedDate] = getutcdate()
+"UPDATE entity0
+SET [entity0].[deleted] = 1,
+	[entity0].[modifiedDate] = getutcdate()
 FROM [Table1s] AS [entity0]
 INNER JOIN [#delete] AS [delete] ON ([entity0].[id]=[delete].[id])
 WHERE ([entity0].[deleted]=0)"
@@ -1128,7 +1212,7 @@ WHERE ([entity0].[deleted]=0)"
       {
         "parameters": Map {},
         "query": 
-"UPDATE [entity1]
+"UPDATE entity1
 SET [entity1].[deleted] = 1
 FROM [Table1Manies] AS [entity1]
 WHERE ([entity1].[deleted]=0)"
@@ -1148,13 +1232,14 @@ INSERT INTO [#delete]([id])
 VALUES
 	(1);
 
-UPDATE [entity0]
-SET [entity0].[deleted] = 1, [entity0].[modifiedDate] = getutcdate()
+UPDATE entity0
+SET [entity0].[deleted] = 1,
+	[entity0].[modifiedDate] = getutcdate()
 FROM [Table1s] AS [entity0]
 INNER JOIN [#delete] AS [delete] ON ([entity0].[id]=[delete].[id])
 WHERE ([entity0].[deleted]=0);
 
-UPDATE [entity1]
+UPDATE entity1
 SET [entity1].[deleted] = 1
 FROM [Table1Manies] AS [entity1]
 WHERE ([entity1].[deleted]=0)"
@@ -1195,8 +1280,9 @@ VALUES
       {
         "parameters": Map {},
         "query": 
-"UPDATE [entity0]
-SET [entity0].[deleted] = 1, [entity0].[modifiedDate] = getutcdate()
+"UPDATE entity0
+SET [entity0].[deleted] = 1,
+	[entity0].[modifiedDate] = getutcdate()
 FROM [Table1s] AS [entity0]
 INNER JOIN [#delete] AS [delete] ON ([entity0].[id]=[delete].[id])
 WHERE ([entity0].[deleted]=0)"
@@ -1206,7 +1292,7 @@ WHERE ([entity0].[deleted]=0)"
       {
         "parameters": Map {},
         "query": 
-"UPDATE [entity1]
+"UPDATE entity1
 SET [entity1].[table1Id] = NULL
 FROM [Table1Manies] AS [entity1]"
 ,
@@ -1225,13 +1311,14 @@ INSERT INTO [#delete]([id])
 VALUES
 	(1);
 
-UPDATE [entity0]
-SET [entity0].[deleted] = 1, [entity0].[modifiedDate] = getutcdate()
+UPDATE entity0
+SET [entity0].[deleted] = 1,
+	[entity0].[modifiedDate] = getutcdate()
 FROM [Table1s] AS [entity0]
 INNER JOIN [#delete] AS [delete] ON ([entity0].[id]=[delete].[id])
 WHERE ([entity0].[deleted]=0);
 
-UPDATE [entity1]
+UPDATE entity1
 SET [entity1].[table1Id] = NULL
 FROM [Table1Manies] AS [entity1]"
 ,
@@ -1271,8 +1358,9 @@ VALUES
       {
         "parameters": Map {},
         "query": 
-"UPDATE [entity0]
-SET [entity0].[deleted] = 1, [entity0].[modifiedDate] = getutcdate()
+"UPDATE entity0
+SET [entity0].[deleted] = 1,
+	[entity0].[modifiedDate] = getutcdate()
 FROM [Table1s] AS [entity0]
 INNER JOIN [#delete] AS [delete] ON ([entity0].[id]=[delete].[id])
 WHERE ([entity0].[deleted]=0)"
@@ -1282,7 +1370,7 @@ WHERE ([entity0].[deleted]=0)"
       {
         "parameters": Map {},
         "query": 
-"UPDATE [entity1]
+"UPDATE entity1
 SET [entity1].[table1Id] = 0
 FROM [Table1Manies] AS [entity1]"
 ,
@@ -1301,13 +1389,14 @@ INSERT INTO [#delete]([id])
 VALUES
 	(1);
 
-UPDATE [entity0]
-SET [entity0].[deleted] = 1, [entity0].[modifiedDate] = getutcdate()
+UPDATE entity0
+SET [entity0].[deleted] = 1,
+	[entity0].[modifiedDate] = getutcdate()
 FROM [Table1s] AS [entity0]
 INNER JOIN [#delete] AS [delete] ON ([entity0].[id]=[delete].[id])
 WHERE ([entity0].[deleted]=0);
 
-UPDATE [entity1]
+UPDATE entity1
 SET [entity1].[table1Id] = 0
 FROM [Table1Manies] AS [entity1]"
 ,
@@ -1321,8 +1410,9 @@ exports[`Mssql DATA MANIPULATION DELETE should trigger before/after delete event
   {
     "parameters": Map {},
     "query": 
-"UPDATE [entity0]
-SET [entity0].[deleted] = 1, [entity0].[modifiedDate] = getutcdate()
+"UPDATE entity0
+SET [entity0].[deleted] = 1,
+	[entity0].[modifiedDate] = getutcdate()
 FROM [Table1s] AS [entity0]
 INNER JOIN (
 	VALUES

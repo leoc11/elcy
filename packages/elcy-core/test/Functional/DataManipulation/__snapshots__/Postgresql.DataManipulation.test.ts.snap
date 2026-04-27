@@ -3,10 +3,16 @@
 exports[`Postgresql DATA MANIPULATION INSERT should insert new entity 1 1`] = `
 [
   {
-    "parameters": Map {},
+    "parameters": 
+Map {
+      "$1" => 1n,
+      "$2" => "TEST1",
+      "$3" => 10,
+    }
+,
     "query": 
 "INSERT INTO "Table1One" AS "entity0"("table1Id","name","number") VALUES
-	(1,'TEST1',10)"
+	($1,$2,$3)"
 ,
     "type": 2,
   },
@@ -377,13 +383,38 @@ WHERE ("entity0"."table1Id"=$2)"
 ]
 `;
 
+exports[`Postgresql DATA MANIPULATION UPDATE should update entity 2 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "$1" => 1n,
+      "$2" => "Updated",
+      "$3" => 11,
+    }
+,
+    "query": 
+"UPDATE "Table1One" AS "entity0"
+SET "name" = $2,
+	"number" = $3
+WHERE ("entity0"."table1Id"=$1)"
+,
+    "type": 2,
+  },
+]
+`;
+
 exports[`Postgresql DATA MANIPULATION UPDATE should bulk update entity 1`] = `
 [
   {
-    "parameters": Map {},
+    "parameters": 
+Map {
+      "$1" => "Updated",
+    }
+,
     "query": 
 "UPDATE "Table1One" AS "entity0"
-SET "name" = 'Updated',
+SET "name" = $1,
 	"number" = ("entity0"."number"+100)
 WHERE ("entity0"."table1Id"=1)"
 ,
@@ -401,13 +432,14 @@ Map {
       "$2" => 99.99,
       "$3" => 100,
       "$4" => 50,
-      "$5" => 100.12,
+      "$5" => "Updated",
+      "$6" => 100.12,
     }
 ,
     "query": 
 "UPDATE "fixture"."Table1s" AS "entity0"
-SET "string" = 'Updated',
-	"real" = ("entity0"."real"+$5)
+SET "string" = $5,
+	"real" = ("entity0"."real"+$6)
 FROM (
 	SELECT "entity0"."id"
 	FROM "fixture"."Table1s" AS "entity0"
@@ -715,6 +747,42 @@ USING (
 	(1)
 ) AS "delete"("id")
 WHERE ("entity0"."id"="delete"."id")"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Postgresql DATA MANIPULATION DELETE should delete entity with key (soft delete) 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "$1" => 1n,
+    }
+,
+    "query": 
+"UPDATE "fixture"."Table1s" AS "entity0"
+SET "deleted" = true,
+	"modifiedDate" = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+WHERE (("entity0"."deleted"=false) AND ("entity0"."id"=$1))"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Postgresql DATA MANIPULATION DELETE should delete entity with key (hard delete) 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "$1" => 1n,
+    }
+,
+    "query": 
+"DELETE FROM "fixture"."Table1s" AS "entity0"
+WHERE ("entity0"."id"=$1)"
 ,
     "type": 2,
   },
