@@ -39,8 +39,30 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
     };
     public override translator = mysqlQueryTranslator;
 
-    override encloseIdentifier(identity: string): string {
+    public override encloseIdentifier(identity: string): string {
         return "`" + identity + "`";
+    }
+    protected override getPagingQueryString<TE extends object>(sqlExp: SelectExpression<TE>, context?: IQueryBuilderContext): string {
+        let result = "";
+        if (sqlExp.orders.length <= 0) {
+            if (sqlExp.distinct || sqlExp.isAggregated) {
+                result += `ORDER BY ${this.toString(sqlExp.projectedColumns.find(o => true), context)}${this.newLine()}`;
+            }
+            else {
+                let column = sqlExp.entity.primaryColumns[0];
+                if (!column) {
+                    column = sqlExp.entity.columns[0];
+                }
+                result += `ORDER BY ${this.toString(column, context)}${this.newLine()}`;
+            }
+        }
+        if (sqlExp.paging.take) {
+            result += `LIMIT ${this.toString(sqlExp.paging.take, context)}`;
+        }
+        if (sqlExp.paging.skip) {
+            result += `${sqlExp.paging.take ? " " : ""}OFFSET ${this.toString(sqlExp.paging.skip, context)}`;
+        }
+        return `${this.newLine()}${result}`;
     }
     //#endregion
     protected override getInsertQuery<TE extends object>(insertExp: InsertExpression<TE>, option: IQueryOption, parameters: ISqlParameterValueMap): IQuery[] {

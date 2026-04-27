@@ -252,7 +252,7 @@ Map {
 FROM \`fixture\`.\`Table1s\` AS \`entity0\`
 WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`id\`=?))
 ORDER BY \`entity0\`.\`id\`
-FETCH NEXT 1 ROWS ONLY"
+LIMIT 1"
 ,
     "type": 1,
   },
@@ -751,8 +751,8 @@ Map {
       "?2" => 100,
       "?3" => 99.99,
       "?4" => 99.99,
-      "?5" => 100,
-      "?6" => 50,
+      "?5" => 50,
+      "?6" => 100,
     }
 ,
     "query": 
@@ -762,8 +762,7 @@ INNER JOIN (
 	FROM \`fixture\`.\`Table1s\` AS \`entity0\`
 	WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`integer\`>?) AND (\`entity0\`.\`real\`<=>?) AND ((COALESCE(\`entity0\`.\`real\`, 0))=?))
 	ORDER BY \`entity0\`.\`id\`
-	OFFSET ? ROWS
-	FETCH NEXT ? ROWS ONLY
+	LIMIT ? OFFSET ?
 ) AS \`entity0_1\` ON (\`entity0\`.\`id\`=\`entity0_1\`.\`id\`)
 SET \`entity0\`.\`string\` = ?,
 	\`entity0\`.\`real\` = (\`entity0\`.\`real\`+?)"
@@ -1228,7 +1227,7 @@ Map {
 FROM \`fixture\`.\`Table1s\` AS \`entity0\`
 WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`id\`=?))
 ORDER BY \`entity0\`.\`id\`
-FETCH NEXT 1 ROWS ONLY"
+LIMIT 1"
 ,
     "type": 1,
   },
@@ -1494,8 +1493,8 @@ Map {
       "?0" => 100,
       "?1" => 99.99,
       "?2" => 99.99,
-      "?3" => 100,
-      "?4" => 50,
+      "?3" => 50,
+      "?4" => 100,
     }
 ,
     "query": 
@@ -1505,8 +1504,7 @@ INNER JOIN (
 	FROM \`fixture\`.\`Table1s\` AS \`entity0\`
 	WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`integer\`>?) AND (\`entity0\`.\`real\`<=>?) AND ((COALESCE(\`entity0\`.\`real\`, 0))=?))
 	ORDER BY \`entity0\`.\`id\`
-	OFFSET ? ROWS
-	FETCH NEXT ? ROWS ONLY
+	LIMIT ? OFFSET ?
 ) AS \`entity0_1\` ON (\`entity0\`.\`id\`=\`entity0_1\`.\`id\`)
 SET \`entity0\`.\`deleted\` = true,
 	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()"

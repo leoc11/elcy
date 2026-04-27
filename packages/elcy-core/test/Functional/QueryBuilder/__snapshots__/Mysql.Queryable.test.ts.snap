@@ -2177,7 +2177,7 @@ exports[`Mysql QUERYABLE SOME should work 1`] = `
 FROM \`fixture\`.\`Table1s\` AS \`entity0\`
 WHERE (\`entity0\`.\`deleted\`=false)
 ORDER BY true
-FETCH NEXT 1 ROWS ONLY"
+LIMIT 1"
 ,
     "type": 1,
   },
@@ -2363,7 +2363,7 @@ WHERE ((\`entity0\`.\`deleted\`=false) AND NOT(
 	(\`entity0\`.\`real\`<=20000)
 ))
 ORDER BY false
-FETCH NEXT 1 ROWS ONLY"
+LIMIT 1"
 ,
     "type": 1,
   },
@@ -3626,8 +3626,8 @@ exports[`Mysql QUERYABLE SLICE should work 1`] = `
   {
     "parameters": 
 Map {
-      "?0" => 11,
-      "?1" => 1,
+      "?0" => 1,
+      "?1" => 11,
     }
 ,
     "query": 
@@ -3655,8 +3655,7 @@ Map {
 FROM \`fixture\`.\`Table1s\` AS \`entity0\`
 WHERE (\`entity0\`.\`deleted\`=false)
 ORDER BY \`entity0\`.\`id\`
-OFFSET ? ROWS
-FETCH NEXT ? ROWS ONLY"
+LIMIT ? OFFSET ?"
 ,
     "type": 1,
   },
@@ -3668,8 +3667,8 @@ exports[`Mysql QUERYABLE SLICE order.take.order.take 1`] = `
   {
     "parameters": 
 Map {
-      "?0" => 0,
-      "?1" => 5,
+      "?0" => 5,
+      "?1" => 0,
     }
 ,
     "query": 
@@ -3697,8 +3696,7 @@ Map {
 FROM \`fixture\`.\`Table1s\` AS \`entity0\`
 WHERE (\`entity0\`.\`deleted\`=false)
 ORDER BY \`entity0\`.\`modifiedDate\` DESC
-OFFSET ? ROWS
-FETCH NEXT ? ROWS ONLY"
+LIMIT ? OFFSET ?"
 ,
     "type": 1,
   },
@@ -3880,18 +3878,18 @@ exports[`Mysql QUERYABLE SLICE should work in include 2 (consider orderBy after 
     "_isProcessed": true,
     "_parameters": 
 Map {
-      "?0" => 0,
-      "?1" => 10,
-      "?2" => 0,
-      "?3" => 10,
+      "?0" => 10,
+      "?1" => 0,
+      "?2" => 10,
+      "?3" => 0,
     }
 ,
     "_queries": [
       {
         "parameters": 
 Map {
-          "?0" => 0,
-          "?1" => 10,
+          "?0" => 10,
+          "?1" => 0,
         }
 ,
         "query": 
@@ -3999,8 +3997,7 @@ INNER JOIN (
 	FROM \`fixture\`.\`Table1s\` AS \`entity0\`
 	WHERE (\`entity0\`.\`deleted\`=false)
 	ORDER BY \`entity0\`.\`id\`
-	OFFSET ? ROWS
-	FETCH NEXT ? ROWS ONLY
+	LIMIT ? OFFSET ?
 ) AS \`entity0\` ON (\`entity0\`.\`id\`=\`entity1\`.\`table1Id\`)
 ORDER BY \`entity1\`.\`table1Id\` ASC, \`entity1\`.\`name\` ASC"
 ,
@@ -4009,8 +4006,8 @@ ORDER BY \`entity1\`.\`table1Id\` ASC, \`entity1\`.\`name\` ASC"
       {
         "parameters": 
 Map {
-          "?0" => 0,
-          "?1" => 10,
+          "?0" => 10,
+          "?1" => 0,
         }
 ,
         "query": 
@@ -4038,8 +4035,7 @@ Map {
 FROM \`fixture\`.\`Table1s\` AS \`entity0\`
 WHERE (\`entity0\`.\`deleted\`=false)
 ORDER BY \`entity0\`.\`id\`
-OFFSET ? ROWS
-FETCH NEXT ? ROWS ONLY"
+LIMIT ? OFFSET ?"
 ,
         "type": 1,
       },
@@ -4149,8 +4145,7 @@ INNER JOIN (
 	FROM \`fixture\`.\`Table1s\` AS \`entity0\`
 	WHERE (\`entity0\`.\`deleted\`=false)
 	ORDER BY \`entity0\`.\`id\`
-	OFFSET ? ROWS
-	FETCH NEXT ? ROWS ONLY
+	LIMIT ? OFFSET ?
 ) AS \`entity0\` ON (\`entity0\`.\`id\`=\`entity1\`.\`table1Id\`)
 ORDER BY \`entity1\`.\`table1Id\` ASC, \`entity1\`.\`name\` ASC;
 
@@ -4178,8 +4173,7 @@ SELECT \`entity0\`.\`id\`,
 FROM \`fixture\`.\`Table1s\` AS \`entity0\`
 WHERE (\`entity0\`.\`deleted\`=false)
 ORDER BY \`entity0\`.\`id\`
-OFFSET ? ROWS
-FETCH NEXT ? ROWS ONLY"
+LIMIT ? OFFSET ?"
 ,
     "_type": 1,
   },
@@ -4215,7 +4209,7 @@ exports[`Mysql QUERYABLE FIND should work 1`] = `
 FROM \`fixture\`.\`Table1s\` AS \`entity0\`
 WHERE (\`entity0\`.\`deleted\`=false)
 ORDER BY \`entity0\`.\`id\`
-FETCH NEXT 1 ROWS ONLY"
+LIMIT 1"
 ,
     "type": 1,
   },
@@ -4255,7 +4249,7 @@ Map {
 FROM \`fixture\`.\`Table1s\` AS \`entity0\`
 WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`instant\`<?) AND (\`entity0\`.\`integer\`>20000))
 ORDER BY \`entity0\`.\`id\`
-FETCH NEXT 1 ROWS ONLY"
+LIMIT 1"
 ,
     "type": 1,
   },
@@ -4681,8 +4675,8 @@ exports[`Mysql QUERYABLE GROUP BY groupBy computed column complex 1 1`] = `
   {
     "parameters": 
 Map {
-      "?0" => 0,
-      "?1" => 100,
+      "?0" => 100,
+      "?1" => 0,
     }
 ,
     "query": 
@@ -4737,8 +4731,7 @@ INNER JOIN (
 		FROM \`fixture\`.\`Table1s\` AS \`entity0\`
 		WHERE (\`entity0\`.\`deleted\`=false)
 		ORDER BY \`entity0\`.\`id\`
-		OFFSET ? ROWS
-		FETCH NEXT ? ROWS ONLY
+		LIMIT ? OFFSET ?
 	) AS \`entity0\`
 	WHERE ((\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`)>10000)
 ) AS \`entity0\` ON (\`entity0\`.\`id\`=\`entity1\`.\`table1Id\`)
@@ -6775,10 +6768,10 @@ exports[`Mysql QUERYABLE SET OPERATOR should union 2 records 1`] = `
   {
     "parameters": 
 Map {
-      "?0" => 0,
-      "?1" => 5,
-      "?2" => 0,
-      "?3" => 5,
+      "?0" => 5,
+      "?1" => 0,
+      "?2" => 5,
+      "?3" => 0,
     }
 ,
     "query": 
@@ -6828,8 +6821,7 @@ FROM (
 	FROM \`fixture\`.\`Table1s\` AS \`entity0\`
 	WHERE (\`entity0\`.\`deleted\`=false)
 	ORDER BY \`entity0\`.\`decimalNumber\` DESC
-	OFFSET ? ROWS
-	FETCH NEXT ? ROWS ONLY
+	LIMIT ? OFFSET ?
 	UNION
 	SELECT \`entity1\`.\`id\`,
 		\`entity1\`.\`bigint\`,
@@ -6855,8 +6847,7 @@ FROM (
 	FROM \`fixture\`.\`Table1s\` AS \`entity1\`
 	WHERE (\`entity1\`.\`deleted\`=false)
 	ORDER BY \`entity1\`.\`decimalNumber\` ASC
-	OFFSET ? ROWS
-	FETCH NEXT ? ROWS ONLY
+	LIMIT ? OFFSET ?
 ) AS \`entity0\`
 LEFT JOIN (
 	SELECT \`entity2\`.\`table1Id\`,
@@ -6877,10 +6868,10 @@ exports[`Mysql QUERYABLE SET OPERATOR should concat 2 records 1`] = `
   {
     "parameters": 
 Map {
-      "?0" => 0,
-      "?1" => 5,
-      "?2" => 0,
-      "?3" => 5,
+      "?0" => 5,
+      "?1" => 0,
+      "?2" => 5,
+      "?3" => 0,
     }
 ,
     "query": 
@@ -6930,8 +6921,7 @@ FROM (
 	FROM \`fixture\`.\`Table1s\` AS \`entity0\`
 	WHERE (\`entity0\`.\`deleted\`=false)
 	ORDER BY \`entity0\`.\`decimalNumber\` DESC
-	OFFSET ? ROWS
-	FETCH NEXT ? ROWS ONLY
+	LIMIT ? OFFSET ?
 	UNION ALL
 	SELECT \`entity1\`.\`id\`,
 		\`entity1\`.\`bigint\`,
@@ -6957,8 +6947,7 @@ FROM (
 	FROM \`fixture\`.\`Table1s\` AS \`entity1\`
 	WHERE (\`entity1\`.\`deleted\`=false)
 	ORDER BY \`entity1\`.\`decimalNumber\` ASC
-	OFFSET ? ROWS
-	FETCH NEXT ? ROWS ONLY
+	LIMIT ? OFFSET ?
 ) AS \`entity0\`
 LEFT JOIN (
 	SELECT \`entity2\`.\`table1Id\`,
@@ -6979,12 +6968,12 @@ exports[`Mysql QUERYABLE SET OPERATOR should intersect 2 records 1`] = `
   {
     "parameters": 
 Map {
-      "?0" => 0,
-      "?1" => 10,
-      "?2" => 0,
-      "?3" => 10,
-      "?4" => 0,
-      "?5" => 5,
+      "?0" => 10,
+      "?1" => 0,
+      "?2" => 10,
+      "?3" => 0,
+      "?4" => 5,
+      "?5" => 0,
     }
 ,
     "query": 
@@ -7034,8 +7023,7 @@ FROM (
 	FROM \`fixture\`.\`Table1s\` AS \`entity0\`
 	WHERE (\`entity0\`.\`deleted\`=false)
 	ORDER BY \`entity0\`.\`decimalNumber\` DESC
-	OFFSET ? ROWS
-	FETCH NEXT ? ROWS ONLY
+	LIMIT ? OFFSET ?
 	INTERSECT
 	SELECT \`entity1\`.\`id\`,
 		\`entity1\`.\`bigint\`,
@@ -7061,12 +7049,10 @@ FROM (
 	FROM \`fixture\`.\`Table1s\` AS \`entity1\`
 	WHERE (\`entity1\`.\`deleted\`=false)
 	ORDER BY \`entity1\`.\`decimalNumber\` ASC
-	OFFSET ? ROWS
-	FETCH NEXT ? ROWS ONLY
+	LIMIT ? OFFSET ?
 ) AS \`entity0\`
 ORDER BY \`entity0\`.\`id\`
-OFFSET ? ROWS
-FETCH NEXT ? ROWS ONLY"
+LIMIT ? OFFSET ?"
 ,
     "type": 1,
   },
@@ -7078,10 +7064,10 @@ exports[`Mysql QUERYABLE SET OPERATOR should except records 1`] = `
   {
     "parameters": 
 Map {
-      "?0" => 0,
-      "?1" => 10,
-      "?2" => 0,
-      "?3" => 5,
+      "?0" => 10,
+      "?1" => 0,
+      "?2" => 5,
+      "?3" => 0,
     }
 ,
     "query": 
@@ -7131,8 +7117,7 @@ FROM (
 	FROM \`fixture\`.\`Table1s\` AS \`entity0\`
 	WHERE (\`entity0\`.\`deleted\`=false)
 	ORDER BY \`entity0\`.\`decimalNumber\` DESC
-	OFFSET ? ROWS
-	FETCH NEXT ? ROWS ONLY
+	LIMIT ? OFFSET ?
 	EXCEPT
 	SELECT \`entity1\`.\`id\`,
 		\`entity1\`.\`bigint\`,
@@ -7158,8 +7143,7 @@ FROM (
 	FROM \`fixture\`.\`Table1s\` AS \`entity1\`
 	WHERE (\`entity1\`.\`deleted\`=false)
 	ORDER BY \`entity1\`.\`decimalNumber\` ASC
-	OFFSET ? ROWS
-	FETCH NEXT ? ROWS ONLY
+	LIMIT ? OFFSET ?
 ) AS \`entity0\`
 ORDER BY \`entity0\`.\`decimalNumber\` DESC"
 ,
@@ -8186,8 +8170,8 @@ exports[`Mysql QUERYABLE SUBQUERY should work in select (Sum SubQuery) 1`] = `
   {
     "parameters": 
 Map {
-      "?0" => 0,
-      "?1" => 10,
+      "?0" => 10,
+      "?1" => 0,
     }
 ,
     "query": 
@@ -8212,8 +8196,7 @@ LEFT JOIN (
 ) AS \`entity2\` ON (\`entity2\`.\`id\`=\`entity0\`.\`id\`)
 WHERE (\`entity0\`.\`deleted\`=false)
 ORDER BY \`entity0\`.\`dateTime\` DESC
-OFFSET ? ROWS
-FETCH NEXT ? ROWS ONLY"
+LIMIT ? OFFSET ?"
 ,
     "type": 1,
   },
@@ -8225,8 +8208,8 @@ exports[`Mysql QUERYABLE SUBQUERY should work in select (Some SubQuery) 1`] = `
   {
     "parameters": 
 Map {
-      "?0" => 0,
-      "?1" => 10,
+      "?0" => 10,
+      "?1" => 0,
     }
 ,
     "query": 
@@ -8250,8 +8233,7 @@ LEFT JOIN (
 ) AS \`entity2\` ON (\`entity2\`.\`id\`=\`entity0\`.\`id\`)
 WHERE (\`entity0\`.\`deleted\`=false)
 ORDER BY \`entity0\`.\`decimalNumber\` ASC
-OFFSET ? ROWS
-FETCH NEXT ? ROWS ONLY"
+LIMIT ? OFFSET ?"
 ,
     "type": 1,
   },
@@ -8263,8 +8245,8 @@ exports[`Mysql QUERYABLE SUBQUERY should work in select (Every SubQuery) 1`] = `
   {
     "parameters": 
 Map {
-      "?0" => 0,
-      "?1" => 10,
+      "?0" => 10,
+      "?1" => 0,
     }
 ,
     "query": 
@@ -8292,8 +8274,7 @@ LEFT JOIN (
 ) AS \`entity2\` ON (\`entity2\`.\`id\`=\`entity0\`.\`id\`)
 WHERE (\`entity0\`.\`deleted\`=false)
 ORDER BY \`entity0\`.\`decimalNumber\` DESC
-OFFSET ? ROWS
-FETCH NEXT ? ROWS ONLY"
+LIMIT ? OFFSET ?"
 ,
     "type": 1,
   },
@@ -8629,8 +8610,8 @@ exports[`Mysql QUERYABLE ARRAY PARAMETER should work in select (Sum SubQuery) 1`
   {
     "parameters": 
 Map {
-      "?0" => 0,
-      "?1" => 10,
+      "?0" => 10,
+      "?1" => 0,
     }
 ,
     "query": 
@@ -8658,8 +8639,7 @@ LEFT JOIN (
 ) AS \`entity2\` ON (\`entity2\`.\`id\`=\`entity0\`.\`id\`)
 WHERE (\`entity0\`.\`deleted\`=false)
 ORDER BY \`entity0\`.\`dateTime\` DESC
-OFFSET ? ROWS
-FETCH NEXT ? ROWS ONLY"
+LIMIT ? OFFSET ?"
 ,
     "type": 1,
   },
@@ -8671,8 +8651,8 @@ exports[`Mysql QUERYABLE ARRAY PARAMETER should work in select (Some SubQuery) 1
   {
     "parameters": 
 Map {
-      "?0" => 0,
-      "?1" => 10,
+      "?0" => 10,
+      "?1" => 0,
     }
 ,
     "query": 
@@ -8699,8 +8679,7 @@ LEFT JOIN (
 ) AS \`entity2\` ON (\`entity2\`.\`id\`=\`entity0\`.\`id\`)
 WHERE (\`entity0\`.\`deleted\`=false)
 ORDER BY \`entity0\`.\`decimalNumber\` ASC
-OFFSET ? ROWS
-FETCH NEXT ? ROWS ONLY"
+LIMIT ? OFFSET ?"
 ,
     "type": 1,
   },
@@ -8712,8 +8691,8 @@ exports[`Mysql QUERYABLE ARRAY PARAMETER should work in select (Every SubQuery) 
   {
     "parameters": 
 Map {
-      "?0" => 0,
-      "?1" => 10,
+      "?0" => 10,
+      "?1" => 0,
     }
 ,
     "query": 
@@ -8744,8 +8723,7 @@ LEFT JOIN (
 ) AS \`entity2\` ON (\`entity2\`.\`id\`=\`entity0\`.\`id\`)
 WHERE (\`entity0\`.\`deleted\`=false)
 ORDER BY \`entity0\`.\`decimalNumber\` DESC
-OFFSET ? ROWS
-FETCH NEXT ? ROWS ONLY"
+LIMIT ? OFFSET ?"
 ,
     "type": 1,
   },
@@ -9049,8 +9027,8 @@ Map {
       "?3" => "name 2",
       "?4" => 3,
       "?5" => "name 3",
-      "?6" => 1,
-      "?7" => 9,
+      "?6" => 9,
+      "?7" => 1,
     }
 ,
     "query": 
@@ -9062,8 +9040,7 @@ SELECT ? as id, ? as name
 UNION ALL
 SELECT ? as id, ? as name) AS \`entity0\`
 ORDER BY \`entity0\`.\`id\`
-OFFSET ? ROWS
-FETCH NEXT ? ROWS ONLY"
+LIMIT ? OFFSET ?"
 ,
     "type": 1,
   },
@@ -9092,7 +9069,7 @@ UNION ALL
 SELECT ? as id, ? as name) AS \`entity0\`
 WHERE (\`entity0\`.\`id\`=2)
 ORDER BY true
-FETCH NEXT 1 ROWS ONLY"
+LIMIT 1"
 ,
     "type": 1,
   },
@@ -9123,7 +9100,7 @@ WHERE NOT(
 	(\`entity0\`.\`id\`>=0)
 )
 ORDER BY false
-FETCH NEXT 1 ROWS ONLY"
+LIMIT 1"
 ,
     "type": 1,
   },
@@ -9204,7 +9181,7 @@ SELECT ? as id, ? as name
 UNION ALL
 SELECT ? as id, ? as name) AS \`entity0\`
 ORDER BY \`entity0\`.\`id\`
-FETCH NEXT 1 ROWS ONLY"
+LIMIT 1"
 ,
     "type": 1,
   },
@@ -9365,10 +9342,10 @@ exports[`Mysql QUERYABLE RAW should union 1`] = `
   {
     "parameters": 
 Map {
-      "?0" => 0,
-      "?1" => 5,
-      "?2" => 0,
-      "?3" => 5,
+      "?0" => 5,
+      "?1" => 0,
+      "?2" => 5,
+      "?3" => 0,
     }
 ,
     "query": 
@@ -9381,15 +9358,13 @@ SELECT 2 as id, 'name 2' as name
 UNION ALL
 SELECT 3 as id, 'name 3' as name) AS \`entity0\`
 	ORDER BY \`entity0\`.\`id\` DESC
-	OFFSET ? ROWS
-	FETCH NEXT ? ROWS ONLY
+	LIMIT ? OFFSET ?
 	UNION
 	SELECT \`entity1\`.\`id\`
 	FROM \`fixture\`.\`Table1s\` AS \`entity1\`
 	WHERE (\`entity1\`.\`deleted\`=false)
 	ORDER BY \`entity1\`.\`id\` ASC
-	OFFSET ? ROWS
-	FETCH NEXT ? ROWS ONLY
+	LIMIT ? OFFSET ?
 ) AS \`entity0\`"
 ,
     "type": 1,

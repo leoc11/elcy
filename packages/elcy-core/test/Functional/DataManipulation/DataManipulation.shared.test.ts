@@ -850,5 +850,3 @@ export const dataManipulationTest = (db: ITestContext) => {
         });
     });
 };
-
-// dataManipulationTest(new MysqlContext());
