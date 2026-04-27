@@ -183,9 +183,12 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
                 relation.operands.push(equalExp);
             }
 
-            const setQuery = selectExp.selects
-                .map((o) => `${this.enclose(o.columnName)} = ${this.getColumnQueryString(o, context)}`)
-                .join(", ");
+            const setQuery = Object.keys(updateExp.setter).map((o) => {
+                const value = updateExp.setter[o as keyof TE];
+                const valueStr = this.toOperandString(value, context);
+                const column = updateExp.entity.columns.find((c) => c.propertyName === o);
+                return `${this.enclose(updateExp.entity.alias)}.${this.enclose(column.columnName)} = ${valueStr}`;
+            }).join(`,${this.newLine(1, false)}`);
 
             const updateQuery = `UPDATE ${this.entityName(updateExp.entity)} AS ${this.enclose(updateExp.entity.alias)}` +
                 this.getJoinQueryString([new JoinRelation(updateExp.select, selectExp, relation.asOperand(), "INNER")], context) +
@@ -202,7 +205,7 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
                 const valueStr = this.toOperandString(value, context);
                 const column = updateExp.entity.columns.find((c) => c.propertyName === o);
                 return `${this.enclose(updateExp.entity.alias)}.${this.enclose(column.columnName)} = ${valueStr}`;
-            }).join(", ");
+            }).join(`,${this.newLine(1, false)}`);
 
             let updateQuery = `UPDATE ${this.entityName(updateExp.entity)} AS ${this.enclose(updateExp.entity.alias)}` +
                 this.getJoinQueryString(updateExp.joins, context) +

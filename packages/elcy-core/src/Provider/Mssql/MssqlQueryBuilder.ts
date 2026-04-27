@@ -144,6 +144,13 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
                 relation.operands.push(equalExp);
             }
 
+            const setQuery = Object.keys(updateExp.setter).map((o) => {
+                const value = updateExp.setter[o as keyof TE];
+                const valueStr = this.toOperandString(value, context);
+                const column = updateExp.entity.columns.find((c) => c.propertyName === o);
+                return `${this.enclose(updateExp.entity.alias)}.${this.enclose(column.columnName)} = ${valueStr}`;
+            }).join(`,${this.newLine(1, false)}`);
+            
             const updateQuery = `UPDATE ${updateExp.entity.alias}` +
                 this.newLine() + `SET ${setQuery}` +
                 returning +
@@ -161,14 +168,14 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
                 const valueStr = this.toOperandString(value, context);
                 const column = updateExp.entity.columns.find((c) => c.propertyName === o);
                 return `${this.enclose(updateExp.entity.alias)}.${this.enclose(column.columnName)} = ${valueStr}`;
-            });
+            }).join(`,${this.newLine(1, false)}`);
 
             let limit = "";
             if (updateExp.paging?.take) {
                 limit = ` TOP (${this.toString(updateExp.paging.take, context)})`;
             }
             let updateQuery = `UPDATE${limit} ${updateExp.entity.alias}` +
-                this.newLine() + `SET ${setQuery.join(", ")}` +
+                this.newLine() + `SET ${setQuery}` +
                 returning +
                 this.newLine() + `FROM ${this.enclose(updateExp.entity.name)} AS ${this.enclose(updateExp.entity.alias)}` +
                 this.getJoinQueryString(updateExp.joins, context);
