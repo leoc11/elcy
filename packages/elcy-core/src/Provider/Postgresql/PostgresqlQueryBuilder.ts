@@ -228,8 +228,8 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
             });
         }
 
-        const includedDeletes = updateExp.includes.flatMap((o) => this.getUpdateQuery(o.child, context.option, context.parameters));
-        result.push(...includedDeletes);
+        const includedUpdates = updateExp.includes.flatMap((o) => this.getUpdateQuery(o.child, context.option, context.parameters));
+        result.push(...includedUpdates);
         return result;
     }
     protected override getDeleteQuery<TE extends object>(deleteExp: DeleteExpression<TE>, option: IQueryOption, parameters: ISqlParameterValueMap): IQuery[] {

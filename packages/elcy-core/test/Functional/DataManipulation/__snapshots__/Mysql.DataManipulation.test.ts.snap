@@ -22,7 +22,7 @@ Map {
         }
 ,
         "query": 
-"INSERT INTO "Table1One"("table1Id","name","number") VALUES
+"INSERT INTO \`Table1One\`(\`table1Id\`,\`name\`,\`number\`) VALUES
 (?,?,?)"
 ,
         "type": 2,
@@ -34,20 +34,20 @@ Map {
         }
 ,
         "query": 
-"SELECT "entity0"."table1Id"
-FROM "Table1One" AS "entity0"
-WHERE ("entity0"."table1Id"=?)"
+"SELECT \`entity0\`.\`table1Id\`
+FROM \`Table1One\` AS \`entity0\`
+WHERE (\`entity0\`.\`table1Id\`=?)"
 ,
         "type": 1,
       },
     ],
     "_query": 
-"INSERT INTO "Table1One"("table1Id","name","number") VALUES
+"INSERT INTO \`Table1One\`(\`table1Id\`,\`name\`,\`number\`) VALUES
 (?,?,?);
 
-SELECT "entity0"."table1Id"
-FROM "Table1One" AS "entity0"
-WHERE ("entity0"."table1Id"=?)"
+SELECT \`entity0\`.\`table1Id\`
+FROM \`Table1One\` AS \`entity0\`
+WHERE (\`entity0\`.\`table1Id\`=?)"
 ,
     "_type": 3,
   },
@@ -76,7 +76,7 @@ Map {
         }
 ,
         "query": 
-"INSERT INTO "Table1One"("table1Id","name","number") VALUES
+"INSERT INTO \`Table1One\`(\`table1Id\`,\`name\`,\`number\`) VALUES
 (?,?,?)"
 ,
         "type": 2,
@@ -88,20 +88,20 @@ Map {
         }
 ,
         "query": 
-"SELECT "entity0"."table1Id"
-FROM "Table1One" AS "entity0"
-WHERE ("entity0"."table1Id"=?)"
+"SELECT \`entity0\`.\`table1Id\`
+FROM \`Table1One\` AS \`entity0\`
+WHERE (\`entity0\`.\`table1Id\`=?)"
 ,
         "type": 1,
       },
     ],
     "_query": 
-"INSERT INTO "Table1One"("table1Id","name","number") VALUES
+"INSERT INTO \`Table1One\`(\`table1Id\`,\`name\`,\`number\`) VALUES
 (?,?,?);
 
-SELECT "entity0"."table1Id"
-FROM "Table1One" AS "entity0"
-WHERE ("entity0"."table1Id"=?)"
+SELECT \`entity0\`.\`table1Id\`
+FROM \`Table1One\` AS \`entity0\`
+WHERE (\`entity0\`.\`table1Id\`=?)"
 ,
     "_type": 3,
   },
@@ -130,7 +130,7 @@ Map {
         }
 ,
         "query": 
-"INSERT INTO "Table1One"("table1Id","name","number") VALUES
+"INSERT INTO \`Table1One\`(\`table1Id\`,\`name\`,\`number\`) VALUES
 (?,?,?)"
 ,
         "type": 2,
@@ -142,20 +142,20 @@ Map {
         }
 ,
         "query": 
-"SELECT "entity0"."table1Id"
-FROM "Table1One" AS "entity0"
-WHERE ("entity0"."table1Id"=?)"
+"SELECT \`entity0\`.\`table1Id\`
+FROM \`Table1One\` AS \`entity0\`
+WHERE (\`entity0\`.\`table1Id\`=?)"
 ,
         "type": 1,
       },
     ],
     "_query": 
-"INSERT INTO "Table1One"("table1Id","name","number") VALUES
+"INSERT INTO \`Table1One\`(\`table1Id\`,\`name\`,\`number\`) VALUES
 (?,?,?);
 
-SELECT "entity0"."table1Id"
-FROM "Table1One" AS "entity0"
-WHERE ("entity0"."table1Id"=?)"
+SELECT \`entity0\`.\`table1Id\`
+FROM \`Table1One\` AS \`entity0\`
+WHERE (\`entity0\`.\`table1Id\`=?)"
 ,
     "_type": 3,
   },
@@ -179,7 +179,7 @@ Map {
         }
 ,
         "query": 
-"INSERT INTO "fixture"."Table1s"("bigint","binary","boolean","date","plainDate","dateTime","instant","decimal","decimalNumber","decimalDecimal","deleted","identifier","identifierString","integer","real","string","time","plainTime") VALUES
+"INSERT INTO \`fixture\`.\`Table1s\`(\`bigint\`,\`binary\`,\`boolean\`,\`date\`,\`plainDate\`,\`dateTime\`,\`instant\`,\`decimal\`,\`decimalNumber\`,\`decimalDecimal\`,\`deleted\`,\`identifier\`,\`identifierString\`,\`integer\`,\`real\`,\`string\`,\`time\`,\`plainTime\`) VALUES
 (DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,?,DEFAULT,DEFAULT)"
 ,
         "type": 2,
@@ -187,32 +187,32 @@ Map {
       {
         "parameters": Map {},
         "query": 
-"SELECT "entity0"."id",
-	"entity0"."id",
-	("entity0"."integer"+"entity0"."decimalNumber") AS "computed",
-	"entity0"."createdDate",
-	"entity0"."modifiedDate",
-	"entity0"."deleted",
-	"entity0"."integer"
-FROM "fixture"."Table1s" AS "entity0"
-WHERE ("entity0"."id"=LAST_INSERT_ID())"
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`createdDate\`,
+	\`entity0\`.\`modifiedDate\`,
+	\`entity0\`.\`deleted\`,
+	\`entity0\`.\`integer\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
 ,
         "type": 1,
       },
     ],
     "_query": 
-"INSERT INTO "fixture"."Table1s"("bigint","binary","boolean","date","plainDate","dateTime","instant","decimal","decimalNumber","decimalDecimal","deleted","identifier","identifierString","integer","real","string","time","plainTime") VALUES
+"INSERT INTO \`fixture\`.\`Table1s\`(\`bigint\`,\`binary\`,\`boolean\`,\`date\`,\`plainDate\`,\`dateTime\`,\`instant\`,\`decimal\`,\`decimalNumber\`,\`decimalDecimal\`,\`deleted\`,\`identifier\`,\`identifierString\`,\`integer\`,\`real\`,\`string\`,\`time\`,\`plainTime\`) VALUES
 (DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,?,DEFAULT,DEFAULT);
 
-SELECT "entity0"."id",
-	"entity0"."id",
-	("entity0"."integer"+"entity0"."decimalNumber") AS "computed",
-	"entity0"."createdDate",
-	"entity0"."modifiedDate",
-	"entity0"."deleted",
-	"entity0"."integer"
-FROM "fixture"."Table1s" AS "entity0"
-WHERE ("entity0"."id"=LAST_INSERT_ID())"
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`createdDate\`,
+	\`entity0\`.\`modifiedDate\`,
+	\`entity0\`.\`deleted\`,
+	\`entity0\`.\`integer\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
 ,
     "_type": 3,
   },
@@ -228,30 +228,30 @@ Map {
     }
 ,
     "query": 
-"SELECT "entity0"."id",
-	"entity0"."bigint",
-	"entity0"."binary",
-	"entity0"."boolean",
-	"entity0"."date",
-	"entity0"."plainDate",
-	"entity0"."dateTime",
-	"entity0"."instant",
-	"entity0"."decimal",
-	"entity0"."decimalNumber",
-	"entity0"."decimalDecimal",
-	"entity0"."deleted",
-	"entity0"."identifier",
-	"entity0"."identifierString",
-	"entity0"."integer",
-	"entity0"."real",
-	"entity0"."string",
-	"entity0"."time",
-	"entity0"."plainTime",
-	"entity0"."createdDate",
-	"entity0"."modifiedDate"
-FROM "fixture"."Table1s" AS "entity0"
-WHERE (("entity0"."deleted"=false) AND ("entity0"."id"=?))
-ORDER BY "entity0"."id"
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`bigint\`,
+	\`entity0\`.\`binary\`,
+	\`entity0\`.\`boolean\`,
+	\`entity0\`.\`date\`,
+	\`entity0\`.\`plainDate\`,
+	\`entity0\`.\`dateTime\`,
+	\`entity0\`.\`instant\`,
+	\`entity0\`.\`decimal\`,
+	\`entity0\`.\`decimalNumber\`,
+	\`entity0\`.\`decimalDecimal\`,
+	\`entity0\`.\`deleted\`,
+	\`entity0\`.\`identifier\`,
+	\`entity0\`.\`identifierString\`,
+	\`entity0\`.\`integer\`,
+	\`entity0\`.\`real\`,
+	\`entity0\`.\`string\`,
+	\`entity0\`.\`time\`,
+	\`entity0\`.\`plainTime\`,
+	\`entity0\`.\`createdDate\`,
+	\`entity0\`.\`modifiedDate\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`id\`=?))
+ORDER BY \`entity0\`.\`id\`
 FETCH NEXT 1 ROWS ONLY"
 ,
     "type": 1,
@@ -278,7 +278,7 @@ Map {
         }
 ,
         "query": 
-"INSERT INTO "Table1Manies"("table1Id","name","integer","deleted") VALUES
+"INSERT INTO \`Table1Manies\`(\`table1Id\`,\`name\`,\`integer\`,\`deleted\`) VALUES
 (?,?,?,DEFAULT)"
 ,
         "type": 2,
@@ -286,12 +286,12 @@ Map {
       {
         "parameters": Map {},
         "query": 
-"SELECT "entity0"."id",
-	"entity0"."id",
-	"entity0"."table1Id",
-	"entity0"."deleted"
-FROM "Table1Manies" AS "entity0"
-WHERE ("entity0"."id"=LAST_INSERT_ID())"
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	\`entity0\`.\`table1Id\`,
+	\`entity0\`.\`deleted\`
+FROM \`Table1Manies\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
 ,
         "type": 1,
       },
@@ -304,7 +304,7 @@ Map {
         }
 ,
         "query": 
-"INSERT INTO "Table1Manies"("table1Id","name","integer","deleted") VALUES
+"INSERT INTO \`Table1Manies\`(\`table1Id\`,\`name\`,\`integer\`,\`deleted\`) VALUES
 (?,?,?,DEFAULT)"
 ,
         "type": 2,
@@ -312,36 +312,36 @@ Map {
       {
         "parameters": Map {},
         "query": 
-"SELECT "entity0"."id",
-	"entity0"."id",
-	"entity0"."table1Id",
-	"entity0"."deleted"
-FROM "Table1Manies" AS "entity0"
-WHERE ("entity0"."id"=LAST_INSERT_ID())"
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	\`entity0\`.\`table1Id\`,
+	\`entity0\`.\`deleted\`
+FROM \`Table1Manies\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
 ,
         "type": 1,
       },
     ],
     "_query": 
-"INSERT INTO "Table1Manies"("table1Id","name","integer","deleted") VALUES
+"INSERT INTO \`Table1Manies\`(\`table1Id\`,\`name\`,\`integer\`,\`deleted\`) VALUES
 (?,?,?,DEFAULT);
 
-SELECT "entity0"."id",
-	"entity0"."id",
-	"entity0"."table1Id",
-	"entity0"."deleted"
-FROM "Table1Manies" AS "entity0"
-WHERE ("entity0"."id"=LAST_INSERT_ID());
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	\`entity0\`.\`table1Id\`,
+	\`entity0\`.\`deleted\`
+FROM \`Table1Manies\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID());
 
-INSERT INTO "Table1Manies"("table1Id","name","integer","deleted") VALUES
+INSERT INTO \`Table1Manies\`(\`table1Id\`,\`name\`,\`integer\`,\`deleted\`) VALUES
 (?,?,?,DEFAULT);
 
-SELECT "entity0"."id",
-	"entity0"."id",
-	"entity0"."table1Id",
-	"entity0"."deleted"
-FROM "Table1Manies" AS "entity0"
-WHERE ("entity0"."id"=LAST_INSERT_ID())"
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	\`entity0\`.\`table1Id\`,
+	\`entity0\`.\`deleted\`
+FROM \`Table1Manies\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
 ,
     "_type": 3,
   },
@@ -357,7 +357,7 @@ Map {
     }
 ,
     "query": 
-"INSERT INTO "fixture"."Table1s"("bigint","binary","boolean","date","plainDate","dateTime","instant","decimal","decimalNumber","decimalDecimal","deleted","identifier","identifierString","integer","real","string","time","plainTime") VALUES
+"INSERT INTO \`fixture\`.\`Table1s\`(\`bigint\`,\`binary\`,\`boolean\`,\`date\`,\`plainDate\`,\`dateTime\`,\`instant\`,\`decimal\`,\`decimalNumber\`,\`decimalDecimal\`,\`deleted\`,\`identifier\`,\`identifierString\`,\`integer\`,\`real\`,\`string\`,\`time\`,\`plainTime\`) VALUES
 (DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,?,DEFAULT,DEFAULT)"
 ,
     "type": 2,
@@ -365,15 +365,15 @@ Map {
   {
     "parameters": Map {},
     "query": 
-"SELECT "entity0"."id",
-	"entity0"."id",
-	("entity0"."integer"+"entity0"."decimalNumber") AS "computed",
-	"entity0"."createdDate",
-	"entity0"."modifiedDate",
-	"entity0"."deleted",
-	"entity0"."integer"
-FROM "fixture"."Table1s" AS "entity0"
-WHERE ("entity0"."id"=LAST_INSERT_ID())"
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`createdDate\`,
+	\`entity0\`.\`modifiedDate\`,
+	\`entity0\`.\`deleted\`,
+	\`entity0\`.\`integer\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
 ,
     "type": 1,
   },
@@ -384,7 +384,7 @@ Map {
     }
 ,
     "query": 
-"INSERT INTO "fixture"."Table1s"("bigint","binary","boolean","date","plainDate","dateTime","instant","decimal","decimalNumber","decimalDecimal","deleted","identifier","identifierString","integer","real","string","time","plainTime") VALUES
+"INSERT INTO \`fixture\`.\`Table1s\`(\`bigint\`,\`binary\`,\`boolean\`,\`date\`,\`plainDate\`,\`dateTime\`,\`instant\`,\`decimal\`,\`decimalNumber\`,\`decimalDecimal\`,\`deleted\`,\`identifier\`,\`identifierString\`,\`integer\`,\`real\`,\`string\`,\`time\`,\`plainTime\`) VALUES
 (DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,?,DEFAULT,DEFAULT)"
 ,
     "type": 2,
@@ -392,15 +392,15 @@ Map {
   {
     "parameters": Map {},
     "query": 
-"SELECT "entity0"."id",
-	"entity0"."id",
-	("entity0"."integer"+"entity0"."decimalNumber") AS "computed",
-	"entity0"."createdDate",
-	"entity0"."modifiedDate",
-	"entity0"."deleted",
-	"entity0"."integer"
-FROM "fixture"."Table1s" AS "entity0"
-WHERE ("entity0"."id"=LAST_INSERT_ID())"
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`createdDate\`,
+	\`entity0\`.\`modifiedDate\`,
+	\`entity0\`.\`deleted\`,
+	\`entity0\`.\`integer\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
 ,
     "type": 1,
   },
@@ -413,7 +413,7 @@ Map {
     }
 ,
     "query": 
-"INSERT INTO "Table1Manies"("table1Id","name","integer","deleted") VALUES
+"INSERT INTO \`Table1Manies\`(\`table1Id\`,\`name\`,\`integer\`,\`deleted\`) VALUES
 (?,?,?,DEFAULT)"
 ,
     "type": 2,
@@ -421,12 +421,12 @@ Map {
   {
     "parameters": Map {},
     "query": 
-"SELECT "entity1"."id",
-	"entity1"."id",
-	"entity1"."table1Id",
-	"entity1"."deleted"
-FROM "Table1Manies" AS "entity1"
-WHERE ("entity1"."id"=LAST_INSERT_ID())"
+"SELECT \`entity1\`.\`id\`,
+	\`entity1\`.\`id\`,
+	\`entity1\`.\`table1Id\`,
+	\`entity1\`.\`deleted\`
+FROM \`Table1Manies\` AS \`entity1\`
+WHERE (\`entity1\`.\`id\`=LAST_INSERT_ID())"
 ,
     "type": 1,
   },
@@ -439,7 +439,7 @@ Map {
     }
 ,
     "query": 
-"INSERT INTO "Table1Manies"("table1Id","name","integer","deleted") VALUES
+"INSERT INTO \`Table1Manies\`(\`table1Id\`,\`name\`,\`integer\`,\`deleted\`) VALUES
 (?,?,?,DEFAULT)"
 ,
     "type": 2,
@@ -447,12 +447,12 @@ Map {
   {
     "parameters": Map {},
     "query": 
-"SELECT "entity1"."id",
-	"entity1"."id",
-	"entity1"."table1Id",
-	"entity1"."deleted"
-FROM "Table1Manies" AS "entity1"
-WHERE ("entity1"."id"=LAST_INSERT_ID())"
+"SELECT \`entity1\`.\`id\`,
+	\`entity1\`.\`id\`,
+	\`entity1\`.\`table1Id\`,
+	\`entity1\`.\`deleted\`
+FROM \`Table1Manies\` AS \`entity1\`
+WHERE (\`entity1\`.\`id\`=LAST_INSERT_ID())"
 ,
     "type": 1,
   },
@@ -465,7 +465,7 @@ Map {
     }
 ,
     "query": 
-"INSERT INTO "Table1Manies"("table1Id","name","integer","deleted") VALUES
+"INSERT INTO \`Table1Manies\`(\`table1Id\`,\`name\`,\`integer\`,\`deleted\`) VALUES
 (?,?,?,DEFAULT)"
 ,
     "type": 2,
@@ -473,12 +473,12 @@ Map {
   {
     "parameters": Map {},
     "query": 
-"SELECT "entity1"."id",
-	"entity1"."id",
-	"entity1"."table1Id",
-	"entity1"."deleted"
-FROM "Table1Manies" AS "entity1"
-WHERE ("entity1"."id"=LAST_INSERT_ID())"
+"SELECT \`entity1\`.\`id\`,
+	\`entity1\`.\`id\`,
+	\`entity1\`.\`table1Id\`,
+	\`entity1\`.\`deleted\`
+FROM \`Table1Manies\` AS \`entity1\`
+WHERE (\`entity1\`.\`id\`=LAST_INSERT_ID())"
 ,
     "type": 1,
   },
@@ -502,7 +502,7 @@ Map {
         }
 ,
         "query": 
-"INSERT INTO "fixture"."Table1s"("bigint","binary","boolean","date","plainDate","dateTime","instant","decimal","decimalNumber","decimalDecimal","deleted","identifier","identifierString","integer","real","string","time","plainTime") VALUES
+"INSERT INTO \`fixture\`.\`Table1s\`(\`bigint\`,\`binary\`,\`boolean\`,\`date\`,\`plainDate\`,\`dateTime\`,\`instant\`,\`decimal\`,\`decimalNumber\`,\`decimalDecimal\`,\`deleted\`,\`identifier\`,\`identifierString\`,\`integer\`,\`real\`,\`string\`,\`time\`,\`plainTime\`) VALUES
 (DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,?,DEFAULT,DEFAULT)"
 ,
         "type": 2,
@@ -510,32 +510,32 @@ Map {
       {
         "parameters": Map {},
         "query": 
-"SELECT "entity0"."id",
-	"entity0"."id",
-	("entity0"."integer"+"entity0"."decimalNumber") AS "computed",
-	"entity0"."createdDate",
-	"entity0"."modifiedDate",
-	"entity0"."deleted",
-	"entity0"."integer"
-FROM "fixture"."Table1s" AS "entity0"
-WHERE ("entity0"."id"=LAST_INSERT_ID())"
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`createdDate\`,
+	\`entity0\`.\`modifiedDate\`,
+	\`entity0\`.\`deleted\`,
+	\`entity0\`.\`integer\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
 ,
         "type": 1,
       },
     ],
     "_query": 
-"INSERT INTO "fixture"."Table1s"("bigint","binary","boolean","date","plainDate","dateTime","instant","decimal","decimalNumber","decimalDecimal","deleted","identifier","identifierString","integer","real","string","time","plainTime") VALUES
+"INSERT INTO \`fixture\`.\`Table1s\`(\`bigint\`,\`binary\`,\`boolean\`,\`date\`,\`plainDate\`,\`dateTime\`,\`instant\`,\`decimal\`,\`decimalNumber\`,\`decimalDecimal\`,\`deleted\`,\`identifier\`,\`identifierString\`,\`integer\`,\`real\`,\`string\`,\`time\`,\`plainTime\`) VALUES
 (DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,?,DEFAULT,DEFAULT);
 
-SELECT "entity0"."id",
-	"entity0"."id",
-	("entity0"."integer"+"entity0"."decimalNumber") AS "computed",
-	"entity0"."createdDate",
-	"entity0"."modifiedDate",
-	"entity0"."deleted",
-	"entity0"."integer"
-FROM "fixture"."Table1s" AS "entity0"
-WHERE ("entity0"."id"=LAST_INSERT_ID())"
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`createdDate\`,
+	\`entity0\`.\`modifiedDate\`,
+	\`entity0\`.\`deleted\`,
+	\`entity0\`.\`integer\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
 ,
     "_type": 3,
   },
@@ -547,17 +547,17 @@ exports[`Mysql DATA MANIPULATION INSERT should bulk insert 1`] = `
   {
     "parameters": Map {},
     "query": 
-"INSERT INTO "Table1Manies" ("name")
-SELECT (CONCAT('Detail of parent ', CAST("entity0"."id" AS nvarchar(max)))) AS "column1"
-FROM "fixture"."Table1s" AS "entity0"
+"INSERT INTO \`Table1Manies\` (\`name\`)
+SELECT (CONCAT('Detail of parent ', CAST(\`entity0\`.\`id\` AS nvarchar(max)))) AS \`column1\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
 LEFT JOIN (
-	SELECT "entity1"."table1Id",
-		COUNT("entity1".*) AS "column0"
-	FROM "Table1Manies" AS "entity1"
-	WHERE ("entity1"."deleted"=false)
-	GROUP BY "entity1"."table1Id"
-) AS "entity1" ON ("entity0"."id"="entity1"."table1Id")
-WHERE (("entity0"."deleted"=false) AND ((COALESCE("entity1"."column0", 0))<=0))"
+	SELECT \`entity1\`.\`table1Id\`,
+		COUNT(\`entity1\`.*) AS \`column0\`
+	FROM \`Table1Manies\` AS \`entity1\`
+	WHERE (\`entity1\`.\`deleted\`=false)
+	GROUP BY \`entity1\`.\`table1Id\`
+) AS \`entity1\` ON (\`entity0\`.\`id\`=\`entity1\`.\`table1Id\`)
+WHERE ((\`entity0\`.\`deleted\`=false) AND ((COALESCE(\`entity1\`.\`column0\`, 0))<=0))"
 ,
     "type": 2,
   },
@@ -605,7 +605,7 @@ Map {
     }
 ,
     "query": 
-"INSERT INTO "Table1One"("table1Id","name","number") VALUES
+"INSERT INTO \`Table1One\`(\`table1Id\`,\`name\`,\`number\`) VALUES
 	(?,?,?)
 	,(?,?,?)
 	,(?,?,?)
@@ -642,7 +642,7 @@ Map {
         }
 ,
         "query": 
-"INSERT INTO "fixture"."Table1s"("bigint","binary","boolean","date","plainDate","dateTime","instant","decimal","decimalNumber","decimalDecimal","deleted","identifier","identifierString","integer","real","string","time","plainTime") VALUES
+"INSERT INTO \`fixture\`.\`Table1s\`(\`bigint\`,\`binary\`,\`boolean\`,\`date\`,\`plainDate\`,\`dateTime\`,\`instant\`,\`decimal\`,\`decimalNumber\`,\`decimalDecimal\`,\`deleted\`,\`identifier\`,\`identifierString\`,\`integer\`,\`real\`,\`string\`,\`time\`,\`plainTime\`) VALUES
 (DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,?,DEFAULT,?,DEFAULT,DEFAULT)"
 ,
         "type": 2,
@@ -650,32 +650,32 @@ Map {
       {
         "parameters": Map {},
         "query": 
-"SELECT "entity0"."id",
-	"entity0"."id",
-	("entity0"."integer"+"entity0"."decimalNumber") AS "computed",
-	"entity0"."createdDate",
-	"entity0"."modifiedDate",
-	"entity0"."deleted",
-	"entity0"."integer"
-FROM "fixture"."Table1s" AS "entity0"
-WHERE ("entity0"."id"=LAST_INSERT_ID())"
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`createdDate\`,
+	\`entity0\`.\`modifiedDate\`,
+	\`entity0\`.\`deleted\`,
+	\`entity0\`.\`integer\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
 ,
         "type": 1,
       },
     ],
     "_query": 
-"INSERT INTO "fixture"."Table1s"("bigint","binary","boolean","date","plainDate","dateTime","instant","decimal","decimalNumber","decimalDecimal","deleted","identifier","identifierString","integer","real","string","time","plainTime") VALUES
+"INSERT INTO \`fixture\`.\`Table1s\`(\`bigint\`,\`binary\`,\`boolean\`,\`date\`,\`plainDate\`,\`dateTime\`,\`instant\`,\`decimal\`,\`decimalNumber\`,\`decimalDecimal\`,\`deleted\`,\`identifier\`,\`identifierString\`,\`integer\`,\`real\`,\`string\`,\`time\`,\`plainTime\`) VALUES
 (DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,?,DEFAULT,?,DEFAULT,DEFAULT);
 
-SELECT "entity0"."id",
-	"entity0"."id",
-	("entity0"."integer"+"entity0"."decimalNumber") AS "computed",
-	"entity0"."createdDate",
-	"entity0"."modifiedDate",
-	"entity0"."deleted",
-	"entity0"."integer"
-FROM "fixture"."Table1s" AS "entity0"
-WHERE ("entity0"."id"=LAST_INSERT_ID())"
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`createdDate\`,
+	\`entity0\`.\`modifiedDate\`,
+	\`entity0\`.\`deleted\`,
+	\`entity0\`.\`integer\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
 ,
     "_type": 3,
   },
@@ -692,9 +692,9 @@ Map {
     }
 ,
     "query": 
-"UPDATE "Table1One" AS "entity0"
-SET "entity0"."name" = ?
-WHERE ("entity0"."table1Id"=?)"
+"UPDATE \`Table1One\` AS \`entity0\`
+SET \`entity0\`.\`name\` = ?
+WHERE (\`entity0\`.\`table1Id\`=?)"
 ,
     "type": 2,
   },
@@ -712,10 +712,10 @@ Map {
     }
 ,
     "query": 
-"UPDATE "Table1One" AS "entity0"
-SET "entity0"."name" = ?,
-	"entity0"."number" = ?
-WHERE ("entity0"."table1Id"=?)"
+"UPDATE \`Table1One\` AS \`entity0\`
+SET \`entity0\`.\`name\` = ?,
+	\`entity0\`.\`number\` = ?
+WHERE (\`entity0\`.\`table1Id\`=?)"
 ,
     "type": 2,
   },
@@ -731,10 +731,10 @@ Map {
     }
 ,
     "query": 
-"UPDATE "Table1One" AS "entity0"
-SET "entity0"."name" = ?,
-	"entity0"."number" = ("entity0"."number"+100)
-WHERE ("entity0"."table1Id"=1)"
+"UPDATE \`Table1One\` AS \`entity0\`
+SET \`entity0\`.\`name\` = ?,
+	\`entity0\`.\`number\` = (\`entity0\`.\`number\`+100)
+WHERE (\`entity0\`.\`table1Id\`=1)"
 ,
     "type": 2,
   },
@@ -756,17 +756,17 @@ Map {
     }
 ,
     "query": 
-"UPDATE "fixture"."Table1s" AS "entity0"
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
 INNER JOIN (
-	SELECT "entity0"."id"
-	FROM "fixture"."Table1s" AS "entity0"
-	WHERE (("entity0"."deleted"=false) AND ("entity0"."integer">?) AND ("entity0"."real" IS NOT DISTINCT FROM ?) AND ((COALESCE("entity0"."real", 0))=?))
-	ORDER BY "entity0"."id"
+	SELECT \`entity0\`.\`id\`
+	FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+	WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`integer\`>?) AND (\`entity0\`.\`real\` IS NOT DISTINCT FROM ?) AND ((COALESCE(\`entity0\`.\`real\`, 0))=?))
+	ORDER BY \`entity0\`.\`id\`
 	OFFSET ? ROWS
 	FETCH NEXT ? ROWS ONLY
-) AS "entity0_1" ON ("entity0"."id"="entity0_1"."id")
-SET "entity0"."string" = ?,
-	"entity0"."real" = ("entity0"."real"+?)"
+) AS \`entity0_1\` ON (\`entity0\`.\`id\`=\`entity0_1\`.\`id\`)
+SET \`entity0\`.\`string\` = ?,
+	\`entity0\`.\`real\` = (\`entity0\`.\`real\`+?)"
 ,
     "type": 2,
   },
@@ -784,9 +784,9 @@ Map {
     }
 ,
     "query": 
-"UPDATE "Table1One" AS "entity0"
-SET "entity0"."name" = ?
-WHERE (("entity0"."table1Id"=?) AND ("entity0"."name"=?))"
+"UPDATE \`Table1One\` AS \`entity0\`
+SET \`entity0\`.\`name\` = ?
+WHERE ((\`entity0\`.\`table1Id\`=?) AND (\`entity0\`.\`name\`=?))"
 ,
     "type": 2,
   },
@@ -834,9 +834,9 @@ Map {
         }
 ,
         "query": 
-"UPDATE "fixture"."Table2s" AS "entity0"
-SET "entity0"."t2Name" = ?
-WHERE (("entity0"."id"=?) AND ("entity0"."rowVersion"=?))"
+"UPDATE \`fixture\`.\`Table2s\` AS \`entity0\`
+SET \`entity0\`.\`t2Name\` = ?
+WHERE ((\`entity0\`.\`id\`=?) AND (\`entity0\`.\`rowVersion\`=?))"
 ,
         "type": 2,
       },
@@ -854,27 +854,27 @@ Map {
         }
 ,
         "query": 
-"SELECT "entity0"."id",
-	"entity0"."rowVersion",
-	"entity0"."id",
-	"entity0"."rowVersion"
-FROM "fixture"."Table2s" AS "entity0"
-WHERE (("entity0"."id"=?) AND ("entity0"."rowVersion"=?))"
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`rowVersion\`,
+	\`entity0\`.\`id\`,
+	\`entity0\`.\`rowVersion\`
+FROM \`fixture\`.\`Table2s\` AS \`entity0\`
+WHERE ((\`entity0\`.\`id\`=?) AND (\`entity0\`.\`rowVersion\`=?))"
 ,
         "type": 1,
       },
     ],
     "_query": 
-"UPDATE "fixture"."Table2s" AS "entity0"
-SET "entity0"."t2Name" = ?
-WHERE (("entity0"."id"=?) AND ("entity0"."rowVersion"=?));
+"UPDATE \`fixture\`.\`Table2s\` AS \`entity0\`
+SET \`entity0\`.\`t2Name\` = ?
+WHERE ((\`entity0\`.\`id\`=?) AND (\`entity0\`.\`rowVersion\`=?));
 
-SELECT "entity0"."id",
-	"entity0"."rowVersion",
-	"entity0"."id",
-	"entity0"."rowVersion"
-FROM "fixture"."Table2s" AS "entity0"
-WHERE (("entity0"."id"=?) AND ("entity0"."rowVersion"=?))"
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`rowVersion\`,
+	\`entity0\`.\`id\`,
+	\`entity0\`.\`rowVersion\`
+FROM \`fixture\`.\`Table2s\` AS \`entity0\`
+WHERE ((\`entity0\`.\`id\`=?) AND (\`entity0\`.\`rowVersion\`=?))"
 ,
     "_type": 3,
   },
@@ -904,10 +904,10 @@ Map {
         }
 ,
         "query": 
-"UPDATE "fixture"."Table1s" AS "entity0"
-SET "entity0"."string" = ?,
-	"entity0"."modifiedDate" = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
-WHERE (("entity0"."id"=?) AND ("entity0"."modifiedDate"=?))"
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+SET \`entity0\`.\`string\` = ?,
+	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+WHERE ((\`entity0\`.\`id\`=?) AND (\`entity0\`.\`modifiedDate\`=?))"
 ,
         "type": 2,
       },
@@ -919,28 +919,28 @@ Map {
         }
 ,
         "query": 
-"SELECT "entity0"."id",
-	"entity0"."id",
-	("entity0"."integer"+"entity0"."decimalNumber") AS "computed",
-	"entity0"."modifiedDate"
-FROM "fixture"."Table1s" AS "entity0"
-WHERE (("entity0"."id"=?) AND ("entity0"."modifiedDate"=?))"
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`modifiedDate\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE ((\`entity0\`.\`id\`=?) AND (\`entity0\`.\`modifiedDate\`=?))"
 ,
         "type": 1,
       },
     ],
     "_query": 
-"UPDATE "fixture"."Table1s" AS "entity0"
-SET "entity0"."string" = ?,
-	"entity0"."modifiedDate" = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
-WHERE (("entity0"."id"=?) AND ("entity0"."modifiedDate"=?));
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+SET \`entity0\`.\`string\` = ?,
+	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+WHERE ((\`entity0\`.\`id\`=?) AND (\`entity0\`.\`modifiedDate\`=?));
 
-SELECT "entity0"."id",
-	"entity0"."id",
-	("entity0"."integer"+"entity0"."decimalNumber") AS "computed",
-	"entity0"."modifiedDate"
-FROM "fixture"."Table1s" AS "entity0"
-WHERE (("entity0"."id"=?) AND ("entity0"."modifiedDate"=?))"
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`modifiedDate\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE ((\`entity0\`.\`id\`=?) AND (\`entity0\`.\`modifiedDate\`=?))"
 ,
     "_type": 3,
   },
@@ -967,10 +967,10 @@ Map {
         }
 ,
         "query": 
-"UPDATE "fixture"."Table1s" AS "entity0"
-SET "entity0"."string" = ?,
-	"entity0"."modifiedDate" = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
-WHERE ("entity0"."id"=?)"
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+SET \`entity0\`.\`string\` = ?,
+	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+WHERE (\`entity0\`.\`id\`=?)"
 ,
         "type": 2,
       },
@@ -981,28 +981,28 @@ Map {
         }
 ,
         "query": 
-"SELECT "entity0"."id",
-	"entity0"."id",
-	("entity0"."integer"+"entity0"."decimalNumber") AS "computed",
-	"entity0"."modifiedDate"
-FROM "fixture"."Table1s" AS "entity0"
-WHERE ("entity0"."id"=?)"
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`modifiedDate\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=?)"
 ,
         "type": 1,
       },
     ],
     "_query": 
-"UPDATE "fixture"."Table1s" AS "entity0"
-SET "entity0"."string" = ?,
-	"entity0"."modifiedDate" = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
-WHERE ("entity0"."id"=?);
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+SET \`entity0\`.\`string\` = ?,
+	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+WHERE (\`entity0\`.\`id\`=?);
 
-SELECT "entity0"."id",
-	"entity0"."id",
-	("entity0"."integer"+"entity0"."decimalNumber") AS "computed",
-	"entity0"."modifiedDate"
-FROM "fixture"."Table1s" AS "entity0"
-WHERE ("entity0"."id"=?)"
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`modifiedDate\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=?)"
 ,
     "_type": 3,
   },
@@ -1029,10 +1029,10 @@ Map {
         }
 ,
         "query": 
-"UPDATE "fixture"."Table1s" AS "entity0"
-SET "entity0"."string" = ?,
-	"entity0"."modifiedDate" = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
-WHERE ("entity0"."id"=?)"
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+SET \`entity0\`.\`string\` = ?,
+	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+WHERE (\`entity0\`.\`id\`=?)"
 ,
         "type": 2,
       },
@@ -1043,28 +1043,28 @@ Map {
         }
 ,
         "query": 
-"SELECT "entity0"."id",
-	"entity0"."id",
-	("entity0"."integer"+"entity0"."decimalNumber") AS "computed",
-	"entity0"."modifiedDate"
-FROM "fixture"."Table1s" AS "entity0"
-WHERE ("entity0"."id"=?)"
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`modifiedDate\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=?)"
 ,
         "type": 1,
       },
     ],
     "_query": 
-"UPDATE "fixture"."Table1s" AS "entity0"
-SET "entity0"."string" = ?,
-	"entity0"."modifiedDate" = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
-WHERE ("entity0"."id"=?);
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+SET \`entity0\`.\`string\` = ?,
+	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+WHERE (\`entity0\`.\`id\`=?);
 
-SELECT "entity0"."id",
-	"entity0"."id",
-	("entity0"."integer"+"entity0"."decimalNumber") AS "computed",
-	"entity0"."modifiedDate"
-FROM "fixture"."Table1s" AS "entity0"
-WHERE ("entity0"."id"=?)"
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`modifiedDate\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=?)"
 ,
     "_type": 3,
   },
@@ -1091,10 +1091,10 @@ Map {
         }
 ,
         "query": 
-"UPDATE "fixture"."Table1s" AS "entity0"
-SET "entity0"."string" = ?,
-	"entity0"."modifiedDate" = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
-WHERE ("entity0"."id"=?)"
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+SET \`entity0\`.\`string\` = ?,
+	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+WHERE (\`entity0\`.\`id\`=?)"
 ,
         "type": 2,
       },
@@ -1105,28 +1105,28 @@ Map {
         }
 ,
         "query": 
-"SELECT "entity0"."id",
-	"entity0"."id",
-	("entity0"."integer"+"entity0"."decimalNumber") AS "computed",
-	"entity0"."modifiedDate"
-FROM "fixture"."Table1s" AS "entity0"
-WHERE ("entity0"."id"=?)"
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`modifiedDate\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=?)"
 ,
         "type": 1,
       },
     ],
     "_query": 
-"UPDATE "fixture"."Table1s" AS "entity0"
-SET "entity0"."string" = ?,
-	"entity0"."modifiedDate" = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
-WHERE ("entity0"."id"=?);
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+SET \`entity0\`.\`string\` = ?,
+	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+WHERE (\`entity0\`.\`id\`=?);
 
-SELECT "entity0"."id",
-	"entity0"."id",
-	("entity0"."integer"+"entity0"."decimalNumber") AS "computed",
-	"entity0"."modifiedDate"
-FROM "fixture"."Table1s" AS "entity0"
-WHERE ("entity0"."id"=?)"
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`modifiedDate\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=?)"
 ,
     "_type": 3,
   },
@@ -1153,10 +1153,10 @@ Map {
         }
 ,
         "query": 
-"UPDATE "fixture"."Table1s" AS "entity0"
-SET "entity0"."string" = ?,
-	"entity0"."modifiedDate" = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
-WHERE ("entity0"."id"=?)"
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+SET \`entity0\`.\`string\` = ?,
+	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+WHERE (\`entity0\`.\`id\`=?)"
 ,
         "type": 2,
       },
@@ -1167,28 +1167,28 @@ Map {
         }
 ,
         "query": 
-"SELECT "entity0"."id",
-	"entity0"."id",
-	("entity0"."integer"+"entity0"."decimalNumber") AS "computed",
-	"entity0"."modifiedDate"
-FROM "fixture"."Table1s" AS "entity0"
-WHERE ("entity0"."id"=?)"
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`modifiedDate\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=?)"
 ,
         "type": 1,
       },
     ],
     "_query": 
-"UPDATE "fixture"."Table1s" AS "entity0"
-SET "entity0"."string" = ?,
-	"entity0"."modifiedDate" = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
-WHERE ("entity0"."id"=?);
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+SET \`entity0\`.\`string\` = ?,
+	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+WHERE (\`entity0\`.\`id\`=?);
 
-SELECT "entity0"."id",
-	"entity0"."id",
-	("entity0"."integer"+"entity0"."decimalNumber") AS "computed",
-	"entity0"."modifiedDate"
-FROM "fixture"."Table1s" AS "entity0"
-WHERE ("entity0"."id"=?)"
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`modifiedDate\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=?)"
 ,
     "_type": 3,
   },
@@ -1204,30 +1204,30 @@ Map {
     }
 ,
     "query": 
-"SELECT "entity0"."id",
-	"entity0"."bigint",
-	"entity0"."binary",
-	"entity0"."boolean",
-	"entity0"."date",
-	"entity0"."plainDate",
-	"entity0"."dateTime",
-	"entity0"."instant",
-	"entity0"."decimal",
-	"entity0"."decimalNumber",
-	"entity0"."decimalDecimal",
-	"entity0"."deleted",
-	"entity0"."identifier",
-	"entity0"."identifierString",
-	"entity0"."integer",
-	"entity0"."real",
-	"entity0"."string",
-	"entity0"."time",
-	"entity0"."plainTime",
-	"entity0"."createdDate",
-	"entity0"."modifiedDate"
-FROM "fixture"."Table1s" AS "entity0"
-WHERE (("entity0"."deleted"=false) AND ("entity0"."id"=?))
-ORDER BY "entity0"."id"
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`bigint\`,
+	\`entity0\`.\`binary\`,
+	\`entity0\`.\`boolean\`,
+	\`entity0\`.\`date\`,
+	\`entity0\`.\`plainDate\`,
+	\`entity0\`.\`dateTime\`,
+	\`entity0\`.\`instant\`,
+	\`entity0\`.\`decimal\`,
+	\`entity0\`.\`decimalNumber\`,
+	\`entity0\`.\`decimalDecimal\`,
+	\`entity0\`.\`deleted\`,
+	\`entity0\`.\`identifier\`,
+	\`entity0\`.\`identifierString\`,
+	\`entity0\`.\`integer\`,
+	\`entity0\`.\`real\`,
+	\`entity0\`.\`string\`,
+	\`entity0\`.\`time\`,
+	\`entity0\`.\`plainTime\`,
+	\`entity0\`.\`createdDate\`,
+	\`entity0\`.\`modifiedDate\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`id\`=?))
+ORDER BY \`entity0\`.\`id\`
 FETCH NEXT 1 ROWS ONLY"
 ,
     "type": 1,
@@ -1250,9 +1250,9 @@ Map {
         }
 ,
         "query": 
-"UPDATE "Table1Manies" AS "entity0"
-SET "entity0"."table1Id" = ?
-WHERE ("entity0"."id"=?)"
+"UPDATE \`Table1Manies\` AS \`entity0\`
+SET \`entity0\`.\`table1Id\` = ?
+WHERE (\`entity0\`.\`id\`=?)"
 ,
         "type": 2,
       },
@@ -1263,23 +1263,23 @@ Map {
         }
 ,
         "query": 
-"SELECT "entity0"."id",
-	"entity0"."id"
-FROM "Table1Manies" AS "entity0"
-WHERE ("entity0"."id"=?)"
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`
+FROM \`Table1Manies\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=?)"
 ,
         "type": 1,
       },
     ],
     "_query": 
-"UPDATE "Table1Manies" AS "entity0"
-SET "entity0"."table1Id" = ?
-WHERE ("entity0"."id"=?);
+"UPDATE \`Table1Manies\` AS \`entity0\`
+SET \`entity0\`.\`table1Id\` = ?
+WHERE (\`entity0\`.\`id\`=?);
 
-SELECT "entity0"."id",
-	"entity0"."id"
-FROM "Table1Manies" AS "entity0"
-WHERE ("entity0"."id"=?)"
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`
+FROM \`Table1Manies\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=?)"
 ,
     "_type": 3,
   },
@@ -1295,7 +1295,7 @@ Map {
     }
 ,
     "query": 
-"INSERT INTO "fixture"."Table1s"("bigint","binary","boolean","date","plainDate","dateTime","instant","decimal","decimalNumber","decimalDecimal","deleted","identifier","identifierString","integer","real","string","time","plainTime") VALUES
+"INSERT INTO \`fixture\`.\`Table1s\`(\`bigint\`,\`binary\`,\`boolean\`,\`date\`,\`plainDate\`,\`dateTime\`,\`instant\`,\`decimal\`,\`decimalNumber\`,\`decimalDecimal\`,\`deleted\`,\`identifier\`,\`identifierString\`,\`integer\`,\`real\`,\`string\`,\`time\`,\`plainTime\`) VALUES
 (DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,?,DEFAULT,DEFAULT)"
 ,
     "type": 2,
@@ -1303,15 +1303,15 @@ Map {
   {
     "parameters": Map {},
     "query": 
-"SELECT "entity0"."id",
-	"entity0"."id",
-	("entity0"."integer"+"entity0"."decimalNumber") AS "computed",
-	"entity0"."createdDate",
-	"entity0"."modifiedDate",
-	"entity0"."deleted",
-	"entity0"."integer"
-FROM "fixture"."Table1s" AS "entity0"
-WHERE ("entity0"."id"=LAST_INSERT_ID())"
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`createdDate\`,
+	\`entity0\`.\`modifiedDate\`,
+	\`entity0\`.\`deleted\`,
+	\`entity0\`.\`integer\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
 ,
     "type": 1,
   },
@@ -1323,9 +1323,9 @@ Map {
     }
 ,
     "query": 
-"UPDATE "Table1Manies" AS "entity1"
-SET "entity1"."table1Id" = ?
-WHERE ("entity1"."id"=?)"
+"UPDATE \`Table1Manies\` AS \`entity1\`
+SET \`entity1\`.\`table1Id\` = ?
+WHERE (\`entity1\`.\`id\`=?)"
 ,
     "type": 2,
   },
@@ -1336,10 +1336,10 @@ Map {
     }
 ,
     "query": 
-"SELECT "entity1"."id",
-	"entity1"."id"
-FROM "Table1Manies" AS "entity1"
-WHERE ("entity1"."id"=?)"
+"SELECT \`entity1\`.\`id\`,
+	\`entity1\`.\`id\`
+FROM \`Table1Manies\` AS \`entity1\`
+WHERE (\`entity1\`.\`id\`=?)"
 ,
     "type": 1,
   },
@@ -1365,50 +1365,50 @@ Map {
         }
 ,
         "query": 
-"INSERT INTO "fixture"."Table1s"("bigint","binary","boolean","date","plainDate","dateTime","instant","decimal","decimalNumber","decimalDecimal","deleted","identifier","identifierString","integer","real","string","time","plainTime") VALUES
-	(DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,?,DEFAULT,?,DEFAULT,DEFAULT) AS "entity0"ON DUPLICATE KEY UPDATE
-	"modifiedDate" = CURRENT_TIMESTAMP AT TIME ZONE 'UTC',
-	"string" = "entity0"."string"
-RETURNING "entity0"."id","entity0"."computed" AS "computed","entity0"."createdDate","entity0"."modifiedDate","entity0"."deleted","entity0"."integer""
+"INSERT INTO \`fixture\`.\`Table1s\`(\`bigint\`,\`binary\`,\`boolean\`,\`date\`,\`plainDate\`,\`dateTime\`,\`instant\`,\`decimal\`,\`decimalNumber\`,\`decimalDecimal\`,\`deleted\`,\`identifier\`,\`identifierString\`,\`integer\`,\`real\`,\`string\`,\`time\`,\`plainTime\`) VALUES
+	(DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,?,DEFAULT,?,DEFAULT,DEFAULT) AS \`entity0\`ON DUPLICATE KEY UPDATE
+	\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC',
+	\`string\` = \`entity0\`.\`string\`
+RETURNING \`entity0\`.\`id\`,\`entity0\`.\`computed\` AS \`computed\`,\`entity0\`.\`createdDate\`,\`entity0\`.\`modifiedDate\`,\`entity0\`.\`deleted\`,\`entity0\`.\`integer\`"
 ,
         "type": 2,
       },
       {
         "parameters": Map {},
         "query": 
-"SELECT "entity0"."id",
-	"entity0"."id",
-	("entity0"."integer"+"entity0"."decimalNumber") AS "computed",
-	"entity0"."createdDate",
-	"entity0"."modifiedDate",
-	"entity0"."deleted",
-	"entity0"."integer"
-FROM "fixture"."Table1s" AS "entity0"
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`createdDate\`,
+	\`entity0\`.\`modifiedDate\`,
+	\`entity0\`.\`deleted\`,
+	\`entity0\`.\`integer\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
 INNER JOIN (
-	SELECT NULL AS "id"
-) AS "inserted" ON ("entity0"."id"="inserted"."id")"
+	SELECT NULL AS \`id\`
+) AS \`inserted\` ON (\`entity0\`.\`id\`=\`inserted\`.\`id\`)"
 ,
         "type": 1,
       },
     ],
     "_query": 
-"INSERT INTO "fixture"."Table1s"("bigint","binary","boolean","date","plainDate","dateTime","instant","decimal","decimalNumber","decimalDecimal","deleted","identifier","identifierString","integer","real","string","time","plainTime") VALUES
-	(DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,?,DEFAULT,?,DEFAULT,DEFAULT) AS "entity0"ON DUPLICATE KEY UPDATE
-	"modifiedDate" = CURRENT_TIMESTAMP AT TIME ZONE 'UTC',
-	"string" = "entity0"."string"
-RETURNING "entity0"."id","entity0"."computed" AS "computed","entity0"."createdDate","entity0"."modifiedDate","entity0"."deleted","entity0"."integer";
+"INSERT INTO \`fixture\`.\`Table1s\`(\`bigint\`,\`binary\`,\`boolean\`,\`date\`,\`plainDate\`,\`dateTime\`,\`instant\`,\`decimal\`,\`decimalNumber\`,\`decimalDecimal\`,\`deleted\`,\`identifier\`,\`identifierString\`,\`integer\`,\`real\`,\`string\`,\`time\`,\`plainTime\`) VALUES
+	(DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,?,DEFAULT,?,DEFAULT,DEFAULT) AS \`entity0\`ON DUPLICATE KEY UPDATE
+	\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC',
+	\`string\` = \`entity0\`.\`string\`
+RETURNING \`entity0\`.\`id\`,\`entity0\`.\`computed\` AS \`computed\`,\`entity0\`.\`createdDate\`,\`entity0\`.\`modifiedDate\`,\`entity0\`.\`deleted\`,\`entity0\`.\`integer\`;
 
-SELECT "entity0"."id",
-	"entity0"."id",
-	("entity0"."integer"+"entity0"."decimalNumber") AS "computed",
-	"entity0"."createdDate",
-	"entity0"."modifiedDate",
-	"entity0"."deleted",
-	"entity0"."integer"
-FROM "fixture"."Table1s" AS "entity0"
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`createdDate\`,
+	\`entity0\`.\`modifiedDate\`,
+	\`entity0\`.\`deleted\`,
+	\`entity0\`.\`integer\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
 INNER JOIN (
-	SELECT NULL AS "id"
-) AS "inserted" ON ("entity0"."id"="inserted"."id")"
+	SELECT NULL AS \`id\`
+) AS \`inserted\` ON (\`entity0\`.\`id\`=\`inserted\`.\`id\`)"
 ,
     "_type": 3,
   },
@@ -1420,13 +1420,13 @@ exports[`Mysql DATA MANIPULATION DELETE should delete entity (soft delete) + sho
   {
     "parameters": Map {},
     "query": 
-"UPDATE "fixture"."Table1s" AS "entity0"
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
 INNER JOIN (
-	SELECT 1 AS "id"
-) AS "delete" ON ("entity0"."id"="delete"."id")
-SET "entity0"."deleted" = true,
-	"entity0"."modifiedDate" = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
-WHERE ("entity0"."deleted"=false)"
+	SELECT 1 AS \`id\`
+) AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
+SET \`entity0\`.\`deleted\` = true,
+	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+WHERE (\`entity0\`.\`deleted\`=false)"
 ,
     "type": 2,
   },
@@ -1438,11 +1438,11 @@ exports[`Mysql DATA MANIPULATION DELETE should delete entity (hard delete) 1`] =
   {
     "parameters": Map {},
     "query": 
-"DELETE "entity0"
-FROM "fixture"."Table1s" AS "entity0"
+"DELETE \`entity0\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
 INNER JOIN (
-	SELECT 1 AS "id"
-) AS "delete" ON ("entity0"."id"="delete"."id")"
+	SELECT 1 AS \`id\`
+) AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)"
 ,
     "type": 2,
   },
@@ -1458,10 +1458,10 @@ Map {
     }
 ,
     "query": 
-"UPDATE "fixture"."Table1s" AS "entity0"
-SET "entity0"."deleted" = true,
-	"entity0"."modifiedDate" = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
-WHERE (("entity0"."deleted"=false) AND ("entity0"."id"=?))"
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+SET \`entity0\`.\`deleted\` = true,
+	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`id\`=?))"
 ,
     "type": 2,
   },
@@ -1477,9 +1477,9 @@ Map {
     }
 ,
     "query": 
-"DELETE "entity0"
-FROM "fixture"."Table1s" AS "entity0"
-WHERE ("entity0"."id"=?)"
+"DELETE \`entity0\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=?)"
 ,
     "type": 2,
   },
@@ -1499,17 +1499,17 @@ Map {
     }
 ,
     "query": 
-"UPDATE "fixture"."Table1s" AS "entity0"
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
 INNER JOIN (
-	SELECT "entity0"."id"
-	FROM "fixture"."Table1s" AS "entity0"
-	WHERE (("entity0"."deleted"=false) AND ("entity0"."integer">?) AND ("entity0"."real" IS NOT DISTINCT FROM ?) AND ((COALESCE("entity0"."real", 0))=?))
-	ORDER BY "entity0"."id"
+	SELECT \`entity0\`.\`id\`
+	FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+	WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`integer\`>?) AND (\`entity0\`.\`real\` IS NOT DISTINCT FROM ?) AND ((COALESCE(\`entity0\`.\`real\`, 0))=?))
+	ORDER BY \`entity0\`.\`id\`
 	OFFSET ? ROWS
 	FETCH NEXT ? ROWS ONLY
-) AS "entity0_1" ON ("entity0"."id"="entity0_1"."id")
-SET "entity0"."deleted" = true,
-	"entity0"."modifiedDate" = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'"
+) AS \`entity0_1\` ON (\`entity0\`.\`id\`=\`entity0_1\`.\`id\`)
+SET \`entity0\`.\`deleted\` = true,
+	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'"
 ,
     "type": 2,
   },
@@ -1527,9 +1527,9 @@ Map {
     }
 ,
     "query": 
-"DELETE "entity0"
-FROM "fixture"."Table1s" AS "entity0"
-WHERE (("entity0"."deleted"=false) AND ("entity0"."integer">?) AND ("entity0"."real" IS NOT DISTINCT FROM ?) AND ((COALESCE("entity0"."real", 0))=?))"
+"DELETE \`entity0\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`integer\`>?) AND (\`entity0\`.\`real\` IS NOT DISTINCT FROM ?) AND ((COALESCE(\`entity0\`.\`real\`, 0))=?))"
 ,
     "type": 2,
   },
@@ -1545,32 +1545,32 @@ exports[`Mysql DATA MANIPULATION DELETE should bulk delete with include (soft de
       {
         "parameters": Map {},
         "query": 
-"UPDATE "fixture"."Table1s" AS "entity0"
-SET "entity0"."deleted" = true,
-	"entity0"."modifiedDate" = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
-WHERE (("entity0"."deleted"=false) AND ("entity0"."id"=1))"
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+SET \`entity0\`.\`deleted\` = true,
+	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`id\`=1))"
 ,
         "type": 2,
       },
       {
         "parameters": Map {},
         "query": 
-"UPDATE "Table1Manies" AS "entity1"
-SET "entity1"."deleted" = true
-WHERE ("entity1"."deleted"=false)"
+"UPDATE \`Table1Manies\` AS \`entity1\`
+SET \`entity1\`.\`deleted\` = true
+WHERE (\`entity1\`.\`deleted\`=false)"
 ,
         "type": 2,
       },
     ],
     "_query": 
-"UPDATE "fixture"."Table1s" AS "entity0"
-SET "entity0"."deleted" = true,
-	"entity0"."modifiedDate" = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
-WHERE (("entity0"."deleted"=false) AND ("entity0"."id"=1));
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+SET \`entity0\`.\`deleted\` = true,
+	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`id\`=1));
 
-UPDATE "Table1Manies" AS "entity1"
-SET "entity1"."deleted" = true
-WHERE ("entity1"."deleted"=false)"
+UPDATE \`Table1Manies\` AS \`entity1\`
+SET \`entity1\`.\`deleted\` = true
+WHERE (\`entity1\`.\`deleted\`=false)"
 ,
     "_type": 2,
   },
@@ -1586,80 +1586,80 @@ exports[`Mysql DATA MANIPULATION DELETE should bulk delete with include (hard de
       {
         "parameters": Map {},
         "query": 
-"DELETE "entity0"
-FROM "fixture"."Table1s" AS "entity0"
-WHERE (("entity0"."deleted"=false) AND ("entity0"."id"=1))"
+"DELETE \`entity0\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`id\`=1))"
 ,
         "type": 2,
       },
       {
         "parameters": Map {},
         "query": 
-"DELETE "entity1"
-FROM "Table1Manies" AS "entity1"
+"DELETE \`entity1\`
+FROM \`Table1Manies\` AS \`entity1\`
 INNER JOIN (
-	SELECT "entity0"."id",
-		"entity0"."bigint",
-		"entity0"."binary",
-		"entity0"."boolean",
-		"entity0"."date",
-		"entity0"."plainDate",
-		"entity0"."dateTime",
-		"entity0"."instant",
-		"entity0"."decimal",
-		"entity0"."decimalNumber",
-		"entity0"."decimalDecimal",
-		"entity0"."deleted",
-		"entity0"."identifier",
-		"entity0"."identifierString",
-		"entity0"."integer",
-		"entity0"."real",
-		"entity0"."string",
-		"entity0"."time",
-		"entity0"."plainTime",
-		"entity0"."createdDate",
-		"entity0"."modifiedDate"
-	FROM "fixture"."Table1s" AS "entity0"
-	WHERE (("entity0"."deleted"=false) AND ("entity0"."id"=1))
-) AS "entity0" ON ("entity0"."id"="entity1"."table1Id")
-WHERE ("entity1"."deleted"=false)"
+	SELECT \`entity0\`.\`id\`,
+		\`entity0\`.\`bigint\`,
+		\`entity0\`.\`binary\`,
+		\`entity0\`.\`boolean\`,
+		\`entity0\`.\`date\`,
+		\`entity0\`.\`plainDate\`,
+		\`entity0\`.\`dateTime\`,
+		\`entity0\`.\`instant\`,
+		\`entity0\`.\`decimal\`,
+		\`entity0\`.\`decimalNumber\`,
+		\`entity0\`.\`decimalDecimal\`,
+		\`entity0\`.\`deleted\`,
+		\`entity0\`.\`identifier\`,
+		\`entity0\`.\`identifierString\`,
+		\`entity0\`.\`integer\`,
+		\`entity0\`.\`real\`,
+		\`entity0\`.\`string\`,
+		\`entity0\`.\`time\`,
+		\`entity0\`.\`plainTime\`,
+		\`entity0\`.\`createdDate\`,
+		\`entity0\`.\`modifiedDate\`
+	FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+	WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`id\`=1))
+) AS \`entity0\` ON (\`entity0\`.\`id\`=\`entity1\`.\`table1Id\`)
+WHERE (\`entity1\`.\`deleted\`=false)"
 ,
         "type": 2,
       },
     ],
     "_query": 
-"DELETE "entity0"
-FROM "fixture"."Table1s" AS "entity0"
-WHERE (("entity0"."deleted"=false) AND ("entity0"."id"=1));
+"DELETE \`entity0\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`id\`=1));
 
-DELETE "entity1"
-FROM "Table1Manies" AS "entity1"
+DELETE \`entity1\`
+FROM \`Table1Manies\` AS \`entity1\`
 INNER JOIN (
-	SELECT "entity0"."id",
-		"entity0"."bigint",
-		"entity0"."binary",
-		"entity0"."boolean",
-		"entity0"."date",
-		"entity0"."plainDate",
-		"entity0"."dateTime",
-		"entity0"."instant",
-		"entity0"."decimal",
-		"entity0"."decimalNumber",
-		"entity0"."decimalDecimal",
-		"entity0"."deleted",
-		"entity0"."identifier",
-		"entity0"."identifierString",
-		"entity0"."integer",
-		"entity0"."real",
-		"entity0"."string",
-		"entity0"."time",
-		"entity0"."plainTime",
-		"entity0"."createdDate",
-		"entity0"."modifiedDate"
-	FROM "fixture"."Table1s" AS "entity0"
-	WHERE (("entity0"."deleted"=false) AND ("entity0"."id"=1))
-) AS "entity0" ON ("entity0"."id"="entity1"."table1Id")
-WHERE ("entity1"."deleted"=false)"
+	SELECT \`entity0\`.\`id\`,
+		\`entity0\`.\`bigint\`,
+		\`entity0\`.\`binary\`,
+		\`entity0\`.\`boolean\`,
+		\`entity0\`.\`date\`,
+		\`entity0\`.\`plainDate\`,
+		\`entity0\`.\`dateTime\`,
+		\`entity0\`.\`instant\`,
+		\`entity0\`.\`decimal\`,
+		\`entity0\`.\`decimalNumber\`,
+		\`entity0\`.\`decimalDecimal\`,
+		\`entity0\`.\`deleted\`,
+		\`entity0\`.\`identifier\`,
+		\`entity0\`.\`identifierString\`,
+		\`entity0\`.\`integer\`,
+		\`entity0\`.\`real\`,
+		\`entity0\`.\`string\`,
+		\`entity0\`.\`time\`,
+		\`entity0\`.\`plainTime\`,
+		\`entity0\`.\`createdDate\`,
+		\`entity0\`.\`modifiedDate\`
+	FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+	WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`id\`=1))
+) AS \`entity0\` ON (\`entity0\`.\`id\`=\`entity1\`.\`table1Id\`)
+WHERE (\`entity1\`.\`deleted\`=false)"
 ,
     "_type": 2,
   },
@@ -1671,13 +1671,13 @@ exports[`Mysql DATA MANIPULATION DELETE should not cascade delete entity when no
   {
     "parameters": Map {},
     "query": 
-"UPDATE "fixture"."Table1s" AS "entity0"
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
 INNER JOIN (
-	SELECT 1 AS "id"
-) AS "delete" ON ("entity0"."id"="delete"."id")
-SET "entity0"."deleted" = true,
-	"entity0"."modifiedDate" = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
-WHERE ("entity0"."deleted"=false)"
+	SELECT 1 AS \`id\`
+) AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
+SET \`entity0\`.\`deleted\` = true,
+	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+WHERE (\`entity0\`.\`deleted\`=false)"
 ,
     "type": 2,
   },
@@ -1691,14 +1691,14 @@ exports[`Mysql DATA MANIPULATION DELETE should cascade delete entity + relation 
     "_parameters": Map {},
     "_queries": [
       {
-        "query": "DROP TEMPORARY TABLE IF EXISTS "delete"",
+        "query": "DROP TEMPORARY TABLE IF EXISTS \`delete\`",
         "type": 4,
       },
       {
         "query": 
-"CREATE TEMPORARY TABLE "delete"
+"CREATE TEMPORARY TABLE \`delete\`
 (
-	"id" bigint
+	\`id\` bigint
 )"
 ,
         "type": 4,
@@ -1706,7 +1706,7 @@ exports[`Mysql DATA MANIPULATION DELETE should cascade delete entity + relation 
       {
         "parameters": Map {},
         "query": 
-"INSERT INTO "delete"("id") VALUES
+"INSERT INTO \`delete\`(\`id\`) VALUES
 (1)"
 ,
         "type": 2,
@@ -1714,57 +1714,57 @@ exports[`Mysql DATA MANIPULATION DELETE should cascade delete entity + relation 
       {
         "parameters": Map {},
         "query": 
-"SELECT "delete"."id"
-FROM "delete" AS "delete"
-WHERE ("delete"."id"=1)"
+"SELECT \`delete\`.\`id\`
+FROM \`delete\` AS \`delete\`
+WHERE (\`delete\`.\`id\`=1)"
 ,
         "type": 1,
       },
       {
         "parameters": Map {},
         "query": 
-"UPDATE "fixture"."Table1s" AS "entity0"
-INNER JOIN "delete" AS "delete" ON ("entity0"."id"="delete"."id")
-SET "entity0"."deleted" = true,
-	"entity0"."modifiedDate" = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
-WHERE ("entity0"."deleted"=false)"
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+INNER JOIN \`delete\` AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
+SET \`entity0\`.\`deleted\` = true,
+	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+WHERE (\`entity0\`.\`deleted\`=false)"
 ,
         "type": 2,
       },
       {
         "parameters": Map {},
         "query": 
-"UPDATE "Table1Manies" AS "entity1"
-SET "entity1"."deleted" = true
-WHERE ("entity1"."deleted"=false)"
+"UPDATE \`Table1Manies\` AS \`entity1\`
+SET \`entity1\`.\`deleted\` = true
+WHERE (\`entity1\`.\`deleted\`=false)"
 ,
         "type": 2,
       },
     ],
     "_query": 
-"DROP TEMPORARY TABLE IF EXISTS "delete";
+"DROP TEMPORARY TABLE IF EXISTS \`delete\`;
 
-CREATE TEMPORARY TABLE "delete"
+CREATE TEMPORARY TABLE \`delete\`
 (
-	"id" bigint
+	\`id\` bigint
 );
 
-INSERT INTO "delete"("id") VALUES
+INSERT INTO \`delete\`(\`id\`) VALUES
 (1);
 
-SELECT "delete"."id"
-FROM "delete" AS "delete"
-WHERE ("delete"."id"=1);
+SELECT \`delete\`.\`id\`
+FROM \`delete\` AS \`delete\`
+WHERE (\`delete\`.\`id\`=1);
 
-UPDATE "fixture"."Table1s" AS "entity0"
-INNER JOIN "delete" AS "delete" ON ("entity0"."id"="delete"."id")
-SET "entity0"."deleted" = true,
-	"entity0"."modifiedDate" = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
-WHERE ("entity0"."deleted"=false);
+UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+INNER JOIN \`delete\` AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
+SET \`entity0\`.\`deleted\` = true,
+	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+WHERE (\`entity0\`.\`deleted\`=false);
 
-UPDATE "Table1Manies" AS "entity1"
-SET "entity1"."deleted" = true
-WHERE ("entity1"."deleted"=false)"
+UPDATE \`Table1Manies\` AS \`entity1\`
+SET \`entity1\`.\`deleted\` = true
+WHERE (\`entity1\`.\`deleted\`=false)"
 ,
     "_type": 7,
   },
@@ -1778,14 +1778,14 @@ exports[`Mysql DATA MANIPULATION DELETE should delete with SET NULL option (soft
     "_parameters": Map {},
     "_queries": [
       {
-        "query": "DROP TEMPORARY TABLE IF EXISTS "delete"",
+        "query": "DROP TEMPORARY TABLE IF EXISTS \`delete\`",
         "type": 4,
       },
       {
         "query": 
-"CREATE TEMPORARY TABLE "delete"
+"CREATE TEMPORARY TABLE \`delete\`
 (
-	"id" bigint
+	\`id\` bigint
 )"
 ,
         "type": 4,
@@ -1793,7 +1793,7 @@ exports[`Mysql DATA MANIPULATION DELETE should delete with SET NULL option (soft
       {
         "parameters": Map {},
         "query": 
-"INSERT INTO "delete"("id") VALUES
+"INSERT INTO \`delete\`(\`id\`) VALUES
 (1)"
 ,
         "type": 2,
@@ -1801,55 +1801,55 @@ exports[`Mysql DATA MANIPULATION DELETE should delete with SET NULL option (soft
       {
         "parameters": Map {},
         "query": 
-"SELECT "delete"."id"
-FROM "delete" AS "delete"
-WHERE ("delete"."id"=1)"
+"SELECT \`delete\`.\`id\`
+FROM \`delete\` AS \`delete\`
+WHERE (\`delete\`.\`id\`=1)"
 ,
         "type": 1,
       },
       {
         "parameters": Map {},
         "query": 
-"UPDATE "fixture"."Table1s" AS "entity0"
-INNER JOIN "delete" AS "delete" ON ("entity0"."id"="delete"."id")
-SET "entity0"."deleted" = true,
-	"entity0"."modifiedDate" = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
-WHERE ("entity0"."deleted"=false)"
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+INNER JOIN \`delete\` AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
+SET \`entity0\`.\`deleted\` = true,
+	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+WHERE (\`entity0\`.\`deleted\`=false)"
 ,
         "type": 2,
       },
       {
         "parameters": Map {},
         "query": 
-"UPDATE "Table1Manies" AS "entity1"
-SET "entity1"."table1Id" = NULL"
+"UPDATE \`Table1Manies\` AS \`entity1\`
+SET \`entity1\`.\`table1Id\` = NULL"
 ,
         "type": 2,
       },
     ],
     "_query": 
-"DROP TEMPORARY TABLE IF EXISTS "delete";
+"DROP TEMPORARY TABLE IF EXISTS \`delete\`;
 
-CREATE TEMPORARY TABLE "delete"
+CREATE TEMPORARY TABLE \`delete\`
 (
-	"id" bigint
+	\`id\` bigint
 );
 
-INSERT INTO "delete"("id") VALUES
+INSERT INTO \`delete\`(\`id\`) VALUES
 (1);
 
-SELECT "delete"."id"
-FROM "delete" AS "delete"
-WHERE ("delete"."id"=1);
+SELECT \`delete\`.\`id\`
+FROM \`delete\` AS \`delete\`
+WHERE (\`delete\`.\`id\`=1);
 
-UPDATE "fixture"."Table1s" AS "entity0"
-INNER JOIN "delete" AS "delete" ON ("entity0"."id"="delete"."id")
-SET "entity0"."deleted" = true,
-	"entity0"."modifiedDate" = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
-WHERE ("entity0"."deleted"=false);
+UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+INNER JOIN \`delete\` AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
+SET \`entity0\`.\`deleted\` = true,
+	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+WHERE (\`entity0\`.\`deleted\`=false);
 
-UPDATE "Table1Manies" AS "entity1"
-SET "entity1"."table1Id" = NULL"
+UPDATE \`Table1Manies\` AS \`entity1\`
+SET \`entity1\`.\`table1Id\` = NULL"
 ,
     "_type": 7,
   },
@@ -1863,14 +1863,14 @@ exports[`Mysql DATA MANIPULATION DELETE should delete with SET DEFAULT option (s
     "_parameters": Map {},
     "_queries": [
       {
-        "query": "DROP TEMPORARY TABLE IF EXISTS "delete"",
+        "query": "DROP TEMPORARY TABLE IF EXISTS \`delete\`",
         "type": 4,
       },
       {
         "query": 
-"CREATE TEMPORARY TABLE "delete"
+"CREATE TEMPORARY TABLE \`delete\`
 (
-	"id" bigint
+	\`id\` bigint
 )"
 ,
         "type": 4,
@@ -1878,7 +1878,7 @@ exports[`Mysql DATA MANIPULATION DELETE should delete with SET DEFAULT option (s
       {
         "parameters": Map {},
         "query": 
-"INSERT INTO "delete"("id") VALUES
+"INSERT INTO \`delete\`(\`id\`) VALUES
 (1)"
 ,
         "type": 2,
@@ -1886,55 +1886,55 @@ exports[`Mysql DATA MANIPULATION DELETE should delete with SET DEFAULT option (s
       {
         "parameters": Map {},
         "query": 
-"SELECT "delete"."id"
-FROM "delete" AS "delete"
-WHERE ("delete"."id"=1)"
+"SELECT \`delete\`.\`id\`
+FROM \`delete\` AS \`delete\`
+WHERE (\`delete\`.\`id\`=1)"
 ,
         "type": 1,
       },
       {
         "parameters": Map {},
         "query": 
-"UPDATE "fixture"."Table1s" AS "entity0"
-INNER JOIN "delete" AS "delete" ON ("entity0"."id"="delete"."id")
-SET "entity0"."deleted" = true,
-	"entity0"."modifiedDate" = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
-WHERE ("entity0"."deleted"=false)"
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+INNER JOIN \`delete\` AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
+SET \`entity0\`.\`deleted\` = true,
+	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+WHERE (\`entity0\`.\`deleted\`=false)"
 ,
         "type": 2,
       },
       {
         "parameters": Map {},
         "query": 
-"UPDATE "Table1Manies" AS "entity1"
-SET "entity1"."table1Id" = 0"
+"UPDATE \`Table1Manies\` AS \`entity1\`
+SET \`entity1\`.\`table1Id\` = 0"
 ,
         "type": 2,
       },
     ],
     "_query": 
-"DROP TEMPORARY TABLE IF EXISTS "delete";
+"DROP TEMPORARY TABLE IF EXISTS \`delete\`;
 
-CREATE TEMPORARY TABLE "delete"
+CREATE TEMPORARY TABLE \`delete\`
 (
-	"id" bigint
+	\`id\` bigint
 );
 
-INSERT INTO "delete"("id") VALUES
+INSERT INTO \`delete\`(\`id\`) VALUES
 (1);
 
-SELECT "delete"."id"
-FROM "delete" AS "delete"
-WHERE ("delete"."id"=1);
+SELECT \`delete\`.\`id\`
+FROM \`delete\` AS \`delete\`
+WHERE (\`delete\`.\`id\`=1);
 
-UPDATE "fixture"."Table1s" AS "entity0"
-INNER JOIN "delete" AS "delete" ON ("entity0"."id"="delete"."id")
-SET "entity0"."deleted" = true,
-	"entity0"."modifiedDate" = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
-WHERE ("entity0"."deleted"=false);
+UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+INNER JOIN \`delete\` AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
+SET \`entity0\`.\`deleted\` = true,
+	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+WHERE (\`entity0\`.\`deleted\`=false);
 
-UPDATE "Table1Manies" AS "entity1"
-SET "entity1"."table1Id" = 0"
+UPDATE \`Table1Manies\` AS \`entity1\`
+SET \`entity1\`.\`table1Id\` = 0"
 ,
     "_type": 7,
   },
@@ -1946,13 +1946,13 @@ exports[`Mysql DATA MANIPULATION DELETE should trigger before/after delete event
   {
     "parameters": Map {},
     "query": 
-"UPDATE "fixture"."Table1s" AS "entity0"
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
 INNER JOIN (
-	SELECT 1 AS "id"
-) AS "delete" ON ("entity0"."id"="delete"."id")
-SET "entity0"."deleted" = true,
-	"entity0"."modifiedDate" = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
-WHERE ("entity0"."deleted"=false)"
+	SELECT 1 AS \`id\`
+) AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
+SET \`entity0\`.\`deleted\` = true,
+	\`entity0\`.\`modifiedDate\` = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+WHERE (\`entity0\`.\`deleted\`=false)"
 ,
     "type": 2,
   },

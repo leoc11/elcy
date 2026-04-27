@@ -37,6 +37,9 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
         maxQueryLength: 8388608
     };
 
+    override encloseIdentifier(identity: string): string {
+        return "`" + identity + "`";
+    }
     //#endregion
     protected override getInsertQuery<TE extends object>(insertExp: InsertExpression<TE>, option: IQueryOption, parameters: ISqlParameterValueMap): IQuery[] {
         if (insertExp.values.length <= 0) {
