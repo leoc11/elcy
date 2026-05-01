@@ -1,5 +1,7 @@
-# Dependency directories
-node_modules/
+!packages
+!packages/*
 
-# build directory
-build/
+*.tsbuildinfo
+lcov.info
+dist
+.vscode

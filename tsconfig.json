@@ -1,49 +1,11 @@
 {
-    "version": "2.1.1",
-    "compileOnSave": false,
     "compilerOptions": {
-        "allowUnreachableCode": false,
-        "moduleResolution": "node",
-        "module": "commonjs",
-        "noImplicitReturns": true,
-        "noFallthroughCasesInSwitch": true,
-        "noUnusedLocals": true,
-        "noUnusedParameters": false,
-        "sourceMap": true,
-        "target": "es6",
-        "lib": [
-            "es6"
-        ],
-        "types": [
-            "node"
-        ],
-        "outDir": "build",
-        "rootDir": "",
-        "emitDecoratorMetadata": false,
-        "experimentalDecorators": true,
-        "keyofStringsOnly": true,
-        "declaration": true,
-        "stripInternal": true,
-        "pretty": true,
-        // "watch": true,
-        // "strict": true,
-        "removeComments": false,
-        "noImplicitAny": false,
-        "noImplicitThis": true,
-        "alwaysStrict": true,
-        "strictNullChecks": false,
-        "strictBindCallApply": true,
-        "strictFunctionTypes": false,
-        "strictPropertyInitialization": false,
-        "noStrictGenericChecks": true,
+        "target": "esnext"
     },
-    "include": [
-        "test",
-        "src"
-    ],
-    "exclude": [
-        "build",
-        "node_modules",
-        "**/node_modules/*"
+    "extends": "./tsconfig.base.json",
+    "references": [
+      { "path": "./packages/elcy-core" },
+      { "path": "./packages/enumerable" },
+      { "path": "./packages/elcy-transform" }
     ]
 }

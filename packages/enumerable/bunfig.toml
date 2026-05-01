@@ -1,0 +1,5 @@
+[test]
+coverageSkipTestFiles = true
+coverageThreshold = { lines = 0.99, functions = 0.85 }
+coverageReporter = ["text", "lcov"]
+coverageDir = "./"

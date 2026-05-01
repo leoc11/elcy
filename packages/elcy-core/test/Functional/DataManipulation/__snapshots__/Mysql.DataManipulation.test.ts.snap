@@ -1,0 +1,1958 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`Mysql DATA MANIPULATION INSERT should insert new entity 1 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": 
+Map {
+      "?0" => 1n,
+      "?1" => "TEST1",
+      "?2" => 10,
+      "?3" => 1n,
+    }
+,
+    "_queries": [
+      {
+        "parameters": 
+Map {
+          "?0" => 1n,
+          "?1" => "TEST1",
+          "?2" => 10,
+        }
+,
+        "query": 
+"INSERT INTO \`Table1One\`(\`table1Id\`,\`name\`,\`number\`) VALUES
+(?,?,?)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => 1n,
+        }
+,
+        "query": 
+"SELECT \`entity0\`.\`table1Id\`
+FROM \`Table1One\` AS \`entity0\`
+WHERE (\`entity0\`.\`table1Id\`=?)"
+,
+        "type": 1,
+      },
+    ],
+    "_query": 
+"INSERT INTO \`Table1One\`(\`table1Id\`,\`name\`,\`number\`) VALUES
+(?,?,?);
+
+SELECT \`entity0\`.\`table1Id\`
+FROM \`Table1One\` AS \`entity0\`
+WHERE (\`entity0\`.\`table1Id\`=?)"
+,
+    "_type": 3,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION INSERT should insert new entity 2 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": 
+Map {
+      "?0" => 2n,
+      "?1" => "TEST2",
+      "?2" => 20,
+      "?3" => 2n,
+    }
+,
+    "_queries": [
+      {
+        "parameters": 
+Map {
+          "?0" => 2n,
+          "?1" => "TEST2",
+          "?2" => 20,
+        }
+,
+        "query": 
+"INSERT INTO \`Table1One\`(\`table1Id\`,\`name\`,\`number\`) VALUES
+(?,?,?)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => 2n,
+        }
+,
+        "query": 
+"SELECT \`entity0\`.\`table1Id\`
+FROM \`Table1One\` AS \`entity0\`
+WHERE (\`entity0\`.\`table1Id\`=?)"
+,
+        "type": 1,
+      },
+    ],
+    "_query": 
+"INSERT INTO \`Table1One\`(\`table1Id\`,\`name\`,\`number\`) VALUES
+(?,?,?);
+
+SELECT \`entity0\`.\`table1Id\`
+FROM \`Table1One\` AS \`entity0\`
+WHERE (\`entity0\`.\`table1Id\`=?)"
+,
+    "_type": 3,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION INSERT should insert new entity 3 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": 
+Map {
+      "?0" => 3n,
+      "?1" => "TEST3",
+      "?2" => 30,
+      "?3" => 3n,
+    }
+,
+    "_queries": [
+      {
+        "parameters": 
+Map {
+          "?0" => 3n,
+          "?1" => "TEST3",
+          "?2" => 30,
+        }
+,
+        "query": 
+"INSERT INTO \`Table1One\`(\`table1Id\`,\`name\`,\`number\`) VALUES
+(?,?,?)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => 3n,
+        }
+,
+        "query": 
+"SELECT \`entity0\`.\`table1Id\`
+FROM \`Table1One\` AS \`entity0\`
+WHERE (\`entity0\`.\`table1Id\`=?)"
+,
+        "type": 1,
+      },
+    ],
+    "_query": 
+"INSERT INTO \`Table1One\`(\`table1Id\`,\`name\`,\`number\`) VALUES
+(?,?,?);
+
+SELECT \`entity0\`.\`table1Id\`
+FROM \`Table1One\` AS \`entity0\`
+WHERE (\`entity0\`.\`table1Id\`=?)"
+,
+    "_type": 3,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION INSERT should insert new entity and update all insert generated column (createdDate, default) 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": 
+Map {
+      "?0" => "INSERT 1",
+    }
+,
+    "_queries": [
+      {
+        "parameters": 
+Map {
+          "?0" => "INSERT 1",
+        }
+,
+        "query": 
+"INSERT INTO \`fixture\`.\`Table1s\`(\`bigint\`,\`binary\`,\`boolean\`,\`date\`,\`plainDate\`,\`dateTime\`,\`instant\`,\`decimal\`,\`decimalNumber\`,\`decimalDecimal\`,\`deleted\`,\`identifier\`,\`identifierString\`,\`integer\`,\`real\`,\`string\`,\`time\`,\`plainTime\`) VALUES
+(DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,?,DEFAULT,DEFAULT)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`createdDate\`,
+	\`entity0\`.\`modifiedDate\`,
+	\`entity0\`.\`deleted\`,
+	\`entity0\`.\`integer\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
+,
+        "type": 1,
+      },
+    ],
+    "_query": 
+"INSERT INTO \`fixture\`.\`Table1s\`(\`bigint\`,\`binary\`,\`boolean\`,\`date\`,\`plainDate\`,\`dateTime\`,\`instant\`,\`decimal\`,\`decimalNumber\`,\`decimalDecimal\`,\`deleted\`,\`identifier\`,\`identifierString\`,\`integer\`,\`real\`,\`string\`,\`time\`,\`plainTime\`) VALUES
+(DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,?,DEFAULT,DEFAULT);
+
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`createdDate\`,
+	\`entity0\`.\`modifiedDate\`,
+	\`entity0\`.\`deleted\`,
+	\`entity0\`.\`integer\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
+,
+    "_type": 3,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION INSERT should insert entity with it relation correctly 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "?0" => 10n,
+    }
+,
+    "query": 
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`bigint\`,
+	\`entity0\`.\`binary\`,
+	\`entity0\`.\`boolean\`,
+	\`entity0\`.\`date\`,
+	\`entity0\`.\`plainDate\`,
+	\`entity0\`.\`dateTime\`,
+	\`entity0\`.\`instant\`,
+	\`entity0\`.\`decimal\`,
+	\`entity0\`.\`decimalNumber\`,
+	\`entity0\`.\`decimalDecimal\`,
+	\`entity0\`.\`deleted\`,
+	\`entity0\`.\`identifier\`,
+	\`entity0\`.\`identifierString\`,
+	\`entity0\`.\`integer\`,
+	\`entity0\`.\`real\`,
+	\`entity0\`.\`string\`,
+	\`entity0\`.\`time\`,
+	\`entity0\`.\`plainTime\`,
+	\`entity0\`.\`createdDate\`,
+	\`entity0\`.\`modifiedDate\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`id\`=?))
+ORDER BY \`entity0\`.\`id\`
+LIMIT 1"
+,
+    "type": 1,
+  },
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": 
+Map {
+      "?0" => 10n,
+      "?1" => "detail 1",
+      "?2" => 1,
+      "?3" => 10n,
+      "?4" => "detail 2",
+      "?5" => 2,
+    }
+,
+    "_queries": [
+      {
+        "parameters": 
+Map {
+          "?0" => 10n,
+          "?1" => "detail 1",
+          "?2" => 1,
+        }
+,
+        "query": 
+"INSERT INTO \`Table1Manies\`(\`table1Id\`,\`name\`,\`integer\`,\`deleted\`) VALUES
+(?,?,?,DEFAULT)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	\`entity0\`.\`table1Id\`,
+	\`entity0\`.\`deleted\`
+FROM \`Table1Manies\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
+,
+        "type": 1,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => 10n,
+          "?1" => "detail 2",
+          "?2" => 2,
+        }
+,
+        "query": 
+"INSERT INTO \`Table1Manies\`(\`table1Id\`,\`name\`,\`integer\`,\`deleted\`) VALUES
+(?,?,?,DEFAULT)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	\`entity0\`.\`table1Id\`,
+	\`entity0\`.\`deleted\`
+FROM \`Table1Manies\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
+,
+        "type": 1,
+      },
+    ],
+    "_query": 
+"INSERT INTO \`Table1Manies\`(\`table1Id\`,\`name\`,\`integer\`,\`deleted\`) VALUES
+(?,?,?,DEFAULT);
+
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	\`entity0\`.\`table1Id\`,
+	\`entity0\`.\`deleted\`
+FROM \`Table1Manies\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID());
+
+INSERT INTO \`Table1Manies\`(\`table1Id\`,\`name\`,\`integer\`,\`deleted\`) VALUES
+(?,?,?,DEFAULT);
+
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	\`entity0\`.\`table1Id\`,
+	\`entity0\`.\`deleted\`
+FROM \`Table1Manies\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
+,
+    "_type": 3,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION INSERT should insert entity with it relation correctly (auto pk) 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "?0" => "INSERT 1",
+    }
+,
+    "query": 
+"INSERT INTO \`fixture\`.\`Table1s\`(\`bigint\`,\`binary\`,\`boolean\`,\`date\`,\`plainDate\`,\`dateTime\`,\`instant\`,\`decimal\`,\`decimalNumber\`,\`decimalDecimal\`,\`deleted\`,\`identifier\`,\`identifierString\`,\`integer\`,\`real\`,\`string\`,\`time\`,\`plainTime\`) VALUES
+(DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,?,DEFAULT,DEFAULT)"
+,
+    "type": 2,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`createdDate\`,
+	\`entity0\`.\`modifiedDate\`,
+	\`entity0\`.\`deleted\`,
+	\`entity0\`.\`integer\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
+,
+    "type": 1,
+  },
+  {
+    "parameters": 
+Map {
+      "?0" => "Insert 2",
+    }
+,
+    "query": 
+"INSERT INTO \`fixture\`.\`Table1s\`(\`bigint\`,\`binary\`,\`boolean\`,\`date\`,\`plainDate\`,\`dateTime\`,\`instant\`,\`decimal\`,\`decimalNumber\`,\`decimalDecimal\`,\`deleted\`,\`identifier\`,\`identifierString\`,\`integer\`,\`real\`,\`string\`,\`time\`,\`plainTime\`) VALUES
+(DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,?,DEFAULT,DEFAULT)"
+,
+    "type": 2,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`createdDate\`,
+	\`entity0\`.\`modifiedDate\`,
+	\`entity0\`.\`deleted\`,
+	\`entity0\`.\`integer\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
+,
+    "type": 1,
+  },
+  {
+    "parameters": 
+Map {
+      "?0" => Anything,
+      "?1" => "detail 1",
+      "?2" => 1,
+    }
+,
+    "query": 
+"INSERT INTO \`Table1Manies\`(\`table1Id\`,\`name\`,\`integer\`,\`deleted\`) VALUES
+(?,?,?,DEFAULT)"
+,
+    "type": 2,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT \`entity1\`.\`id\`,
+	\`entity1\`.\`id\`,
+	\`entity1\`.\`table1Id\`,
+	\`entity1\`.\`deleted\`
+FROM \`Table1Manies\` AS \`entity1\`
+WHERE (\`entity1\`.\`id\`=LAST_INSERT_ID())"
+,
+    "type": 1,
+  },
+  {
+    "parameters": 
+Map {
+      "?0" => Anything,
+      "?1" => "detail 2",
+      "?2" => 2,
+    }
+,
+    "query": 
+"INSERT INTO \`Table1Manies\`(\`table1Id\`,\`name\`,\`integer\`,\`deleted\`) VALUES
+(?,?,?,DEFAULT)"
+,
+    "type": 2,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT \`entity1\`.\`id\`,
+	\`entity1\`.\`id\`,
+	\`entity1\`.\`table1Id\`,
+	\`entity1\`.\`deleted\`
+FROM \`Table1Manies\` AS \`entity1\`
+WHERE (\`entity1\`.\`id\`=LAST_INSERT_ID())"
+,
+    "type": 1,
+  },
+  {
+    "parameters": 
+Map {
+      "?0" => Anything,
+      "?1" => "detail 21",
+      "?2" => 2,
+    }
+,
+    "query": 
+"INSERT INTO \`Table1Manies\`(\`table1Id\`,\`name\`,\`integer\`,\`deleted\`) VALUES
+(?,?,?,DEFAULT)"
+,
+    "type": 2,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT \`entity1\`.\`id\`,
+	\`entity1\`.\`id\`,
+	\`entity1\`.\`table1Id\`,
+	\`entity1\`.\`deleted\`
+FROM \`Table1Manies\` AS \`entity1\`
+WHERE (\`entity1\`.\`id\`=LAST_INSERT_ID())"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION INSERT should trigger before/after save event 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": 
+Map {
+      "?0" => "Insert 1",
+    }
+,
+    "_queries": [
+      {
+        "parameters": 
+Map {
+          "?0" => "Insert 1",
+        }
+,
+        "query": 
+"INSERT INTO \`fixture\`.\`Table1s\`(\`bigint\`,\`binary\`,\`boolean\`,\`date\`,\`plainDate\`,\`dateTime\`,\`instant\`,\`decimal\`,\`decimalNumber\`,\`decimalDecimal\`,\`deleted\`,\`identifier\`,\`identifierString\`,\`integer\`,\`real\`,\`string\`,\`time\`,\`plainTime\`) VALUES
+(DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,?,DEFAULT,DEFAULT)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`createdDate\`,
+	\`entity0\`.\`modifiedDate\`,
+	\`entity0\`.\`deleted\`,
+	\`entity0\`.\`integer\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
+,
+        "type": 1,
+      },
+    ],
+    "_query": 
+"INSERT INTO \`fixture\`.\`Table1s\`(\`bigint\`,\`binary\`,\`boolean\`,\`date\`,\`plainDate\`,\`dateTime\`,\`instant\`,\`decimal\`,\`decimalNumber\`,\`decimalDecimal\`,\`deleted\`,\`identifier\`,\`identifierString\`,\`integer\`,\`real\`,\`string\`,\`time\`,\`plainTime\`) VALUES
+(DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,?,DEFAULT,DEFAULT);
+
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`createdDate\`,
+	\`entity0\`.\`modifiedDate\`,
+	\`entity0\`.\`deleted\`,
+	\`entity0\`.\`integer\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
+,
+    "_type": 3,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION INSERT should bulk insert 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"INSERT INTO \`Table1Manies\` (\`name\`)
+SELECT (CONCAT('Detail of parent ', CAST(\`entity0\`.\`id\` AS nvarchar(max)))) AS \`column1\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+LEFT JOIN (
+	SELECT \`entity1\`.\`table1Id\`,
+		COUNT(\`entity1\`.*) AS \`column0\`
+	FROM \`Table1Manies\` AS \`entity1\`
+	WHERE (\`entity1\`.\`deleted\`=false)
+	GROUP BY \`entity1\`.\`table1Id\`
+) AS \`entity1\` ON (\`entity0\`.\`id\`=\`entity1\`.\`table1Id\`)
+WHERE ((\`entity0\`.\`deleted\`=false) AND ((COALESCE(\`entity1\`.\`column0\`, 0))<=0))"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION INSERT should bulk insert entity for non auto pk when updating more than 10 entity 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "?0" => 1n,
+      "?1" => "TEST1",
+      "?2" => 10,
+      "?3" => 2n,
+      "?4" => "TEST2",
+      "?5" => 20,
+      "?6" => 3n,
+      "?7" => "TEST3",
+      "?8" => 30,
+      "?9" => 4n,
+      "?10" => "TEST4",
+      "?11" => 40,
+      "?12" => 5n,
+      "?13" => "TEST5",
+      "?14" => 50,
+      "?15" => 6n,
+      "?16" => "TEST6",
+      "?17" => 60,
+      "?18" => 7n,
+      "?19" => "TEST7",
+      "?20" => 70,
+      "?21" => 8n,
+      "?22" => "TEST8",
+      "?23" => 80,
+      "?24" => 9n,
+      "?25" => "TEST9",
+      "?26" => 90,
+      "?27" => 10n,
+      "?28" => "TEST10",
+      "?29" => 100,
+      "?30" => 11n,
+      "?31" => "TEST11",
+      "?32" => 110,
+    }
+,
+    "query": 
+"INSERT INTO \`Table1One\`(\`table1Id\`,\`name\`,\`number\`) VALUES
+	(?,?,?)
+	,(?,?,?)
+	,(?,?,?)
+	,(?,?,?)
+	,(?,?,?)
+	,(?,?,?)
+	,(?,?,?)
+	,(?,?,?)
+	,(?,?,?)
+	,(?,?,?)
+	,(?,?,?)"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION INSERT should do upsert 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": 
+Map {
+      "?0" => 11,
+      "?1" => "Original",
+    }
+,
+    "_queries": [
+      {
+        "parameters": 
+Map {
+          "?0" => 11,
+          "?1" => "Original",
+        }
+,
+        "query": 
+"INSERT INTO \`fixture\`.\`Table1s\`(\`bigint\`,\`binary\`,\`boolean\`,\`date\`,\`plainDate\`,\`dateTime\`,\`instant\`,\`decimal\`,\`decimalNumber\`,\`decimalDecimal\`,\`deleted\`,\`identifier\`,\`identifierString\`,\`integer\`,\`real\`,\`string\`,\`time\`,\`plainTime\`) VALUES
+(DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,?,DEFAULT,?,DEFAULT,DEFAULT)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`createdDate\`,
+	\`entity0\`.\`modifiedDate\`,
+	\`entity0\`.\`deleted\`,
+	\`entity0\`.\`integer\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
+,
+        "type": 1,
+      },
+    ],
+    "_query": 
+"INSERT INTO \`fixture\`.\`Table1s\`(\`bigint\`,\`binary\`,\`boolean\`,\`date\`,\`plainDate\`,\`dateTime\`,\`instant\`,\`decimal\`,\`decimalNumber\`,\`decimalDecimal\`,\`deleted\`,\`identifier\`,\`identifierString\`,\`integer\`,\`real\`,\`string\`,\`time\`,\`plainTime\`) VALUES
+(DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,?,DEFAULT,?,DEFAULT,DEFAULT);
+
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`createdDate\`,
+	\`entity0\`.\`modifiedDate\`,
+	\`entity0\`.\`deleted\`,
+	\`entity0\`.\`integer\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
+,
+    "_type": 3,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION UPDATE should update entity 1 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "?0" => "Updated",
+      "?1" => 1n,
+    }
+,
+    "query": 
+"UPDATE \`Table1One\` AS \`entity0\`
+SET \`entity0\`.\`name\` = ?
+WHERE (\`entity0\`.\`table1Id\`=?)"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION UPDATE should update entity 2 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "?0" => "Updated",
+      "?1" => 11,
+      "?2" => 1n,
+    }
+,
+    "query": 
+"UPDATE \`Table1One\` AS \`entity0\`
+SET \`entity0\`.\`name\` = ?,
+	\`entity0\`.\`number\` = ?
+WHERE (\`entity0\`.\`table1Id\`=?)"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION UPDATE should bulk update entity 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "?0" => "Updated",
+    }
+,
+    "query": 
+"UPDATE \`Table1One\` AS \`entity0\`
+SET \`entity0\`.\`name\` = ?,
+	\`entity0\`.\`number\` = (\`entity0\`.\`number\`+100)
+WHERE (\`entity0\`.\`table1Id\`=1)"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION UPDATE should bulk update entity with paging 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "?0" => "Updated",
+      "?1" => 100.12,
+      "?2" => 100,
+      "?3" => 99.99,
+      "?4" => 99.99,
+      "?5" => 50,
+      "?6" => 100,
+    }
+,
+    "query": 
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+INNER JOIN (
+	SELECT \`entity0\`.\`id\`
+	FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+	WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`integer\`>?) AND (\`entity0\`.\`real\`<=>?) AND ((COALESCE(\`entity0\`.\`real\`, 0))=?))
+	ORDER BY \`entity0\`.\`id\`
+	LIMIT ? OFFSET ?
+) AS \`entity0_1\` ON (\`entity0\`.\`id\`=\`entity0_1\`.\`id\`)
+SET \`entity0\`.\`string\` = ?,
+	\`entity0\`.\`real\` = (\`entity0\`.\`real\`+?)"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION UPDATE should update with DIRTY concurrency check 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "?0" => "Updated",
+      "?1" => 2n,
+      "?2" => "TEST2",
+    }
+,
+    "query": 
+"UPDATE \`Table1One\` AS \`entity0\`
+SET \`entity0\`.\`name\` = ?
+WHERE ((\`entity0\`.\`table1Id\`=?) AND (\`entity0\`.\`name\`=?))"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION UPDATE should update with VERSION concurrency check 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": 
+Map {
+      "?0" => "Updated",
+      "?1" => 1,
+      "?2" => Uint8Array [
+        1,
+        200,
+        0,
+        0,
+        100,
+      ],
+      "?3" => 1,
+      "?4" => Uint8Array [
+        1,
+        200,
+        0,
+        0,
+        100,
+      ],
+    }
+,
+    "_queries": [
+      {
+        "parameters": 
+Map {
+          "?0" => "Updated",
+          "?1" => 1,
+          "?2" => Uint8Array [
+            1,
+            200,
+            0,
+            0,
+            100,
+          ],
+        }
+,
+        "query": 
+"UPDATE \`fixture\`.\`Table2s\` AS \`entity0\`
+SET \`entity0\`.\`t2Name\` = ?
+WHERE ((\`entity0\`.\`id\`=?) AND (\`entity0\`.\`rowVersion\`=?))"
+,
+        "type": 2,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => 1,
+          "?1" => Uint8Array [
+            1,
+            200,
+            0,
+            0,
+            100,
+          ],
+        }
+,
+        "query": 
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`rowVersion\`,
+	\`entity0\`.\`id\`,
+	\`entity0\`.\`rowVersion\`
+FROM \`fixture\`.\`Table2s\` AS \`entity0\`
+WHERE ((\`entity0\`.\`id\`=?) AND (\`entity0\`.\`rowVersion\`=?))"
+,
+        "type": 1,
+      },
+    ],
+    "_query": 
+"UPDATE \`fixture\`.\`Table2s\` AS \`entity0\`
+SET \`entity0\`.\`t2Name\` = ?
+WHERE ((\`entity0\`.\`id\`=?) AND (\`entity0\`.\`rowVersion\`=?));
+
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`rowVersion\`,
+	\`entity0\`.\`id\`,
+	\`entity0\`.\`rowVersion\`
+FROM \`fixture\`.\`Table2s\` AS \`entity0\`
+WHERE ((\`entity0\`.\`id\`=?) AND (\`entity0\`.\`rowVersion\`=?))"
+,
+    "_type": 3,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION UPDATE should update with VERSION concurrency check (fallback to ModifiedDate) 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": 
+Map {
+      "?0" => "Updated",
+      "?1" => 1n,
+      "?2" => "1971-01-02T00:00:00Z",
+      "?3" => 1n,
+      "?4" => "1971-01-02T00:00:00Z",
+    }
+,
+    "_queries": [
+      {
+        "parameters": 
+Map {
+          "?0" => "Updated",
+          "?1" => 1n,
+          "?2" => "1971-01-02T00:00:00Z",
+        }
+,
+        "query": 
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+SET \`entity0\`.\`string\` = ?,
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
+WHERE ((\`entity0\`.\`id\`=?) AND (\`entity0\`.\`modifiedDate\`=?))"
+,
+        "type": 2,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => 1n,
+          "?1" => "1971-01-02T00:00:00Z",
+        }
+,
+        "query": 
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`modifiedDate\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE ((\`entity0\`.\`id\`=?) AND (\`entity0\`.\`modifiedDate\`=?))"
+,
+        "type": 1,
+      },
+    ],
+    "_query": 
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+SET \`entity0\`.\`string\` = ?,
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
+WHERE ((\`entity0\`.\`id\`=?) AND (\`entity0\`.\`modifiedDate\`=?));
+
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`modifiedDate\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE ((\`entity0\`.\`id\`=?) AND (\`entity0\`.\`modifiedDate\`=?))"
+,
+    "_type": 3,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION UPDATE should update without concurrency check 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": 
+Map {
+      "?0" => "Updated",
+      "?1" => 1n,
+      "?2" => 1n,
+    }
+,
+    "_queries": [
+      {
+        "parameters": 
+Map {
+          "?0" => "Updated",
+          "?1" => 1n,
+        }
+,
+        "query": 
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+SET \`entity0\`.\`string\` = ?,
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
+WHERE (\`entity0\`.\`id\`=?)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => 1n,
+        }
+,
+        "query": 
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`modifiedDate\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=?)"
+,
+        "type": 1,
+      },
+    ],
+    "_query": 
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+SET \`entity0\`.\`string\` = ?,
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
+WHERE (\`entity0\`.\`id\`=?);
+
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`modifiedDate\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=?)"
+,
+    "_type": 3,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION UPDATE should update ModifiedDate 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": 
+Map {
+      "?0" => "Updated",
+      "?1" => 1n,
+      "?2" => 1n,
+    }
+,
+    "_queries": [
+      {
+        "parameters": 
+Map {
+          "?0" => "Updated",
+          "?1" => 1n,
+        }
+,
+        "query": 
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+SET \`entity0\`.\`string\` = ?,
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
+WHERE (\`entity0\`.\`id\`=?)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => 1n,
+        }
+,
+        "query": 
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`modifiedDate\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=?)"
+,
+        "type": 1,
+      },
+    ],
+    "_query": 
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+SET \`entity0\`.\`string\` = ?,
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
+WHERE (\`entity0\`.\`id\`=?);
+
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`modifiedDate\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=?)"
+,
+    "_type": 3,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION UPDATE should not update Readonly Column, ex: CreatedDate 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": 
+Map {
+      "?0" => "Updated",
+      "?1" => 1n,
+      "?2" => 1n,
+    }
+,
+    "_queries": [
+      {
+        "parameters": 
+Map {
+          "?0" => "Updated",
+          "?1" => 1n,
+        }
+,
+        "query": 
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+SET \`entity0\`.\`string\` = ?,
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
+WHERE (\`entity0\`.\`id\`=?)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => 1n,
+        }
+,
+        "query": 
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`modifiedDate\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=?)"
+,
+        "type": 1,
+      },
+    ],
+    "_query": 
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+SET \`entity0\`.\`string\` = ?,
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
+WHERE (\`entity0\`.\`id\`=?);
+
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`modifiedDate\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=?)"
+,
+    "_type": 3,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION UPDATE should trigger before/after save event 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": 
+Map {
+      "?0" => "Updated",
+      "?1" => 1n,
+      "?2" => 1n,
+    }
+,
+    "_queries": [
+      {
+        "parameters": 
+Map {
+          "?0" => "Updated",
+          "?1" => 1n,
+        }
+,
+        "query": 
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+SET \`entity0\`.\`string\` = ?,
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
+WHERE (\`entity0\`.\`id\`=?)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => 1n,
+        }
+,
+        "query": 
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`modifiedDate\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=?)"
+,
+        "type": 1,
+      },
+    ],
+    "_query": 
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+SET \`entity0\`.\`string\` = ?,
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
+WHERE (\`entity0\`.\`id\`=?);
+
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`modifiedDate\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=?)"
+,
+    "_type": 3,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION UPDATE should update entity with it relation correctly 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "?0" => 1n,
+    }
+,
+    "query": 
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`bigint\`,
+	\`entity0\`.\`binary\`,
+	\`entity0\`.\`boolean\`,
+	\`entity0\`.\`date\`,
+	\`entity0\`.\`plainDate\`,
+	\`entity0\`.\`dateTime\`,
+	\`entity0\`.\`instant\`,
+	\`entity0\`.\`decimal\`,
+	\`entity0\`.\`decimalNumber\`,
+	\`entity0\`.\`decimalDecimal\`,
+	\`entity0\`.\`deleted\`,
+	\`entity0\`.\`identifier\`,
+	\`entity0\`.\`identifierString\`,
+	\`entity0\`.\`integer\`,
+	\`entity0\`.\`real\`,
+	\`entity0\`.\`string\`,
+	\`entity0\`.\`time\`,
+	\`entity0\`.\`plainTime\`,
+	\`entity0\`.\`createdDate\`,
+	\`entity0\`.\`modifiedDate\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`id\`=?))
+ORDER BY \`entity0\`.\`id\`
+LIMIT 1"
+,
+    "type": 1,
+  },
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": 
+Map {
+      "?0" => 1n,
+      "?1" => 1n,
+      "?2" => 1n,
+    }
+,
+    "_queries": [
+      {
+        "parameters": 
+Map {
+          "?0" => 1n,
+          "?1" => 1n,
+        }
+,
+        "query": 
+"UPDATE \`Table1Manies\` AS \`entity0\`
+SET \`entity0\`.\`table1Id\` = ?
+WHERE (\`entity0\`.\`id\`=?)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => 1n,
+        }
+,
+        "query": 
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`
+FROM \`Table1Manies\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=?)"
+,
+        "type": 1,
+      },
+    ],
+    "_query": 
+"UPDATE \`Table1Manies\` AS \`entity0\`
+SET \`entity0\`.\`table1Id\` = ?
+WHERE (\`entity0\`.\`id\`=?);
+
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`
+FROM \`Table1Manies\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=?)"
+,
+    "_type": 3,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION UPDATE should update relation value to inserted relation entity's identity 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "?0" => "INSERT 1",
+    }
+,
+    "query": 
+"INSERT INTO \`fixture\`.\`Table1s\`(\`bigint\`,\`binary\`,\`boolean\`,\`date\`,\`plainDate\`,\`dateTime\`,\`instant\`,\`decimal\`,\`decimalNumber\`,\`decimalDecimal\`,\`deleted\`,\`identifier\`,\`identifierString\`,\`integer\`,\`real\`,\`string\`,\`time\`,\`plainTime\`) VALUES
+(DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,?,DEFAULT,DEFAULT)"
+,
+    "type": 2,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`createdDate\`,
+	\`entity0\`.\`modifiedDate\`,
+	\`entity0\`.\`deleted\`,
+	\`entity0\`.\`integer\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
+,
+    "type": 1,
+  },
+  {
+    "parameters": 
+Map {
+      "?0" => Anything,
+      "?1" => 1n,
+    }
+,
+    "query": 
+"UPDATE \`Table1Manies\` AS \`entity1\`
+SET \`entity1\`.\`table1Id\` = ?
+WHERE (\`entity1\`.\`id\`=?)"
+,
+    "type": 2,
+  },
+  {
+    "parameters": 
+Map {
+      "?0" => 1n,
+    }
+,
+    "query": 
+"SELECT \`entity1\`.\`id\`,
+	\`entity1\`.\`id\`
+FROM \`Table1Manies\` AS \`entity1\`
+WHERE (\`entity1\`.\`id\`=?)"
+,
+    "type": 1,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION UPDATE should do upsert 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": 
+Map {
+      "?0" => 11,
+      "?1" => "Updated",
+    }
+,
+    "_queries": [
+      {
+        "parameters": 
+Map {
+          "?0" => 11,
+          "?1" => "Updated",
+        }
+,
+        "query": 
+"INSERT INTO \`fixture\`.\`Table1s\`(\`bigint\`,\`binary\`,\`boolean\`,\`date\`,\`plainDate\`,\`dateTime\`,\`instant\`,\`decimal\`,\`decimalNumber\`,\`decimalDecimal\`,\`deleted\`,\`identifier\`,\`identifierString\`,\`integer\`,\`real\`,\`string\`,\`time\`,\`plainTime\`) VALUES
+	(DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,?,DEFAULT,?,DEFAULT,DEFAULT) AS \`entity0\`ON DUPLICATE KEY UPDATE
+	\`modifiedDate\` = UTC_TIMESTAMP(),
+	\`string\` = \`entity0\`.\`string\`
+RETURNING \`entity0\`.\`id\`,\`entity0\`.\`computed\` AS \`computed\`,\`entity0\`.\`createdDate\`,\`entity0\`.\`modifiedDate\`,\`entity0\`.\`deleted\`,\`entity0\`.\`integer\`"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`createdDate\`,
+	\`entity0\`.\`modifiedDate\`,
+	\`entity0\`.\`deleted\`,
+	\`entity0\`.\`integer\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+INNER JOIN (
+	SELECT NULL AS \`id\`
+) AS \`inserted\` ON (\`entity0\`.\`id\`=\`inserted\`.\`id\`)"
+,
+        "type": 1,
+      },
+    ],
+    "_query": 
+"INSERT INTO \`fixture\`.\`Table1s\`(\`bigint\`,\`binary\`,\`boolean\`,\`date\`,\`plainDate\`,\`dateTime\`,\`instant\`,\`decimal\`,\`decimalNumber\`,\`decimalDecimal\`,\`deleted\`,\`identifier\`,\`identifierString\`,\`integer\`,\`real\`,\`string\`,\`time\`,\`plainTime\`) VALUES
+	(DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,DEFAULT,?,DEFAULT,?,DEFAULT,DEFAULT) AS \`entity0\`ON DUPLICATE KEY UPDATE
+	\`modifiedDate\` = UTC_TIMESTAMP(),
+	\`string\` = \`entity0\`.\`string\`
+RETURNING \`entity0\`.\`id\`,\`entity0\`.\`computed\` AS \`computed\`,\`entity0\`.\`createdDate\`,\`entity0\`.\`modifiedDate\`,\`entity0\`.\`deleted\`,\`entity0\`.\`integer\`;
+
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`,
+	(\`entity0\`.\`integer\`+\`entity0\`.\`decimalNumber\`) AS \`computed\`,
+	\`entity0\`.\`createdDate\`,
+	\`entity0\`.\`modifiedDate\`,
+	\`entity0\`.\`deleted\`,
+	\`entity0\`.\`integer\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+INNER JOIN (
+	SELECT NULL AS \`id\`
+) AS \`inserted\` ON (\`entity0\`.\`id\`=\`inserted\`.\`id\`)"
+,
+    "_type": 3,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION DELETE should delete entity (soft delete) + should update modifiedDate 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+INNER JOIN (
+	SELECT 1 AS \`id\`
+) AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
+SET \`entity0\`.\`deleted\` = true,
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
+WHERE (\`entity0\`.\`deleted\`=false)"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION DELETE should delete entity (hard delete) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"DELETE \`entity0\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+INNER JOIN (
+	SELECT 1 AS \`id\`
+) AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION DELETE should delete entity with key (soft delete) 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "?0" => 1n,
+    }
+,
+    "query": 
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+SET \`entity0\`.\`deleted\` = true,
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
+WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`id\`=?))"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION DELETE should delete entity with key (hard delete) 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "?0" => 1n,
+    }
+,
+    "query": 
+"DELETE \`entity0\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=?)"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION DELETE should bulk delete entity (soft delete) with paging 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "?0" => 100,
+      "?1" => 99.99,
+      "?2" => 99.99,
+      "?3" => 50,
+      "?4" => 100,
+    }
+,
+    "query": 
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+INNER JOIN (
+	SELECT \`entity0\`.\`id\`
+	FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+	WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`integer\`>?) AND (\`entity0\`.\`real\`<=>?) AND ((COALESCE(\`entity0\`.\`real\`, 0))=?))
+	ORDER BY \`entity0\`.\`id\`
+	LIMIT ? OFFSET ?
+) AS \`entity0_1\` ON (\`entity0\`.\`id\`=\`entity0_1\`.\`id\`)
+SET \`entity0\`.\`deleted\` = true,
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION DELETE should bulk delete entity (hard delete) with paging 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "?0" => 100,
+      "?1" => 99.99,
+      "?2" => 99.99,
+    }
+,
+    "query": 
+"DELETE \`entity0\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`integer\`>?) AND (\`entity0\`.\`real\`<=>?) AND ((COALESCE(\`entity0\`.\`real\`, 0))=?))"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION DELETE should bulk delete with include (soft delete) 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": Map {},
+    "_queries": [
+      {
+        "parameters": Map {},
+        "query": 
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+SET \`entity0\`.\`deleted\` = true,
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
+WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`id\`=1))"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"UPDATE \`Table1Manies\` AS \`entity1\`
+SET \`entity1\`.\`deleted\` = true
+WHERE (\`entity1\`.\`deleted\`=false)"
+,
+        "type": 2,
+      },
+    ],
+    "_query": 
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+SET \`entity0\`.\`deleted\` = true,
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
+WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`id\`=1));
+
+UPDATE \`Table1Manies\` AS \`entity1\`
+SET \`entity1\`.\`deleted\` = true
+WHERE (\`entity1\`.\`deleted\`=false)"
+,
+    "_type": 2,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION DELETE should bulk delete with include (hard delete) 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": Map {},
+    "_queries": [
+      {
+        "parameters": Map {},
+        "query": 
+"DELETE \`entity0\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`id\`=1))"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"DELETE \`entity1\`
+FROM \`Table1Manies\` AS \`entity1\`
+INNER JOIN (
+	SELECT \`entity0\`.\`id\`,
+		\`entity0\`.\`bigint\`,
+		\`entity0\`.\`binary\`,
+		\`entity0\`.\`boolean\`,
+		\`entity0\`.\`date\`,
+		\`entity0\`.\`plainDate\`,
+		\`entity0\`.\`dateTime\`,
+		\`entity0\`.\`instant\`,
+		\`entity0\`.\`decimal\`,
+		\`entity0\`.\`decimalNumber\`,
+		\`entity0\`.\`decimalDecimal\`,
+		\`entity0\`.\`deleted\`,
+		\`entity0\`.\`identifier\`,
+		\`entity0\`.\`identifierString\`,
+		\`entity0\`.\`integer\`,
+		\`entity0\`.\`real\`,
+		\`entity0\`.\`string\`,
+		\`entity0\`.\`time\`,
+		\`entity0\`.\`plainTime\`,
+		\`entity0\`.\`createdDate\`,
+		\`entity0\`.\`modifiedDate\`
+	FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+	WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`id\`=1))
+) AS \`entity0\` ON (\`entity0\`.\`id\`=\`entity1\`.\`table1Id\`)
+WHERE (\`entity1\`.\`deleted\`=false)"
+,
+        "type": 2,
+      },
+    ],
+    "_query": 
+"DELETE \`entity0\`
+FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`id\`=1));
+
+DELETE \`entity1\`
+FROM \`Table1Manies\` AS \`entity1\`
+INNER JOIN (
+	SELECT \`entity0\`.\`id\`,
+		\`entity0\`.\`bigint\`,
+		\`entity0\`.\`binary\`,
+		\`entity0\`.\`boolean\`,
+		\`entity0\`.\`date\`,
+		\`entity0\`.\`plainDate\`,
+		\`entity0\`.\`dateTime\`,
+		\`entity0\`.\`instant\`,
+		\`entity0\`.\`decimal\`,
+		\`entity0\`.\`decimalNumber\`,
+		\`entity0\`.\`decimalDecimal\`,
+		\`entity0\`.\`deleted\`,
+		\`entity0\`.\`identifier\`,
+		\`entity0\`.\`identifierString\`,
+		\`entity0\`.\`integer\`,
+		\`entity0\`.\`real\`,
+		\`entity0\`.\`string\`,
+		\`entity0\`.\`time\`,
+		\`entity0\`.\`plainTime\`,
+		\`entity0\`.\`createdDate\`,
+		\`entity0\`.\`modifiedDate\`
+	FROM \`fixture\`.\`Table1s\` AS \`entity0\`
+	WHERE ((\`entity0\`.\`deleted\`=false) AND (\`entity0\`.\`id\`=1))
+) AS \`entity0\` ON (\`entity0\`.\`id\`=\`entity1\`.\`table1Id\`)
+WHERE (\`entity1\`.\`deleted\`=false)"
+,
+    "_type": 2,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION DELETE should not cascade delete entity when not enabled (soft delete) 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+INNER JOIN (
+	SELECT 1 AS \`id\`
+) AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
+SET \`entity0\`.\`deleted\` = true,
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
+WHERE (\`entity0\`.\`deleted\`=false)"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION DELETE should cascade delete entity + relation (soft delete) 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": Map {},
+    "_queries": [
+      {
+        "query": "DROP TEMPORARY TABLE IF EXISTS \`delete\`",
+        "type": 4,
+      },
+      {
+        "query": 
+"CREATE TEMPORARY TABLE \`delete\`
+(
+	\`id\` bigint
+)"
+,
+        "type": 4,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"INSERT INTO \`delete\`(\`id\`) VALUES
+(1)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"SELECT \`delete\`.\`id\`
+FROM \`delete\` AS \`delete\`
+WHERE (\`delete\`.\`id\`=1)"
+,
+        "type": 1,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+INNER JOIN \`delete\` AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
+SET \`entity0\`.\`deleted\` = true,
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
+WHERE (\`entity0\`.\`deleted\`=false)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"UPDATE \`Table1Manies\` AS \`entity1\`
+SET \`entity1\`.\`deleted\` = true
+WHERE (\`entity1\`.\`deleted\`=false)"
+,
+        "type": 2,
+      },
+    ],
+    "_query": 
+"DROP TEMPORARY TABLE IF EXISTS \`delete\`;
+
+CREATE TEMPORARY TABLE \`delete\`
+(
+	\`id\` bigint
+);
+
+INSERT INTO \`delete\`(\`id\`) VALUES
+(1);
+
+SELECT \`delete\`.\`id\`
+FROM \`delete\` AS \`delete\`
+WHERE (\`delete\`.\`id\`=1);
+
+UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+INNER JOIN \`delete\` AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
+SET \`entity0\`.\`deleted\` = true,
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
+WHERE (\`entity0\`.\`deleted\`=false);
+
+UPDATE \`Table1Manies\` AS \`entity1\`
+SET \`entity1\`.\`deleted\` = true
+WHERE (\`entity1\`.\`deleted\`=false)"
+,
+    "_type": 7,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION DELETE should delete with SET NULL option (soft delete) 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": Map {},
+    "_queries": [
+      {
+        "query": "DROP TEMPORARY TABLE IF EXISTS \`delete\`",
+        "type": 4,
+      },
+      {
+        "query": 
+"CREATE TEMPORARY TABLE \`delete\`
+(
+	\`id\` bigint
+)"
+,
+        "type": 4,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"INSERT INTO \`delete\`(\`id\`) VALUES
+(1)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"SELECT \`delete\`.\`id\`
+FROM \`delete\` AS \`delete\`
+WHERE (\`delete\`.\`id\`=1)"
+,
+        "type": 1,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+INNER JOIN \`delete\` AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
+SET \`entity0\`.\`deleted\` = true,
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
+WHERE (\`entity0\`.\`deleted\`=false)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"UPDATE \`Table1Manies\` AS \`entity1\`
+SET \`entity1\`.\`table1Id\` = NULL"
+,
+        "type": 2,
+      },
+    ],
+    "_query": 
+"DROP TEMPORARY TABLE IF EXISTS \`delete\`;
+
+CREATE TEMPORARY TABLE \`delete\`
+(
+	\`id\` bigint
+);
+
+INSERT INTO \`delete\`(\`id\`) VALUES
+(1);
+
+SELECT \`delete\`.\`id\`
+FROM \`delete\` AS \`delete\`
+WHERE (\`delete\`.\`id\`=1);
+
+UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+INNER JOIN \`delete\` AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
+SET \`entity0\`.\`deleted\` = true,
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
+WHERE (\`entity0\`.\`deleted\`=false);
+
+UPDATE \`Table1Manies\` AS \`entity1\`
+SET \`entity1\`.\`table1Id\` = NULL"
+,
+    "_type": 7,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION DELETE should delete with SET DEFAULT option (soft delete) 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": Map {},
+    "_queries": [
+      {
+        "query": "DROP TEMPORARY TABLE IF EXISTS \`delete\`",
+        "type": 4,
+      },
+      {
+        "query": 
+"CREATE TEMPORARY TABLE \`delete\`
+(
+	\`id\` bigint
+)"
+,
+        "type": 4,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"INSERT INTO \`delete\`(\`id\`) VALUES
+(1)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"SELECT \`delete\`.\`id\`
+FROM \`delete\` AS \`delete\`
+WHERE (\`delete\`.\`id\`=1)"
+,
+        "type": 1,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+INNER JOIN \`delete\` AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
+SET \`entity0\`.\`deleted\` = true,
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
+WHERE (\`entity0\`.\`deleted\`=false)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"UPDATE \`Table1Manies\` AS \`entity1\`
+SET \`entity1\`.\`table1Id\` = 0"
+,
+        "type": 2,
+      },
+    ],
+    "_query": 
+"DROP TEMPORARY TABLE IF EXISTS \`delete\`;
+
+CREATE TEMPORARY TABLE \`delete\`
+(
+	\`id\` bigint
+);
+
+INSERT INTO \`delete\`(\`id\`) VALUES
+(1);
+
+SELECT \`delete\`.\`id\`
+FROM \`delete\` AS \`delete\`
+WHERE (\`delete\`.\`id\`=1);
+
+UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+INNER JOIN \`delete\` AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
+SET \`entity0\`.\`deleted\` = true,
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
+WHERE (\`entity0\`.\`deleted\`=false);
+
+UPDATE \`Table1Manies\` AS \`entity1\`
+SET \`entity1\`.\`table1Id\` = 0"
+,
+    "_type": 7,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION DELETE should trigger before/after delete event 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+INNER JOIN (
+	SELECT 1 AS \`id\`
+) AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
+SET \`entity0\`.\`deleted\` = true,
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
+WHERE (\`entity0\`.\`deleted\`=false)"
+,
+    "type": 2,
+  },
+]
+`;
