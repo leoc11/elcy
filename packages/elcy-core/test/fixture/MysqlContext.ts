@@ -3,12 +3,12 @@ import { IResultCacheManager } from "../../src/Cache/IResultCacheManager";
 import { IDriver } from "../../src/Connection/IDriver";
 import { MockDriver } from "./mock/MockDriver";
 import { Table1, Table1Many, Table1One, Table1Table2, Table1Table2Many, Table1Table2One, Table1Table3, Table2, Table2Table3, Table3 } from "./model";
-import { ITestContext } from "./ITestContext";
+import { entityTypes, ITestContext } from "./ITestContext";
 import { MysqlDbContext } from "../../src/Provider/Mysql/MysqlDbContext";
 
 export class MysqlContext extends MysqlDbContext implements ITestContext {
     constructor(factory: () => IDriver<any> = () => new MockDriver()) {
-        super(factory);
+        super(factory, entityTypes);
     }
     public get table1s() {
         return this.set(Table1);

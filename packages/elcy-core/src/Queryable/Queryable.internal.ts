@@ -592,7 +592,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
             visitor.queryOption = this.queryOption;
             visitor.setParameter(flatParams);
             const selectExp = this.buildQuery(visitor) as SelectExpression<object, TT>;
-            if (this.dbContext.entityTypes?.includes(selectExp.itemExpression.type as IObjectType<TT>) === false) {
+            if (!this.dbContext.entityTypes.includes(selectExp.itemExpression.type as IObjectType<TT>)) {
                 throw new QueryBuilderError(QueryBuilderErrorCode.UsageIssue, `Insert ${selectExp.itemExpression.type.name} not supported`);
             }
 

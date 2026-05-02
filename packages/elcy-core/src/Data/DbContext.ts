@@ -22,7 +22,7 @@ import type { ISaveEventParam } from "../MetaData/Interface/ISaveEventParam";
 import { DeferredQuery } from "../Query/DeferredQuery";
 import type { IQuery } from "../Query/IQuery";
 import type { IQueryBuilder } from "../Query/IQueryBuilder";
-import type { IQueryOption, ISaveChangesOption } from "../Query/IQueryOption";
+import type { ICommitPlanOption, IQueryOption, ISaveChangesOption } from "../Query/IQueryOption";
 import type { IDeferredParameterResolver, IQueryParameterValue, ISqlParameterValueMap } from "../Query/IQueryParameter";
 import type { IQueryResult } from "../Query/IQueryResult";
 import type { IQueryResultParser } from "../Query/IQueryResultParser";
@@ -59,6 +59,8 @@ import { AdditionExpression } from "src/ExpressionBuilder/Expression/AdditionExp
 import { IColumnMetaData } from "src/MetaData/Interface/IColumnMetaData";
 import { getColumnMetadata, getEntityMetadata } from "src/MetaData/MetaDataMapper";
 import { RelationMetaData } from "src/MetaData/Relation/RelationMetaData";
+import { CommitPlan } from "./UOW/CommitPlan";
+import { CommitPlanner } from "./UOW/CommitPlanner";
 
 const connectionManagerMap = new WeakMap<Function, IConnectionManager<any>>();
 const queryCacheManagerMap = new WeakMap<Function, IQueryCacheManager>();
@@ -116,7 +118,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
 
         return this._resultCacheManager;
     }
-    constructor(factory?: () => IConnectionManager<TDB> | IDriver<TDB>, types?: IObjectType[]) {
+    constructor(factory?: () => IConnectionManager<TDB> | IDriver<TDB>, types: IObjectType<object>[] = []) {
         if (factory) {
             this.factory = factory;
         }
@@ -132,7 +134,8 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
     public connection?: IConnection;
     public deferredQueries: DeferredQuery[] = [];
     public entityEntries = new EntityChangeMap();
-    public readonly entityTypes?: Array<IObjectType>;
+    public readonly entityTypes: Array<IObjectType<object>>;
+    private commitPlan?: CommitPlan;
     public modifiedEmbeddedEntries: EmbeddedEntityEntryMap = new EmbeddedEntityEntryMap();
     protected readonly factory: () => IConnectionManager<TDB> | IDriver<TDB>;
     protected abstract readonly namingStrategy: NamingStrategy;
@@ -427,10 +430,14 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
         const updateQueries: Map<IEntityMetaData, Array<DeferredQuery<IQueryResult<object>>>> = new Map();
         const deleteQueries: Map<IEntityMetaData, Array<DeferredQuery<IQueryResult>>> = new Map();
 
+        if (!this.commitPlan) {
+            this.commitPlan = new CommitPlanner(this.entityTypes.map(o => getEntityMetadata(o))).build();
+        }
+
         // order by priority
-        const orderedEntityAdd = Enumerable.from(this.entityEntries.add).filter(o => Boolean(o[1]?.length)).orderBy([(o) => o[0].priority, "ASC"]).toMap((o) => o[0], (o) => o[1]);
-        const orderedEntityUpdate = Enumerable.from(this.entityEntries.update).filter(o => Boolean(o[1]?.length)).orderBy([(o) => o[0].priority, "ASC"]).toMap((o) => o[0], (o) => o[1]);
-        const orderedEntityDelete = Enumerable.from(this.entityEntries.delete).filter(o => Boolean(o[1]?.length)).orderBy([(o) => o[0].priority, "DESC"]).toMap((o) => o[0], (o) => o[1]);
+        const orderedEntityAdd = this.commitPlan.sort(Enumerable.from(this.entityEntries.add).filter(o => Boolean(o[1]?.length)).map(o => o[0])).toMap((o) => o.entityMeta, (o) => this.entityEntries.add.get(o.entityMeta));
+        const orderedEntityUpdate = this.commitPlan.sort(Enumerable.from(this.entityEntries.update).filter(o => Boolean(o[1]?.length)).map(o => o[0])).toMap((o) => o.entityMeta, (o) => this.entityEntries.update.get(o.entityMeta));
+        const orderedEntityDelete = this.commitPlan.reverseSort(Enumerable.from(this.entityEntries.delete).filter(o => Boolean(o[1]?.length)).map(o => o[0])).toMap((o) => o.entityMeta, (o) => this.entityEntries.delete.get(o.entityMeta));
 
         const visitor = this.queryVisitor;
         visitor.queryOption = options;
@@ -465,7 +472,8 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             if (useUpsert) {
                 useUpsert = !entityMeta.hasIncrementPrimary;
             }
-            const insertResult = useUpsert ? this.getUpsertQueries(entityMeta, addEntries, visitor, options) : this.getInsertQueries(entityMeta, addEntries, visitor, options);
+            const commitOption: ICommitPlanOption = { ...options, commitConfig: this.commitPlan.getConfig(entityMeta) };
+            const insertResult = useUpsert ? this.getUpsertQueries(entityMeta, addEntries, visitor, commitOption) : this.getInsertQueries(entityMeta, addEntries, visitor, commitOption);
             if (entityMeta.hasIncrementPrimary) {
                 autoEntriesMap.set(entityMeta, addEntries);
             }
@@ -480,7 +488,8 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             if (useUpsert) {
                 useUpsert = (entityMeta.concurrencyMode ?? "NONE") === "NONE";
             }
-            updateQueries.set(entityMeta, useUpsert ? this.getUpsertQueries(entityMeta, updateEntries, visitor, options) : this.getUpdateQueries(entityMeta, updateEntries, visitor, options));
+            const commitOption: ICommitPlanOption = { ...options, commitConfig: this.commitPlan.getConfig(entityMeta) };
+            updateQueries.set(entityMeta, useUpsert ? this.getUpsertQueries(entityMeta, updateEntries, visitor, commitOption) : this.getUpdateQueries(entityMeta, updateEntries, visitor, commitOption));
         }
 
         // Before delete even and generate query
@@ -495,7 +504,8 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                 type: deleteMode ? deleteMode : entityMeta.deletedColumn ? "soft" : "hard"
             };
             eventEmitter.emitBeforeDeleteEvent(deleteParam, ...deleteEntries);
-            deleteQueries.set(entityMeta, this.getDeleteQueries(entityMeta, deleteEntries, visitor, deleteMode, options));
+            const commitOption: ICommitPlanOption = { ...options, commitConfig: this.commitPlan.getConfig(entityMeta) };
+            deleteQueries.set(entityMeta, this.getDeleteQueries(entityMeta, deleteEntries, visitor, deleteMode, commitOption));
         }
 
         const entityAutoIdentityMap = new Map<IEntityMetaData, Map<EntityEntry, string>>();
@@ -677,23 +687,24 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
         return effectedRow;
     }
     protected acceptAllChanges() {
-        const deletedEntities = Enumerable.from(this.entityEntries.delete)
-            .orderBy([(o) => o[0].priority, "ASC"])
-            .flatMap(o => o[1]);
+        if (!this.commitPlan) {
+            this.commitPlan = new CommitPlanner(this.entityTypes.map(o => getEntityMetadata(o))).build();
+        }
+
+        const deletedEntities = this.commitPlan.reverseSort(Enumerable.from(this.entityEntries.delete).map(o => o[0]))
+            .flatMap(o => this.entityEntries.delete.get(o.entityMeta));
         for (const entry of deletedEntities) {
             entry.acceptChanges();
         }
 
-        const addedEntities = Enumerable.from(this.entityEntries.add)
-            .orderBy([(o) => o[0].priority, "ASC"])
-            .flatMap(o => o[1]);
+        const addedEntities = this.commitPlan.sort(Enumerable.from(this.entityEntries.add).map(o => o[0]))
+            .flatMap(o => this.entityEntries.add.get(o.entityMeta));
         for (const entry of addedEntities) {
             entry.acceptChanges();
         }
 
-        const updatedEntities = Enumerable.from(this.entityEntries.update)
-            .orderBy([(o) => o[0].priority, "ASC"])
-            .flatMap(o => o[1]);
+        const updatedEntities = this.commitPlan.sort(Enumerable.from(this.entityEntries.update).map(o => o[0]))
+            .flatMap(o => this.entityEntries.update.get(o.entityMeta));
         for (const entry of updatedEntities) {
             entry.acceptChanges();
         }
@@ -705,14 +716,14 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
         if (!isClearCache) {
             result = this._cachedDbSets.get(type);
         }
-        if (!result && this.entityTypes?.includes(type) !== false && getEntityMetadata(type)) {
+        if (!result && this.entityTypes.includes(type) && getEntityMetadata(type)) {
             result = new DbSet(type, this);
             this._cachedDbSets.set(type, result);
         }
         return result;
     }
     public async syncSchema() {
-        const schemaQuery = await this.getUpdateSchemaQueries(this.entityTypes ?? []);
+        const schemaQuery = await this.getUpdateSchemaQueries(this.entityTypes);
         const commands = this.queryBuilder.mergeQueries(schemaQuery.commit);
 
         // must be executed to all connection in case connection manager handle replication

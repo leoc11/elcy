@@ -14,3 +14,5 @@ export interface ITestContext extends DbContext {
     get table1table2Ones(): DbSet<Table1Table2One>;
     get table1table2Manies(): DbSet<Table1Table2Many>;
 }
+
+export const entityTypes = [Table1, Table2, Table3, Table1Table2, Table1Table3, Table2Table3, Table1One, Table1Many, Table1Table2One, Table1Table2Many];
