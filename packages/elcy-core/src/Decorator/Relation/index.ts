@@ -1,2 +1,3 @@
 export * from "./EmbeddedRelationship";
-export * from "./Relationship";
+export * from "./Relation";
+export * from "./ReverseRelation";

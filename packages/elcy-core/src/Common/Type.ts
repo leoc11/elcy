@@ -24,6 +24,12 @@ export type KeysType<TE, TVal> = { [P in StringKeyOf<TE>]: TE[P] extends TVal ? 
 export type KeyValue<TE, TVal = ValueType> = Extract<TE[keyof TE], TVal>;
 export type TypeItem<T> = (T extends Array<(infer U)> ? U : T);
 
+export type StringKeyOfValue<T, V> = {
+    [K in keyof T]-?: K extends string ? T[K] extends V ? K : never : never;
+}[keyof T];
+export type PropertySelectorType<TE, T = ValueType> = ((source: TE) => T | undefined) | StringKeyOfValue<TE, T>;
+export type RelationSelector<TSource, TTarget, T = ValueType> = T extends any ? [PropertySelectorType<TSource, T>, PropertySelectorType<TTarget, T>] : never;
+
 declare global {
     interface ValueTypeRegistry {
         number: number;
