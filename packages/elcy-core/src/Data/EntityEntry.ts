@@ -54,10 +54,6 @@ export class EntityEntry<TE extends object = any> implements IEntityEntry<TE> {
                     }
                     break;
                 }
-                case EntityState.Detached: {
-                    // load all relation
-                    break;
-                }
             }
             switch (value) {
                 case EntityState.Added: {
@@ -421,7 +417,7 @@ export class EntityEntry<TE extends object = any> implements IEntityEntry<TE> {
                     this.state = EntityState.Unchanged;
                 }
             }
-            if (oldValue !== newValue && (this.state === EntityState.Modified || this.state === EntityState.Unchanged)) {
+            if (oldValue !== newValue && this.state >= EntityState.Unchanged) {
                 if (this._originalValues.has(metadata.propertyName)) {
                     const oriValue = this._originalValues.get(metadata.propertyName);
                     if (oriValue === newValue) {
@@ -437,12 +433,10 @@ export class EntityEntry<TE extends object = any> implements IEntityEntry<TE> {
                         }
                     }
                 }
-                else {
-                    if (oldValue !== undefined && !metadata.isReadOnly) {
-                        this._originalValues.set(metadata.propertyName, oldValue as TE[StringKeyOf<TE>]);
-                        if (this.state === EntityState.Unchanged) {
-                            this.state = EntityState.Modified;
-                        }
+                else if (oldValue !== undefined && !metadata.isReadOnly) {
+                    this._originalValues.set(metadata.propertyName, oldValue as TE[StringKeyOf<TE>]);
+                    if (this.state === EntityState.Unchanged) {
+                        this.state = EntityState.Modified;
                     }
                 }
             }
