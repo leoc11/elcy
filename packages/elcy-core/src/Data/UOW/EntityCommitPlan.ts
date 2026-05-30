@@ -5,6 +5,7 @@ export type EntityCommitPlan = {
     config: CommitPlanConfig;
 };
 export type CommitPlanConfig = {
-    isSelfReference: boolean;
-    relationBreaks: IRelationMetaData[];
+    selfReferences: Set<IRelationMetaData>;
+    relationBreaks: Set<IRelationMetaData>;
+    uniqueColumns: Set<string>;
 }

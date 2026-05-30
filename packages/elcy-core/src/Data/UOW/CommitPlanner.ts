@@ -2,6 +2,7 @@ import { IEnumerable, Enumerable } from "@elcy/enumerable";
 import { IEntityMetaData, IRelationMetaData } from "../../MetaData/Interface";
 import { CommitPlan } from "./CommitPlan";
 import { EntityCommitPlan } from "./EntityCommitPlan";
+import { UniqueConstraintMetaData } from "src/MetaData";
 
 export class CommitPlanner {
     private entities: Set<IEntityMetaData>;
@@ -21,14 +22,23 @@ export class CommitPlanner {
         const dag = this.buildDAG(breakEdges);
         const order = this.topoSort(dag);
 
-        const m = Enumerable.from(breakEdges).groupBy(o => o.source).toMap(o => o.key, o => o.toArray());
-        const plans = order.map<EntityCommitPlan>(o => ({
-            entityMeta: o,
-            config: {
-                isSelfReference: this.relationMap.get(o)?.some(r => r.target === o),
-                relationBreaks: m.get(o) ?? [],
+        const m = Enumerable.from(breakEdges).groupBy(o => o.source).toMap(o => o.key, o => new Set(o));
+        const plans = order.map<EntityCommitPlan>(o => {
+            const m1 = ({
+                entityMeta: o,
+                config: {
+                    selfReferences: new Set(this.relationMap.get(o)?.filter(r => r.target === o && !r.isMaster && !r.nullable)),
+                    uniqueColumns: Enumerable.from(o.constraints ?? []).ofType(UniqueConstraintMetaData).flatMap(o => o.columns).map(o => o.propertyName).toSet(),
+                    relationBreaks: m.get(o) ?? new Set(),
+                }
+            });
+
+            for (const sf of m1.config.selfReferences) {
+                m1.config.relationBreaks.delete(sf);
             }
-        }));
+
+            return m1;
+        });
 
         return new CommitPlan(plans);
     }
@@ -95,7 +105,9 @@ export class CommitPlanner {
         const breaks = new Set<IRelationMetaData>();
 
         for (const scc of sccs) {
-            if (scc.size <= 1) continue;
+            if (scc.size <= 0) {
+                continue;
+            }
 
             const internalEdges: IRelationMetaData[] = [];
 
@@ -119,7 +131,9 @@ export class CommitPlanner {
     private breakCyclesInSCC(nodes: Set<IEntityMetaData>, edges: IRelationMetaData[]): Set<IRelationMetaData> {
         const breaks = new Set<IRelationMetaData>();
 
-        // build adjacency
+        // Early exit for isolated nodes (Size 1 SCC with no self-referencing edges)
+        if (edges.length === 0) return breaks;
+
         const incoming = new Map<IEntityMetaData, Set<IRelationMetaData>>();
         const outgoing = new Map<IEntityMetaData, Set<IRelationMetaData>>();
 
@@ -133,33 +147,10 @@ export class CommitPlanner {
             outgoing.get(e.source)!.add(e);
         }
 
-        // Kahn pruning
-        const queue: IEntityMetaData[] = [];
+        let remaining: IRelationMetaData[] = [...edges];
 
-        for (const n of nodes) {
-            if (incoming.get(n)!.size === 0) queue.push(n);
-        }
-
-        while (queue.length) {
-            const n = queue.pop()!;
-            for (const e of outgoing.get(n)!) {
-                incoming.get(e.target)!.delete(e);
-                if (incoming.get(e.target)!.size === 0) {
-                    queue.push(e.target);
-                }
-            }
-            outgoing.delete(n);
-        }
-
-        // remaining = cycles
-        let remaining: IRelationMetaData[] = [];
-        for (const set of outgoing.values()) {
-            remaining.push(...set);
-        }
-
-        // remove edges until acyclic
-        while (remaining.length) {
-
+        // Remove edges until acyclic
+        while (remaining.length > 0) {
             remaining.sort((a, b) => {
                 if (a.nullable !== b.nullable) return a.nullable ? -1 : 1;
                 return (
@@ -171,10 +162,15 @@ export class CommitPlanner {
             const chosen = remaining.shift()!;
             breaks.add(chosen);
 
-            // remove chosen edge from graph
-            incoming.get(chosen.target)!.delete(chosen);
+            if (!chosen.nullable) {
+                console.warn(`Cycle broken on NON-NULLABLE relation: ${chosen.source.name} -> ${chosen.target.name}. DB execution may fail without deferred constraints.`);
+            }
 
-            // re-run pruning
+            // remove chosen edge from both sides of the graph
+            incoming.get(chosen.target)!.delete(chosen);
+            outgoing.get(chosen.source)!.delete(chosen);
+
+            // re-run Kahn's pruning
             const queue: IEntityMetaData[] = [];
             for (const n of nodes) {
                 if (incoming.get(n)!.size === 0) queue.push(n);
@@ -182,19 +178,23 @@ export class CommitPlanner {
 
             const visited = new Set<IEntityMetaData>();
 
-            while (queue.length) {
+            while (queue.length > 0) {
                 const n = queue.pop()!;
                 if (visited.has(n)) continue;
                 visited.add(n);
 
                 for (const e of outgoing.get(n) ?? []) {
                     incoming.get(e.target)!.delete(e);
+                    // remove from outgoing so it isn't processed again
+                    outgoing.get(n)!.delete(e);
+
                     if (incoming.get(e.target)!.size === 0) {
                         queue.push(e.target);
                     }
                 }
             }
 
+            // Rebuild remaining pool from un-pruned edges
             remaining = [];
             for (const [n, set] of outgoing) {
                 if (!visited.has(n)) {
