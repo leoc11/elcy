@@ -1048,7 +1048,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             translator = this.resolveTranslator(exp.objectOperand.type.prototype, exp.methodName);
         }
 
-        if (translator?.translate) {
+        if (translator) {
             return translator.translate(this, exp, context);
         }
 

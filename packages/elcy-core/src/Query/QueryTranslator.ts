@@ -103,7 +103,7 @@ export class QueryTranslator {
     public resolve(object: any, memberName?: string) {
         const map = this._map.get(object);
         let item = map && map[memberName || ""];
-        if (item === undefined) {
+        if (!item?.translate) {
             for (const fallback of this.fallbacks) {
                 item = fallback.resolve(object, memberName);
                 if (item) {
