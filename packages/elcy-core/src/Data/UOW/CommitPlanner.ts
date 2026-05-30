@@ -33,10 +33,6 @@ export class CommitPlanner {
                 }
             });
 
-            for (const sf of m1.config.selfReferences) {
-                m1.config.relationBreaks.delete(sf);
-            }
-
             return m1;
         });
 
@@ -133,6 +129,7 @@ export class CommitPlanner {
 
         // Early exit for isolated nodes (Size 1 SCC with no self-referencing edges)
         if (edges.length === 0) return breaks;
+        if (edges.length === 1 && nodes.size === 1 && !edges[0].nullable) return breaks;
 
         const incoming = new Map<IEntityMetaData, Set<IRelationMetaData>>();
         const outgoing = new Map<IEntityMetaData, Set<IRelationMetaData>>();
