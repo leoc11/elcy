@@ -6,9 +6,9 @@ import { ClassAccessor, ClassPropertyDecorator } from "../Type";
 import { setColumnMetadata } from "src/MetaData/MetaDataMapper";
 import { IColumnMetaData } from "src/MetaData/Interface/IColumnMetaData";
 
-export function Column<TE extends object = object, T = (ValueType | undefined)>(type: PrimitiveType<T>, columnMetaType: IObjectType<ColumnMetaData<TE, T>>, columnOption: IColumnOption): ClassPropertyDecorator<TE, T>;
-export function Column<TE extends object = object, T = (ValueType | undefined)>(type: GenericType<T>, columnMetaType: IObjectType<ColumnMetaData<TE, T>>, columnOption: IColumnOption): ClassPropertyDecorator<TE, T>;
-export function Column<TE extends object = object, T = (ValueType | undefined)>(type: GenericType<T>, columnMetaType: IObjectType<ColumnMetaData<TE, T>>, columnOption: IColumnOption): ClassPropertyDecorator<TE, T> {
+export function Column<TE extends object = object, T = (ValueType | undefined)>(type: PrimitiveType<T>, columnMetaType: IObjectType<ColumnMetaData<TE, T>>, columnOption: IColumnOption<T>): ClassPropertyDecorator<TE, T>;
+export function Column<TE extends object = object, T = (ValueType | undefined)>(type: GenericType<T>, columnMetaType: IObjectType<ColumnMetaData<TE, T>>, columnOption: IColumnOption<T>): ClassPropertyDecorator<TE, T>;
+export function Column<TE extends object = object, T = (ValueType | undefined)>(type: GenericType<T>, columnMetaType: IObjectType<ColumnMetaData<TE, T>>, columnOption: IColumnOption<T>): ClassPropertyDecorator<TE, T> {
     return (_: undefined | ClassAccessor<T>, context: ClassFieldDecoratorContext<TE, T> | ClassAccessorDecoratorContext<TE, T>) => {
         let columnHandlers = context.metadata.columns as Array<(entityMeta: IEntityMetaData<TE>) => void>;
         if (!Array.isArray(columnHandlers)) {
