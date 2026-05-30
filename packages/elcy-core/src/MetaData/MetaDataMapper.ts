@@ -3,9 +3,9 @@ import { IColumnMetaData } from "./Interface/IColumnMetaData";
 import { IObjectType, StringKeyOf, ValueType } from "../Common/Type";
 import { IRelationMetaData } from "./Interface/IRelationMetaData";
 
-const entityMetaMap = new WeakMap<IObjectType<unknown>, IEntityMetaData>();
-const columnMetaMap = new WeakMap<IObjectType<unknown>, Map<string, IColumnMetaData>>();
-const relationMetaMap = new WeakMap<IObjectType<unknown>, Map<string, IRelationMetaData>>();
+const entityMetaMap = new WeakMap<IObjectType, IEntityMetaData>();
+const columnMetaMap = new WeakMap<IObjectType, Map<string, IColumnMetaData>>();
+const relationMetaMap = new WeakMap<IObjectType, Map<string, IRelationMetaData>>();
 
 export function getEntityMetadata<TE extends object>(constructor: IObjectType<TE>): IEntityMetaData<TE> {
     return entityMetaMap.get(constructor);
