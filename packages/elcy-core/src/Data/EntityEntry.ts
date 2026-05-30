@@ -18,6 +18,7 @@ import { AndExpression } from "src/ExpressionBuilder/Expression/AndExpression";
 import { isColumnMetaData, isRelationMetaData } from "src/Helper/Util";
 import { StrictEqualExpression } from "src/ExpressionBuilder/Expression/StrictEqualExpression";
 
+const EmbeddedEntityEntry = await import("./EmbeddedEntityEntry").then(o => o.EmbeddedEntityEntry);
 export class EntityEntry<TE extends object = any> implements IEntityEntry<TE> {
     public get isCompletelyLoaded() {
         return this.dbSet.metaData.columns.every((o) => this.entity[o.propertyName] !== undefined);
@@ -404,7 +405,7 @@ export class EntityEntry<TE extends object = any> implements IEntityEntry<TE> {
 
             if (oldValue !== newValue && metadata instanceof EmbeddedRelationMetaData) {
                 const embeddedDbSet = this.dbSet.dbContext.set(metadata.target.type);
-                void import("./EmbeddedEntityEntry").then(o => new o.EmbeddedEntityEntry(embeddedDbSet, newValue as object, this));
+                new EmbeddedEntityEntry(embeddedDbSet, newValue as object, this);
             }
 
             if (!this.enableTrackChanges) {
