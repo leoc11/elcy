@@ -203,7 +203,10 @@ describe("ENUMERABLE", () => {
     });
     it("should group by object", () => {
       const source = Enumerable.range(0, 10);
-      const groups = source.groupBy((o) => ({ modulo: o % 3 }), (o) => o.modulo);
+      const groups = source.groupBy(
+        (o) => ({ modulo: o % 3 }),
+        (o) => o.modulo,
+      );
       let groupCount = 0;
       let groupItemCounts = [];
       let groupList: GroupedEnumerable<{ modulo: number }, number>[] = [];
@@ -229,7 +232,10 @@ describe("ENUMERABLE", () => {
         }
       }
       const source = Enumerable.range(0, 10);
-      const groups = source.groupBy((o) => new Modulo(o % 3), (o) => o.modulo);
+      const groups = source.groupBy(
+        (o) => new Modulo(o % 3),
+        (o) => o.modulo,
+      );
       let groupCount = 0;
       let groupItemCounts = [];
       let groupList: GroupedEnumerable<{ modulo: number }, number>[] = [];
@@ -249,7 +255,10 @@ describe("ENUMERABLE", () => {
     });
     it("should group by date", () => {
       const source = Enumerable.range(0, 10);
-      const groups = source.groupBy((o) => new Date(o % 3), o => o.getTime());
+      const groups = source.groupBy(
+        (o) => new Date(o % 3),
+        (o) => o.getTime(),
+      );
       let groupCount = 0;
       let groupItemCounts = [];
       let groupList: GroupedEnumerable<Date, number>[] = [];
@@ -899,6 +908,20 @@ describe("ENUMERABLE", () => {
       const set2 = new Set(array);
       expect(set1.size).toBe(items.distinct().count());
       expect(set1).toEqual(set2);
+    });
+  });
+  describe("Reduce", () => {
+    it("should work", () => {
+      const enums = items.filter((o) => o > 5);
+      const reduce = enums.reduce((r, o) => r + o, 0);
+      const arrayReduce = Array.from(enums).reduce((r, o) => r + o, 0);
+      expect(reduce).toBe(arrayReduce);
+    });
+    it("should work with bigint", () => {
+      const enums = items.filter((o) => o > 5).map((o) => BigInt(o));
+      const reduce = enums.reduce((r, o) => r + o, 0n);
+      const arrayReduce = Array.from(enums).reduce((r, o) => r + o, 0n);
+      expect(reduce).toBe(arrayReduce);
     });
   });
 });

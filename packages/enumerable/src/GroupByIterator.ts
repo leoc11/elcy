@@ -11,7 +11,7 @@ export class GroupByIterator<K, T> implements Iterator<T, unknown, unknown> {
     protected readonly source: IterableIterator<T>,
     protected readonly keySelector: (item: T) => K,
     public readonly keyHash?: (item: K) => unknown,
-  ) { }
+  ) {}
 
   public next(...value: [] | [unknown]) {
     const a = this.source.next(...value);

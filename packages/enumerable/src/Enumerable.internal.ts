@@ -128,8 +128,8 @@ export class Enumerable<T = unknown> implements IEnumerable<T> {
   }
   public max<
     TArgs extends T extends ValueType
-    ? [selector?: (item: T) => ValueType]
-    : [selector: (item: T) => ValueType],
+      ? [selector?: (item: T) => ValueType]
+      : [selector: (item: T) => ValueType],
     TResult extends TArgs extends [undefined?] ? T : ReturnType<TArgs[0]>,
   >(...args: TArgs): TResult {
     let max: TResult = null;
@@ -144,12 +144,12 @@ export class Enumerable<T = unknown> implements IEnumerable<T> {
   }
   public min<
     TArgs extends T extends ValueType
-    ? [selector?: (item: T) => ValueType]
-    : [selector: (item: T) => ValueType] = T extends ValueType
-    ? [selector?: (item: T) => ValueType]
-    : [selector: (item: T) => ValueType],
+      ? [selector?: (item: T) => ValueType]
+      : [selector: (item: T) => ValueType] = T extends ValueType
+      ? [selector?: (item: T) => ValueType]
+      : [selector: (item: T) => ValueType],
     TResult extends TArgs extends [undefined?] ? T : ReturnType<TArgs[0]> =
-    TArgs extends [undefined?] ? T : ReturnType<TArgs[0]>,
+      TArgs extends [undefined?] ? T : ReturnType<TArgs[0]>,
   >(...args: TArgs): TResult {
     let min: TResult | null = null;
     const selector = args[0];
@@ -163,8 +163,8 @@ export class Enumerable<T = unknown> implements IEnumerable<T> {
   }
   public sum<
     TArgs extends T extends number | bigint
-    ? [selector?: (item: T) => number | bigint]
-    : [selector: (item: T) => number | bigint],
+      ? [selector?: (item: T) => number | bigint]
+      : [selector: (item: T) => number | bigint],
     TResult extends TArgs extends [undefined?] ? T : ReturnType<TArgs[0]>,
   >(...args: TArgs): TResult {
     let sum: TResult;
@@ -181,8 +181,8 @@ export class Enumerable<T = unknown> implements IEnumerable<T> {
   }
   public avg<
     TArgs extends T extends number | bigint
-    ? [selector?: (item: T) => number | bigint]
-    : [selector: (item: T) => number | bigint],
+      ? [selector?: (item: T) => number | bigint]
+      : [selector: (item: T) => number | bigint],
     TResult extends TArgs extends [undefined?] ? T : ReturnType<TArgs[0]>,
   >(...args: TArgs): TResult | null {
     let sum: TResult;
@@ -267,7 +267,7 @@ export class Enumerable<T = unknown> implements IEnumerable<T> {
     iterator._accessCount++;
     try {
       let index = 0;
-      for (; ;) {
+      for (;;) {
         const isDone = this.cache.isDone;
         const len = this.cache.result.length;
         while (len > index) {

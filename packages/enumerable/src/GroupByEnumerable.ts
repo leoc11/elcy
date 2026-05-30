@@ -14,7 +14,11 @@ export class GroupByEnumerable<K = unknown, T = unknown> extends Enumerable<
   }
   protected override *generator() {
     const source = this.parent[Symbol.iterator]();
-    const iterator = new GroupByIterator(source, this.keySelector, this.keyHash);
+    const iterator = new GroupByIterator(
+      source,
+      this.keySelector,
+      this.keyHash,
+    );
     let index = 0;
     for (;;) {
       const isDone = iterator.isDone;

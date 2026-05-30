@@ -34,7 +34,10 @@ declare module "./Enumerable" {
       relation: (item: T, item2: T2) => boolean,
       resultSelector: (item1: T | null, item2: T2 | null) => TResult,
     ): Enumerable<TResult>;
-    groupBy<K>(keySelector: (item: T) => K, keyHash?: (item: K) => unknown): GroupByEnumerable<K, T>;
+    groupBy<K>(
+      keySelector: (item: T) => K,
+      keyHash?: (item: K) => unknown,
+    ): GroupByEnumerable<K, T>;
     groupJoin<T2, TResult>(
       array2: IEnumerable<T2>,
       relation: (item: T, item2: T2) => boolean,
@@ -110,7 +113,7 @@ Enumerable.prototype.slice = function <T>(
 Enumerable.prototype.groupBy = function <T, K>(
   this: Enumerable<T>,
   keySelector: (item: T) => K,
-  keyHash?: (item: K) => unknown
+  keyHash?: (item: K) => unknown,
 ): GroupByEnumerable<K, T> {
   return new GroupByEnumerable(this, keySelector, keyHash);
 };
