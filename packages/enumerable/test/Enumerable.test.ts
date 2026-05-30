@@ -203,7 +203,7 @@ describe("ENUMERABLE", () => {
     });
     it("should group by object", () => {
       const source = Enumerable.range(0, 10);
-      const groups = source.groupBy((o) => ({ modulo: o % 3 }));
+      const groups = source.groupBy((o) => ({ modulo: o % 3 }), (o) => o.modulo);
       let groupCount = 0;
       let groupItemCounts = [];
       let groupList: GroupedEnumerable<{ modulo: number }, number>[] = [];
@@ -229,7 +229,7 @@ describe("ENUMERABLE", () => {
         }
       }
       const source = Enumerable.range(0, 10);
-      const groups = source.groupBy((o) => new Modulo(o % 3));
+      const groups = source.groupBy((o) => new Modulo(o % 3), (o) => o.modulo);
       let groupCount = 0;
       let groupItemCounts = [];
       let groupList: GroupedEnumerable<{ modulo: number }, number>[] = [];
@@ -249,7 +249,7 @@ describe("ENUMERABLE", () => {
     });
     it("should group by date", () => {
       const source = Enumerable.range(0, 10);
-      const groups = source.groupBy((o) => new Date(o % 3));
+      const groups = source.groupBy((o) => new Date(o % 3), o => o.getTime());
       let groupCount = 0;
       let groupItemCounts = [];
       let groupList: GroupedEnumerable<Date, number>[] = [];
