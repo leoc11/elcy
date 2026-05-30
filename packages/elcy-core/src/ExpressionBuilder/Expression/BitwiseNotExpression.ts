@@ -2,18 +2,18 @@ import { hashCode, resolveClone } from "../../Helper/Util";
 import { BitwiseExpression } from "./BitwiseExpression";
 import { IExpression } from "./IExpression";
 import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
-export class BitwiseNotExpression extends BitwiseExpression implements IUnaryOperatorExpression<number> {
+export class BitwiseNotExpression<T extends number | bigint> extends BitwiseExpression<T> implements IUnaryOperatorExpression<T> {
     constructor(operand: IExpression) {
-        super();
+        super(operand.type);
         this.operand = this.convertOperand(operand);
     }
-    public operand: IExpression<number>;
+    public operand: IExpression<number | bigint>;
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) {
             replaceMap = new Map();
         }
         const operand = resolveClone(this.operand, replaceMap);
-        const clone = new BitwiseNotExpression(operand);
+        const clone = new BitwiseNotExpression<T>(operand);
         replaceMap.set(this, clone);
         return clone;
     }
