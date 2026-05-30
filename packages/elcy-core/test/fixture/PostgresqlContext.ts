@@ -8,7 +8,7 @@ import { entityTypes, ITestContext } from "./ITestContext";
 
 export class PostgresqlContext extends PostgresqlDbContext implements ITestContext {
     constructor(factory: () => IDriver<any> = () => new MockDriver()) {
-        super(factory, entityTypes);
+        super(factory, entityTypes());
     }
     public get table1s() {
         return this.set(Table1);

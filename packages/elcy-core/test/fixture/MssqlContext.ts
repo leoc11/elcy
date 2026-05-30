@@ -8,7 +8,7 @@ import { MssqlDbContext } from "../../src/Provider/Mssql/MssqlDbContext";
 
 export class MssqlContext extends MssqlDbContext implements ITestContext {
     constructor(factory: () => IDriver<any> = () => new MockDriver()) {
-        super(factory, entityTypes);
+        super(factory, entityTypes());
     }
     public get table1s() {
         return this.set(Table1);

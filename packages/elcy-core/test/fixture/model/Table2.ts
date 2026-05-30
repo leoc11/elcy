@@ -1,4 +1,4 @@
-import { Entity, IntegerColumn, PrimaryKey, Relationship, RowVersionColumn, StringColumn } from "../../../src/Decorator";
+import { Entity, IntegerColumn, PrimaryKey, ReverseRelation, RowVersionColumn, StringColumn } from "../../../src/Decorator";
 import { Table1Table2 } from "./Table1Table2";
 import { Table2Table3 } from "./Table2Table3";
 
@@ -18,8 +18,8 @@ export class Table2 {
     rowVersion: Uint8Array;
     unmapped?: string;
 
-    @Relationship("TABLE1TABLE2", "TABLE2_RELATION")
+    @ReverseRelation(() => Table1Table2, o => o.table2)
     table1Table2s: Table1Table2[];
-    @Relationship("Table2Table3")
+    @ReverseRelation(() => Table2Table3, o => o.table2)
     table2Table3s: Table2Table3[];
 }

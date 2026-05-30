@@ -6,7 +6,8 @@ import { MockConnection } from "../../fixture/mock/MockConnection";
 import { mockContext } from "../../fixture/mock/MockContext";
 import { IQuery } from "../../../src/Query/IQuery";
 import { getEntityMetadata, getRelationMetadata } from "../../../src/MetaData/MetaDataMapper";
-import { ITestContext, Table1, Table1Many, Table1One, Table2 } from "../../fixture";
+import { CycleDigon1, CycleDigon2, CyclePolygon1, CyclePolygon2, CyclePolygon4, CyclePolygon5, CycleSelf, CycleSelfAuto, CycleSelfAutoNull, CycleTriangle1, CycleTriangle2, CycleTriangle3, Table1, Table1Many, Table1One, Table2, Unblock } from "../../fixture/model";
+import { ITestContext } from "../../fixture";
 import { Temporal } from "@js-temporal/polyfill";
 import { matchSnapShot } from "../../fixture/Utilities";
 import { Enumerable } from "@elcy/enumerable";
@@ -14,6 +15,7 @@ import { EntityState } from "../../../src/Data/EntityState";
 import { BatchedQuery } from "../../../src/Query/BatchedQuery";
 import { QueryType, UpsertStrategy } from "../../../src/Common/Enum";
 import { IDeleteEventParam } from "../../../src/MetaData/Interface/IDeleteEventParam";
+import { MysqlDbContext } from "../../../src/Provider/Mysql/MysqlDbContext";
 
 export const dataManipulationTest = (db: ITestContext) => {
     mockContext(db);
@@ -286,11 +288,222 @@ export const dataManipulationTest = (db: ITestContext) => {
                 expect(queries).toMatchSnapshot();
                 expect(effected).toBe(1);
             });
+            it("should insert entity with loop type reference", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+
+                // self reference
+                db.set(CycleSelf).new({
+                    id: 1n,
+                    parentId: 2n,
+                    table1Id: 0n
+                });
+                db.set(CycleSelf).new({
+                    id: 2n,
+                    parentId: 1n
+                });
+
+                // digon
+                db.set(CycleDigon1).new({
+                    id: 21n,
+                    cycleDigon2Id: 22n,
+                    table1Id: 0n
+                });
+                db.set(CycleDigon2).new({
+                    id: 22n,
+                    cycleDigon1Id: 21n,
+                });
+
+                // cycle triangle
+                db.set(CycleTriangle1).new({
+                    id: 31n,
+                    cycleTriangle2Id: 32n,
+                    table1Id: 0n
+                });
+                db.set(CycleTriangle2).new({
+                    id: 32n,
+                    cycleTriangle3Id: 33n
+                });
+                db.set(CycleTriangle3).new({
+                    id: 33n,
+                    cycleTriangle1Id: 31n,
+                    cyclePolygon4Id: 54n,
+                });
+
+                // cycle polygon
+                db.set(CyclePolygon1).new({
+                    id: 51n,
+                    cyclePolygon2Id: 52n
+                });
+                db.set(CyclePolygon2).new({
+                    id: 52n,
+                    cycleTriangle3Id: 33n
+                });
+                db.set(CyclePolygon4).new({
+                    id: 54n,
+                    cyclePolygon5Id: 55n
+                });
+                db.set(CyclePolygon5).new({
+                    id: 55n,
+                    cyclePolygon1Id: 51n
+                });
+                const effected = await db.saveChanges();
+
+                const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+                expect(effected).toBe(11);
+            });
             it.skip("should insert default identity entity", async () => {
                 throw "Not supported yet";
             });
-            it.skip("should insert entity with auto pk and self reference", async () => {
-                throw "Not supported yet";
+            it("should insert entity with auto pk and self reference nullable", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+                const mockConnection = db.connection as MockConnection;
+                // self reference
+                const c1 = db.set(CycleSelfAutoNull).new({
+                    parentId: 1n,
+                    name: "1"
+                });
+                const c2 = db.set(CycleSelfAutoNull).new({
+                    name: "2"
+                });
+                c2.cycleSelfAutoNull = c1;
+                const c3 = db.set(CycleSelfAutoNull).new({
+                    name: "3"
+                });
+                c3.cycleSelfAutoNull = c2;
+                const c4 = db.set(CycleSelfAutoNull).new({
+                    name: "4"
+                });
+                c4.cycleSelfAutoNull = c3;
+                const c5 = db.set(CycleSelfAutoNull).new({
+                    name: "5"
+                });
+                c5.cycleSelfAutoNull = c2;
+                const c6 = db.set(CycleSelfAutoNull).new({
+                    parentId: 2n,
+                    name: "6"
+                });
+                const c7 = db.set(CycleSelfAutoNull).new({
+                    name: "7"
+                });
+                c7.cycleSelfAutoNull = c6;
+                const c8 = db.set(CycleSelfAutoNull).new({
+                    name: "8"
+                });
+                c8.cycleSelfAutoNull = c6;
+                if (db instanceof MysqlDbContext) {
+                    mockConnection.results = [
+                        { effectedRows: 1 },
+                        { rows: [{ id: 11n }] },
+                        { effectedRows: 1 },
+                        { rows: [{ id: 12n }] },
+                        { effectedRows: 1 },
+                        { rows: [{ id: 13n }] },
+                        { effectedRows: 1 },
+                        { rows: [{ id: 14n }] },
+                        { effectedRows: 1 },
+                        { rows: [{ id: 15n }] },
+                        { effectedRows: 1 },
+                        { rows: [{ id: 16n }] },
+                        { effectedRows: 1 },
+                        { rows: [{ id: 17n }] },
+                        { effectedRows: 1 },
+                        { rows: [{ id: 18n }] },
+                        { effectedRows: 8 },
+                    ];
+                }
+                else {
+                    mockConnection.results = [
+                        { effectedRows: 1, rows: [{ id: 11n }] },
+                        { effectedRows: 1, rows: [{ id: 12n }] },
+                        { effectedRows: 1, rows: [{ id: 13n }] },
+                        { effectedRows: 1, rows: [{ id: 14n }] },
+                        { effectedRows: 1, rows: [{ id: 15n }] },
+                        { effectedRows: 1, rows: [{ id: 16n }] },
+                        { effectedRows: 1, rows: [{ id: 17n }] },
+                        { effectedRows: 1, rows: [{ id: 18n }] },
+                        { effectedRows: 8 },
+                    ];
+                }
+                const effected = await db.saveChanges();
+
+                const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+                expect(effected).toBe(8);
+            });
+            it("should insert entity with auto pk and self reference", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+                const mockConnection = db.connection as MockConnection;
+                // self reference
+                const c1 = db.set(CycleSelfAuto).new({
+                    parentId: 1n,
+                    name: "1"
+                });
+                const c2 = db.set(CycleSelfAuto).new({
+                    name: "2"
+                });
+                c2.cycleSelfAuto = c1;
+                const c3 = db.set(CycleSelfAuto).new({
+                    name: "3"
+                });
+                c3.cycleSelfAuto = c2;
+                const c4 = db.set(CycleSelfAuto).new({
+                    name: "4"
+                });
+                c4.cycleSelfAuto = c2;
+                const c5 = db.set(CycleSelfAuto).new({
+                    name: "5"
+                });
+                c5.cycleSelfAuto = c3;
+                const c6 = db.set(CycleSelfAuto).new({
+                    parentId: 2n,
+                    name: "6"
+                });
+                const c7 = db.set(CycleSelfAuto).new({
+                    name: "7"
+                });
+                c7.cycleSelfAuto = c6;
+                const c8 = db.set(CycleSelfAuto).new({
+                    name: "8"
+                });
+                c8.cycleSelfAuto = c6;
+                if (db instanceof MysqlDbContext) {
+                    mockConnection.results = [
+                        { effectedRows: 1 },
+                        { rows: [{ id: 11n }] },
+                        { effectedRows: 1 },
+                        { rows: [{ id: 16n }] },
+                        { effectedRows: 1 },
+                        { rows: [{ id: 12n }] },
+                        { effectedRows: 1 },
+                        { rows: [{ id: 17n }] },
+                        { effectedRows: 1 },
+                        { rows: [{ id: 18n }] },
+                        { effectedRows: 1 },
+                        { rows: [{ id: 13n }] },
+                        { effectedRows: 1 },
+                        { rows: [{ id: 14n }] },
+                        { effectedRows: 1 },
+                        { rows: [{ id: 15n }] },
+                    ];
+                }
+                else {
+                    mockConnection.results = [
+                        { effectedRows: 1, rows: [{ id: 11n }] },
+                        { effectedRows: 1, rows: [{ id: 16n }] },
+                        { effectedRows: 1, rows: [{ id: 12n }] },
+                        { effectedRows: 1, rows: [{ id: 17n }] },
+                        { effectedRows: 1, rows: [{ id: 18n }] },
+                        { effectedRows: 1, rows: [{ id: 13n }] },
+                        { effectedRows: 1, rows: [{ id: 14n }] },
+                        { effectedRows: 1, rows: [{ id: 15n }] },
+                    ];
+                }
+                const effected = await db.saveChanges();
+
+                const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+                expect(effected).toBe(8);
             });
             it.skip("should insert entity with auto pk, self reference, loop reference", async () => {
                 throw "Not supported yet. need insert null + update";
@@ -593,7 +806,7 @@ export const dataManipulationTest = (db: ITestContext) => {
                     return r;
                 }, {} as Record<number, unknown>);
                 matchSnapShot(flatQueries, matcher);
-                
+
                 expect(effected).toBe(2);
                 expect(entity.table1Id).toBe(data.id);
             });
@@ -846,7 +1059,90 @@ export const dataManipulationTest = (db: ITestContext) => {
                 expect(spy2).toHaveBeenNthCalledWith(1, data, { type: "soft" } as IDeleteEventParam);
                 expect(spy1.mock.invocationCallOrder[0]).toBeLessThan(spy2.mock.invocationCallOrder[0]);
             });
+            it("should delete with correct order", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+
+                // self reference
+                const t1 = await db.table1s
+                    .withRelated(o => o.table1Manies.slice(0, 1))
+                    .find(10n);
+                t1.table1Manies.forEach((o, ix) => {
+                    o.id = BigInt(ix + 1);
+                    db.entry(o).acceptChanges();
+                });
+
+                db.delete(t1);
+                db.delete(t1.table1Manies);
+                const effected = await db.saveChanges();
+
+                const queries = spy.mock.calls.slice(1).flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+                expect(effected).toBe(2);
+            });
             it.skip("should fail hard delete when relation still exist", async () => { });
+        });
+        describe("SAVE", () => {
+            it("should unblock insert unique constraint hard delete: set null", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+
+                // self reference
+                const unblockSet = db.set(Unblock);
+                const u1 = await unblockSet.find(10n);
+                u1.unique = 0n;
+                db.entry(u1).acceptChanges();
+                const u2 = unblockSet.new({
+                    id: u1.id + 1n,
+                    unique: u1.unique,
+                    name: "new"
+                });
+                db.delete(u1);
+                const effected = await db.saveChanges({ forceHardDelete: true });
+
+                const queries = spy.mock.calls.slice(1).flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+                expect(effected).toBe(2);
+            });
+            it("should unblock insert unique constraint: set new value", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+
+                // self reference
+                const unblockSet = db.set(Unblock);
+                const u1 = await unblockSet.find(10n);
+                u1.unique = 0n;
+                db.entry(u1).acceptChanges();
+                const u2 = unblockSet.new({
+                    id: u1.id + 1n,
+                    unique: u1.unique,
+                    name: "new"
+                });
+                db.delete(u1);
+                u1.unique *= 1000n;
+                const effected = await db.saveChanges();
+
+                const queries = spy.mock.calls.slice(1).flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+                expect(effected).toBe(2);
+            });
+            it("should unblock insert unique constraint: ignore", async () => {
+                const spy = vi.spyOn(db.connection, "query");
+
+                // self reference
+                const unblockSet = db.set(Unblock);
+                const u1 = await unblockSet.find(10n);
+                u1.unique = 0n;
+                db.entry(u1).acceptChanges();
+                const u2 = unblockSet.new({
+                    id: u1.id + 1n,
+                    unique: u1.unique,
+                    name: "new"
+                });
+                db.delete(u1);
+                const effected = await db.saveChanges();
+
+                const queries = spy.mock.calls.slice(1).flatMap(o => o) as unknown as IQuery[];
+                expect(queries).toMatchSnapshot();
+                expect(effected).toBe(2);
+            });
         });
     });
 };

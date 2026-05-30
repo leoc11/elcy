@@ -1,5 +1,5 @@
 import { Uuid } from "../../../src/Data/Uuid";
-import { BigIntColumn, Entity, IdentifierColumn, PrimaryKey, Relationship, StringColumn } from "../../../src/Decorator";
+import { BigIntColumn, Entity, IdentifierColumn, PrimaryKey, Relation, StringColumn } from "../../../src/Decorator";
 import { Table1 } from "./Table1";
 import { Table3 } from "./Table3";
 
@@ -17,12 +17,8 @@ export class Table1Table3 {
     @StringColumn()
     option13: string;
 
-    @Relationship(Table1, new Map([
-        [o => o.table1Id, o => o.id]
-    ]))
+    @Relation(() => Table1, o => o.table1Id, o => o.id)
     table1?: Table1;
-    @Relationship(Table3, new Map([
-        [o => o.table3Id, o => o.id]
-    ]))
+    @Relation(() => Table3, o => o.table3Id, o => o.id)
     table3?: Table3;
 }

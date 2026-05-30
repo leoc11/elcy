@@ -1,4 +1,4 @@
-import { BigIntColumn, Entity, IntegerColumn, PrimaryKey, Relationship, StringColumn } from "../../../src/Decorator";
+import { BigIntColumn, Entity, IntegerColumn, PrimaryKey, Relation, StringColumn } from "../../../src/Decorator";
 import { Table1 } from "./Table1";
 
 @Entity("Table1One")
@@ -11,6 +11,6 @@ export class Table1One {
     @IntegerColumn()
     number: number;
 
-    @Relationship(Table1, new Map([[o => o.table1Id, o => o.id]]))
+    @Relation(() => Table1, o => o.table1Id, o => o.id)
     table1: Table1;
 }
