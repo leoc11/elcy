@@ -87,7 +87,7 @@ Enumerable.prototype.map = function <T, TReturn>(
 };
 Enumerable.prototype.flatMap = function <T, TReturn>(
   this: Enumerable<T>,
-  selector: (item: T) => IEnumerable<TReturn>,
+  selector: (item: T) => Iterable<TReturn>,
 ): Enumerable<TReturn> {
   return new SelectManyEnumerable(this, selector);
 };
