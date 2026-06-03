@@ -13,7 +13,7 @@ import { SelectExpression } from "./SelectExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { IGroupArray } from "src/Common/IGroupArray";
 
-export class GroupByExpression<TE extends object = object, K = unknown, T = unknown> extends SelectExpression<TE, IGroupArray<T, K>> {
+export class GroupByExpression<TE extends object = object, K = unknown, T = unknown> extends SelectExpression<TE, IGroupArray<K, T>> {
     public override get allColumns() {
         return Enumerable.from(this.groupBy).concat(super.allColumns);
     }

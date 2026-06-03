@@ -364,6 +364,691 @@ RETURNING "entity0"."id",("entity0"."integer"+"entity0"."decimalNumber") AS "com
 ]
 `;
 
+exports[`Postgresql DATA MANIPULATION INSERT should insert entity with loop type reference 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": 
+Map {
+      "$1" => 21n,
+      "$2" => 0n,
+      "$3" => 22n,
+      "$4" => 21n,
+      "$5" => 51n,
+      "$6" => 54n,
+      "$7" => 31n,
+      "$8" => 0n,
+      "$9" => 33n,
+      "$10" => 31n,
+      "$11" => 54n,
+      "$12" => 52n,
+      "$13" => 33n,
+      "$14" => 55n,
+      "$15" => 51n,
+      "$16" => 1n,
+      "$17" => 0n,
+      "$18" => 2n,
+      "$19" => 32n,
+      "$20" => 33n,
+    }
+,
+    "_queries": [
+      {
+        "parameters": 
+Map {
+          "$1" => 21n,
+          "$2" => 0n,
+        }
+,
+        "query": 
+"INSERT INTO "CycleDigon1" AS "entity0"("id","table1Id","cycleDigon2Id") VALUES
+	($1,$2,DEFAULT)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": 
+Map {
+          "$1" => 22n,
+          "$2" => 21n,
+        }
+,
+        "query": 
+"INSERT INTO "CycleDigon2" AS "entity1"("id","cycleDigon1Id") VALUES
+	($1,$2)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": 
+Map {
+          "$1" => 51n,
+        }
+,
+        "query": 
+"INSERT INTO "CyclePolygon1" AS "entity2"("id","cyclePolygon2Id") VALUES
+	($1,DEFAULT)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": 
+Map {
+          "$1" => 54n,
+        }
+,
+        "query": 
+"INSERT INTO "CyclePolygon4" AS "entity3"("id","cyclePolygon5Id") VALUES
+	($1,DEFAULT)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": 
+Map {
+          "$1" => 31n,
+          "$2" => 0n,
+        }
+,
+        "query": 
+"INSERT INTO "CycleTriangle1" AS "entity4"("id","table1Id","cycleTriangle2Id") VALUES
+	($1,$2,DEFAULT)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": 
+Map {
+          "$1" => 33n,
+          "$2" => 31n,
+          "$3" => 54n,
+        }
+,
+        "query": 
+"INSERT INTO "CycleTriangle3" AS "entity5"("id","cycleTriangle1Id","cyclePolygon4Id") VALUES
+	($1,$2,$3)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": 
+Map {
+          "$1" => 52n,
+          "$2" => 33n,
+        }
+,
+        "query": 
+"INSERT INTO "CyclePolygon2" AS "entity6"("id","cycleTriangle3Id") VALUES
+	($1,$2)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": 
+Map {
+          "$1" => 55n,
+          "$2" => 51n,
+        }
+,
+        "query": 
+"INSERT INTO "CyclePolygon5" AS "entity7"("id","cyclePolygon1Id") VALUES
+	($1,$2)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": 
+Map {
+          "$1" => 1n,
+          "$2" => 0n,
+          "$3" => 2n,
+        }
+,
+        "query": 
+"INSERT INTO "CycleSelf" AS "entity8"("id","table1Id","parentId") VALUES
+	($1,$2,DEFAULT),
+	($3,DEFAULT,DEFAULT)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": 
+Map {
+          "$1" => 32n,
+          "$2" => 33n,
+        }
+,
+        "query": 
+"INSERT INTO "CycleTriangle2" AS "entity9"("id","cycleTriangle3Id") VALUES
+	($1,$2)"
+,
+        "type": 2,
+      },
+    ],
+    "_query": 
+"INSERT INTO "CycleDigon1" AS "entity0"("id","table1Id","cycleDigon2Id") VALUES
+	($1,$2,DEFAULT);
+
+INSERT INTO "CycleDigon2" AS "entity1"("id","cycleDigon1Id") VALUES
+	($3,$4);
+
+INSERT INTO "CyclePolygon1" AS "entity2"("id","cyclePolygon2Id") VALUES
+	($5,DEFAULT);
+
+INSERT INTO "CyclePolygon4" AS "entity3"("id","cyclePolygon5Id") VALUES
+	($6,DEFAULT);
+
+INSERT INTO "CycleTriangle1" AS "entity4"("id","table1Id","cycleTriangle2Id") VALUES
+	($7,$8,DEFAULT);
+
+INSERT INTO "CycleTriangle3" AS "entity5"("id","cycleTriangle1Id","cyclePolygon4Id") VALUES
+	($9,$10,$11);
+
+INSERT INTO "CyclePolygon2" AS "entity6"("id","cycleTriangle3Id") VALUES
+	($12,$13);
+
+INSERT INTO "CyclePolygon5" AS "entity7"("id","cyclePolygon1Id") VALUES
+	($14,$15);
+
+INSERT INTO "CycleSelf" AS "entity8"("id","table1Id","parentId") VALUES
+	($16,$17,DEFAULT),
+	($18,DEFAULT,DEFAULT);
+
+INSERT INTO "CycleTriangle2" AS "entity9"("id","cycleTriangle3Id") VALUES
+	($19,$20)"
+,
+    "_type": 2,
+  },
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": Map {},
+    "_queries": [
+      {
+        "parameters": Map {},
+        "query": 
+"UPDATE "CycleSelf" AS "entity10"
+SET "parentId" = "update"."parentId"
+FROM (
+	VALUES
+	(1, 2),
+	(2, 1)
+) AS "update"("_ori_id", "parentId")
+WHERE ("entity10"."id"="update"."_ori_id")"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"UPDATE "CycleTriangle1" AS "entity11"
+SET "cycleTriangle2Id" = "update"."cycleTriangle2Id"
+FROM (
+	VALUES
+	(31, 32)
+) AS "update"("_ori_id", "cycleTriangle2Id")
+WHERE ("entity11"."id"="update"."_ori_id")"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"UPDATE "CyclePolygon4" AS "entity12"
+SET "cyclePolygon5Id" = "update"."cyclePolygon5Id"
+FROM (
+	VALUES
+	(54, 55)
+) AS "update"("_ori_id", "cyclePolygon5Id")
+WHERE ("entity12"."id"="update"."_ori_id")"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"UPDATE "CyclePolygon1" AS "entity13"
+SET "cyclePolygon2Id" = "update"."cyclePolygon2Id"
+FROM (
+	VALUES
+	(51, 52)
+) AS "update"("_ori_id", "cyclePolygon2Id")
+WHERE ("entity13"."id"="update"."_ori_id")"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"UPDATE "CycleDigon1" AS "entity14"
+SET "cycleDigon2Id" = "update"."cycleDigon2Id"
+FROM (
+	VALUES
+	(21, 22)
+) AS "update"("_ori_id", "cycleDigon2Id")
+WHERE ("entity14"."id"="update"."_ori_id")"
+,
+        "type": 2,
+      },
+    ],
+    "_query": 
+"UPDATE "CycleSelf" AS "entity10"
+SET "parentId" = "update"."parentId"
+FROM (
+	VALUES
+	(1, 2),
+	(2, 1)
+) AS "update"("_ori_id", "parentId")
+WHERE ("entity10"."id"="update"."_ori_id");
+
+UPDATE "CycleTriangle1" AS "entity11"
+SET "cycleTriangle2Id" = "update"."cycleTriangle2Id"
+FROM (
+	VALUES
+	(31, 32)
+) AS "update"("_ori_id", "cycleTriangle2Id")
+WHERE ("entity11"."id"="update"."_ori_id");
+
+UPDATE "CyclePolygon4" AS "entity12"
+SET "cyclePolygon5Id" = "update"."cyclePolygon5Id"
+FROM (
+	VALUES
+	(54, 55)
+) AS "update"("_ori_id", "cyclePolygon5Id")
+WHERE ("entity12"."id"="update"."_ori_id");
+
+UPDATE "CyclePolygon1" AS "entity13"
+SET "cyclePolygon2Id" = "update"."cyclePolygon2Id"
+FROM (
+	VALUES
+	(51, 52)
+) AS "update"("_ori_id", "cyclePolygon2Id")
+WHERE ("entity13"."id"="update"."_ori_id");
+
+UPDATE "CycleDigon1" AS "entity14"
+SET "cycleDigon2Id" = "update"."cycleDigon2Id"
+FROM (
+	VALUES
+	(21, 22)
+) AS "update"("_ori_id", "cycleDigon2Id")
+WHERE ("entity14"."id"="update"."_ori_id")"
+,
+    "_type": 2,
+  },
+]
+`;
+
+exports[`Postgresql DATA MANIPULATION INSERT should insert entity with auto pk and self reference nullable 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": 
+Map {
+      "$1" => "1",
+      "$2" => "2",
+      "$3" => "3",
+      "$4" => "4",
+      "$5" => "5",
+      "$6" => "6",
+      "$7" => "7",
+      "$8" => "8",
+    }
+,
+    "_queries": [
+      {
+        "parameters": 
+Map {
+          "$1" => "1",
+        }
+,
+        "query": 
+"INSERT INTO "CycleSelfAutoNull" AS "entity0"("name","parentId") VALUES
+	($1,DEFAULT)
+RETURNING "entity0"."id""
+,
+        "type": 3,
+      },
+      {
+        "parameters": 
+Map {
+          "$1" => "2",
+        }
+,
+        "query": 
+"INSERT INTO "CycleSelfAutoNull" AS "entity0"("name","parentId") VALUES
+	($1,DEFAULT)
+RETURNING "entity0"."id""
+,
+        "type": 3,
+      },
+      {
+        "parameters": 
+Map {
+          "$1" => "3",
+        }
+,
+        "query": 
+"INSERT INTO "CycleSelfAutoNull" AS "entity0"("name","parentId") VALUES
+	($1,DEFAULT)
+RETURNING "entity0"."id""
+,
+        "type": 3,
+      },
+      {
+        "parameters": 
+Map {
+          "$1" => "4",
+        }
+,
+        "query": 
+"INSERT INTO "CycleSelfAutoNull" AS "entity0"("name","parentId") VALUES
+	($1,DEFAULT)
+RETURNING "entity0"."id""
+,
+        "type": 3,
+      },
+      {
+        "parameters": 
+Map {
+          "$1" => "5",
+        }
+,
+        "query": 
+"INSERT INTO "CycleSelfAutoNull" AS "entity0"("name","parentId") VALUES
+	($1,DEFAULT)
+RETURNING "entity0"."id""
+,
+        "type": 3,
+      },
+      {
+        "parameters": 
+Map {
+          "$1" => "6",
+        }
+,
+        "query": 
+"INSERT INTO "CycleSelfAutoNull" AS "entity0"("name","parentId") VALUES
+	($1,DEFAULT)
+RETURNING "entity0"."id""
+,
+        "type": 3,
+      },
+      {
+        "parameters": 
+Map {
+          "$1" => "7",
+        }
+,
+        "query": 
+"INSERT INTO "CycleSelfAutoNull" AS "entity0"("name","parentId") VALUES
+	($1,DEFAULT)
+RETURNING "entity0"."id""
+,
+        "type": 3,
+      },
+      {
+        "parameters": 
+Map {
+          "$1" => "8",
+        }
+,
+        "query": 
+"INSERT INTO "CycleSelfAutoNull" AS "entity0"("name","parentId") VALUES
+	($1,DEFAULT)
+RETURNING "entity0"."id""
+,
+        "type": 3,
+      },
+    ],
+    "_query": 
+"INSERT INTO "CycleSelfAutoNull" AS "entity0"("name","parentId") VALUES
+	($1,DEFAULT)
+RETURNING "entity0"."id";
+
+INSERT INTO "CycleSelfAutoNull" AS "entity0"("name","parentId") VALUES
+	($2,DEFAULT)
+RETURNING "entity0"."id";
+
+INSERT INTO "CycleSelfAutoNull" AS "entity0"("name","parentId") VALUES
+	($3,DEFAULT)
+RETURNING "entity0"."id";
+
+INSERT INTO "CycleSelfAutoNull" AS "entity0"("name","parentId") VALUES
+	($4,DEFAULT)
+RETURNING "entity0"."id";
+
+INSERT INTO "CycleSelfAutoNull" AS "entity0"("name","parentId") VALUES
+	($5,DEFAULT)
+RETURNING "entity0"."id";
+
+INSERT INTO "CycleSelfAutoNull" AS "entity0"("name","parentId") VALUES
+	($6,DEFAULT)
+RETURNING "entity0"."id";
+
+INSERT INTO "CycleSelfAutoNull" AS "entity0"("name","parentId") VALUES
+	($7,DEFAULT)
+RETURNING "entity0"."id";
+
+INSERT INTO "CycleSelfAutoNull" AS "entity0"("name","parentId") VALUES
+	($8,DEFAULT)
+RETURNING "entity0"."id""
+,
+    "_type": 3,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"UPDATE "CycleSelfAutoNull" AS "entity1"
+SET "parentId" = "update"."parentId"
+FROM (
+	VALUES
+	(11, 1),
+	(12, 11),
+	(13, 12),
+	(14, 13),
+	(15, 12),
+	(16, 2),
+	(17, 16),
+	(18, 16)
+) AS "update"("_ori_id", "parentId")
+WHERE ("entity1"."id"="update"."_ori_id")"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Postgresql DATA MANIPULATION INSERT should insert entity with auto pk and self reference 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": 
+Map {
+      "$1" => "1",
+      "$2" => 1n,
+      "$3" => "6",
+      "$4" => 2n,
+    }
+,
+    "_queries": [
+      {
+        "parameters": 
+Map {
+          "$1" => "1",
+          "$2" => 1n,
+        }
+,
+        "query": 
+"INSERT INTO "CycleSelfAuto" AS "entity0"("table1Id","name","parentId") VALUES
+	(DEFAULT,$1,$2)
+RETURNING "entity0"."id""
+,
+        "type": 3,
+      },
+      {
+        "parameters": 
+Map {
+          "$1" => "6",
+          "$2" => 2n,
+        }
+,
+        "query": 
+"INSERT INTO "CycleSelfAuto" AS "entity0"("table1Id","name","parentId") VALUES
+	(DEFAULT,$1,$2)
+RETURNING "entity0"."id""
+,
+        "type": 3,
+      },
+    ],
+    "_query": 
+"INSERT INTO "CycleSelfAuto" AS "entity0"("table1Id","name","parentId") VALUES
+	(DEFAULT,$1,$2)
+RETURNING "entity0"."id";
+
+INSERT INTO "CycleSelfAuto" AS "entity0"("table1Id","name","parentId") VALUES
+	(DEFAULT,$3,$4)
+RETURNING "entity0"."id""
+,
+    "_type": 3,
+  },
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": 
+Map {
+      "$1" => 11n,
+      "$2" => "2",
+      "$3" => 16n,
+      "$4" => "7",
+      "$5" => 16n,
+      "$6" => "8",
+    }
+,
+    "_queries": [
+      {
+        "parameters": 
+Map {
+          "$1" => 11n,
+          "$2" => "2",
+        }
+,
+        "query": 
+"INSERT INTO "CycleSelfAuto" AS "entity1"("table1Id","name","parentId") VALUES
+	(DEFAULT,$2,$1)
+RETURNING "entity1"."id""
+,
+        "type": 3,
+      },
+      {
+        "parameters": 
+Map {
+          "$1" => 16n,
+          "$2" => "7",
+        }
+,
+        "query": 
+"INSERT INTO "CycleSelfAuto" AS "entity1"("table1Id","name","parentId") VALUES
+	(DEFAULT,$2,$1)
+RETURNING "entity1"."id""
+,
+        "type": 3,
+      },
+      {
+        "parameters": 
+Map {
+          "$1" => 16n,
+          "$2" => "8",
+        }
+,
+        "query": 
+"INSERT INTO "CycleSelfAuto" AS "entity1"("table1Id","name","parentId") VALUES
+	(DEFAULT,$2,$1)
+RETURNING "entity1"."id""
+,
+        "type": 3,
+      },
+    ],
+    "_query": 
+"INSERT INTO "CycleSelfAuto" AS "entity1"("table1Id","name","parentId") VALUES
+	(DEFAULT,$2,$1)
+RETURNING "entity1"."id";
+
+INSERT INTO "CycleSelfAuto" AS "entity1"("table1Id","name","parentId") VALUES
+	(DEFAULT,$4,$3)
+RETURNING "entity1"."id";
+
+INSERT INTO "CycleSelfAuto" AS "entity1"("table1Id","name","parentId") VALUES
+	(DEFAULT,$6,$5)
+RETURNING "entity1"."id""
+,
+    "_type": 3,
+  },
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": 
+Map {
+      "$1" => 12n,
+      "$2" => "3",
+      "$3" => 12n,
+      "$4" => "4",
+    }
+,
+    "_queries": [
+      {
+        "parameters": 
+Map {
+          "$1" => 12n,
+          "$2" => "3",
+        }
+,
+        "query": 
+"INSERT INTO "CycleSelfAuto" AS "entity2"("table1Id","name","parentId") VALUES
+	(DEFAULT,$2,$1)
+RETURNING "entity2"."id""
+,
+        "type": 3,
+      },
+      {
+        "parameters": 
+Map {
+          "$1" => 12n,
+          "$2" => "4",
+        }
+,
+        "query": 
+"INSERT INTO "CycleSelfAuto" AS "entity2"("table1Id","name","parentId") VALUES
+	(DEFAULT,$2,$1)
+RETURNING "entity2"."id""
+,
+        "type": 3,
+      },
+    ],
+    "_query": 
+"INSERT INTO "CycleSelfAuto" AS "entity2"("table1Id","name","parentId") VALUES
+	(DEFAULT,$2,$1)
+RETURNING "entity2"."id";
+
+INSERT INTO "CycleSelfAuto" AS "entity2"("table1Id","name","parentId") VALUES
+	(DEFAULT,$4,$3)
+RETURNING "entity2"."id""
+,
+    "_type": 3,
+  },
+  {
+    "parameters": 
+Map {
+      "$1" => 13n,
+      "$2" => "5",
+    }
+,
+    "query": 
+"INSERT INTO "CycleSelfAuto" AS "entity3"("table1Id","name","parentId") VALUES
+	(DEFAULT,$2,$1)
+RETURNING "entity3"."id""
+,
+    "type": 3,
+  },
+]
+`;
+
 exports[`Postgresql DATA MANIPULATION UPDATE should update entity 1 1`] = `
 [
   {
@@ -1273,6 +1958,179 @@ FROM (
 	(1)
 ) AS "delete"("id")
 WHERE ("entity0"."id"="delete"."id") AND ("entity0"."deleted"=false)"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Postgresql DATA MANIPULATION DELETE should delete with correct order 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": Map {},
+    "_queries": [
+      {
+        "parameters": Map {},
+        "query": 
+"UPDATE "fixture"."Table1s" AS "entity0"
+SET "deleted" = true,
+	"modifiedDate" = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+FROM (
+	VALUES
+	(10)
+) AS "delete"("id")
+WHERE ("entity0"."id"="delete"."id") AND ("entity0"."deleted"=false)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"UPDATE "Table1Manies" AS "entity1"
+SET "deleted" = true
+FROM (
+	VALUES
+	(1)
+) AS "delete"("id")
+WHERE ("entity1"."id"="delete"."id") AND ("entity1"."deleted"=false)"
+,
+        "type": 2,
+      },
+    ],
+    "_query": 
+"UPDATE "fixture"."Table1s" AS "entity0"
+SET "deleted" = true,
+	"modifiedDate" = CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+FROM (
+	VALUES
+	(10)
+) AS "delete"("id")
+WHERE ("entity0"."id"="delete"."id") AND ("entity0"."deleted"=false);
+
+UPDATE "Table1Manies" AS "entity1"
+SET "deleted" = true
+FROM (
+	VALUES
+	(1)
+) AS "delete"("id")
+WHERE ("entity1"."id"="delete"."id") AND ("entity1"."deleted"=false)"
+,
+    "_type": 2,
+  },
+]
+`;
+
+exports[`Postgresql DATA MANIPULATION SAVE should unblock insert unique constraint hard delete: set null 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"UPDATE "Unblock" AS "entity0"
+SET "unique" = (
+	CASE WHEN ((("update"."__flag"&1)=0)) 
+	THEN "entity0"."unique"
+	ELSE "update"."unique"
+	END
+)
+FROM (
+	VALUES
+	(10, NULL, 1)
+) AS "update"("_ori_id", "unique", "__flag")
+WHERE ("entity0"."id"="update"."_ori_id")"
+,
+    "type": 2,
+  },
+  {
+    "parameters": 
+Map {
+      "$1" => 11n,
+      "$2" => 0n,
+      "$3" => "new",
+    }
+,
+    "query": 
+"INSERT INTO "Unblock" AS "entity1"("id","unique","name","deleted") VALUES
+	($1,$2,$3,DEFAULT)
+RETURNING "entity1"."id","entity1"."deleted""
+,
+    "type": 3,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"DELETE FROM "Unblock" AS "entity2"
+USING (
+	VALUES
+	(10)
+) AS "delete"("id")
+WHERE ("entity2"."id"="delete"."id")"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Postgresql DATA MANIPULATION SAVE should unblock insert unique constraint: set new value 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "$1" => 11n,
+      "$2" => 0n,
+      "$3" => "new",
+    }
+,
+    "query": 
+"INSERT INTO "Unblock" AS "entity1"("id","unique","name","deleted") VALUES
+	($1,$2,$3,DEFAULT)
+RETURNING "entity1"."id","entity1"."deleted""
+,
+    "type": 3,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"UPDATE "Unblock" AS "entity2"
+SET "deleted" = true
+FROM (
+	VALUES
+	(10)
+) AS "delete"("id")
+WHERE ("entity2"."id"="delete"."id") AND ("entity2"."deleted"=false)"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Postgresql DATA MANIPULATION SAVE should unblock insert unique constraint: ignore 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      "$1" => 11n,
+      "$2" => 0n,
+      "$3" => "new",
+    }
+,
+    "query": 
+"INSERT INTO "Unblock" AS "entity1"("id","unique","name","deleted") VALUES
+	($1,$2,$3,DEFAULT)
+RETURNING "entity1"."id","entity1"."deleted""
+,
+    "type": 3,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"UPDATE "Unblock" AS "entity2"
+SET "deleted" = true
+FROM (
+	VALUES
+	(10)
+) AS "delete"("id")
+WHERE ("entity2"."id"="delete"."id") AND ("entity2"."deleted"=false)"
 ,
     "type": 2,
   },

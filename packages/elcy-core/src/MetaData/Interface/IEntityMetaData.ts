@@ -31,7 +31,6 @@ export interface IEntityMetaData<TE extends object = any, TBase extends object =
     modifiedDateColumn?: DateTimeColumnMetaData<TE>;
     name: string;
     primaryKeys: Array<IColumnMetaData<TE>>;
-    priority?: number;
     relations?: Array<IRelationMetaData<TE>>;
     schema?: string;
     type: IObjectType<TE>;

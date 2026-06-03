@@ -2,6 +2,7 @@ import { UpsertStrategy } from "src/Common/Enum";
 import { ICacheOption } from "../Cache/ICacheOption";
 import { ConcurrencyModel } from "../Common/StringType";
 import { Version } from "../Common/Version";
+import { CommitPlanConfig } from "src/Data/UOW/EntityCommitPlan";
 
 export interface ISelectCacheOption extends ICacheOption {
     disableEntityAsTag?: boolean;
@@ -11,7 +12,7 @@ export interface IQueryOption {
     supportTVP?: boolean;
     noQueryCache?: boolean;
     version?: Version;
-    
+
     // delete
     forceHardDelete?: boolean;
     includeSoftDeleted?: boolean;
@@ -27,4 +28,7 @@ export interface IQueryOption {
 }
 export interface ISaveChangesOption extends IQueryOption {
     acceptAllChangesOnSuccess?: boolean;
+}
+export interface ICommitPlanOption extends ISaveChangesOption {
+    commitConfig: CommitPlanConfig;
 }

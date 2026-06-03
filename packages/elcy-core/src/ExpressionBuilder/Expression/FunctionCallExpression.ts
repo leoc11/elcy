@@ -42,12 +42,10 @@ export class FunctionCallExpression<T = unknown> implements IExpression<T> {
     }
     constructor(fnExpression: IExpression<(...params: unknown[]) => T> | ((...params: unknown[]) => T), params: IExpression[], functionName?: string) {
         if (fnExpression instanceof Function) {
-            functionName = fnExpression.name;
+            functionName = functionName || fnExpression.name;
             fnExpression = new ValueExpression(fnExpression);
         }
-        else {
-            functionName = fnExpression.toString();
-        }
+        
         this.fnExpression = fnExpression;
         this.params = params;
         this.functionName = functionName;

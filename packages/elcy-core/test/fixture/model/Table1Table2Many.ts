@@ -1,5 +1,4 @@
-import { PropertySelector } from "packages/elcy-core/src/Common/Type";
-import { BigIntColumn, Entity, IntegerColumn, PrimaryKey, Relationship, StringColumn } from "../../../src/Decorator";
+import { BigIntColumn, Entity, IntegerColumn, PrimaryKey, Relation, StringColumn } from "../../../src/Decorator";
 import { Table1 } from "./Table1";
 import { Table1Table2 } from "./Table1Table2";
 import { Table2 } from "./Table2";
@@ -20,13 +19,13 @@ export class Table1Table2Many {
     @IntegerColumn()
     number: number;
 
-    @Relationship(Table1Table2, new Map<PropertySelector<Table1Table2Many>, PropertySelector<Table1Table2>>([
+    @Relation(() => Table1Table2, [
         [o => o.table1Id, o => o.table1Id],
         [o => o.table2Id, o => o.table2Id]
-    ]))
+    ])
     table1table2: Table1Table2;
-    @Relationship(Table1, new Map([["table1Id", "id"]]))
+    @Relation(() => Table1, "table1Id", "id")
     table1: Table1;
-    @Relationship(Table2, new Map([["table2Id", "id"]]))
+    @Relation(() => Table2, [["table2Id", "id"]])
     table2: Table2;
 }

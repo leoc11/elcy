@@ -1,4 +1,4 @@
-import { BigIntColumn, Entity, IntegerColumn, PrimaryKey, Relationship, StringColumn } from "../../../src/Decorator";
+import { BigIntColumn, Entity, IntegerColumn, PrimaryKey, Relation, StringColumn } from "../../../src/Decorator";
 import { Table1 } from "./Table1";
 import { Table1Table2 } from "./Table1Table2";
 import { Table2 } from "./Table2";
@@ -18,13 +18,13 @@ export class Table1Table2One {
     @IntegerColumn()
     number: number;
 
-    @Relationship(Table1Table2, new Map([
+    @Relation(() => Table1Table2, [
         ["relTable1Id", "table1Id"],
         ["relTable2Id", "table2Id"]
-    ]))
+    ])
     table1table2: Table1Table2;
-    @Relationship(Table1, new Map([["relTable1Id", o => o.id]]))
+    @Relation(() => Table1, "relTable1Id", o => o.id)
     table1: Table1;
-    @Relationship(Table2, new Map([["relTable2Id", o => o.id]]))
+    @Relation(() => Table2, [["relTable2Id", o => o.id]])
     table2: Table2;
 }

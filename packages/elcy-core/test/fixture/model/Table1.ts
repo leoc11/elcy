@@ -2,7 +2,7 @@ import { Temporal } from "@js-temporal/polyfill";
 import Decimal from "decimal.js";
 import { TimeSpan } from "../../../src/Data/TimeSpan";
 import { Uuid } from "../../../src/Data/Uuid";
-import { AfterDelete, AfterSave, BeforeDelete, BeforeSave, BigIntColumn, BinaryColumn, BooleanColumn, ComputedColumn, CreatedDateColumn, DateColumn, DateTimeColumn, DecimalColumn, DeletedColumn, Entity, IdentifierColumn, IntegerColumn, ModifiedDateColumn, NullableColumn, PrimaryKey, RealColumn, Relationship, StringColumn, TimeColumn } from "../../../src/Decorator";
+import { AfterDelete, AfterSave, BeforeDelete, BeforeSave, BigIntColumn, BinaryColumn, BooleanColumn, ComputedColumn, CreatedDateColumn, DateColumn, DateTimeColumn, DecimalColumn, DeletedColumn, Entity, IdentifierColumn, IntegerColumn, ModifiedDateColumn, NullableColumn, PrimaryKey, RealColumn, ReverseRelation, StringColumn, TimeColumn } from "../../../src/Decorator";
 import { Table1Table2 } from "./Table1Table2";
 import { Table1One } from "./Table1One";
 import { Table1Table3 } from "./Table1Table3";
@@ -64,13 +64,13 @@ export class Table1 {
     @ComputedColumn(o => o.integer + o.decimalNumber)
     public accessor computed: number;
 
-    @Relationship("Table1Table2", "table1_relation")
+    @ReverseRelation(() => Table1Table2, o => o.table1)
     table1Table2s: Table1Table2[];
-    @Relationship("Table1Table3")
+    @ReverseRelation(() => Table1Table3, o => o.table1)
     table1Table3s: Table1Table3[];
-    @Relationship("Table1One")
+    @ReverseRelation(() => Table1One, o => o.table1)
     table1One: Table1One;
-    @Relationship("Table1Many")
+    @ReverseRelation(() => Table1Many, o => o.table1)
     table1Manies: Table1Many[];
 
 

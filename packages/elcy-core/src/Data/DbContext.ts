@@ -22,7 +22,7 @@ import type { ISaveEventParam } from "../MetaData/Interface/ISaveEventParam";
 import { DeferredQuery } from "../Query/DeferredQuery";
 import type { IQuery } from "../Query/IQuery";
 import type { IQueryBuilder } from "../Query/IQueryBuilder";
-import type { IQueryOption, ISaveChangesOption } from "../Query/IQueryOption";
+import type { ICommitPlanOption, IQueryOption, ISaveChangesOption } from "../Query/IQueryOption";
 import type { IDeferredParameterResolver, IQueryParameterValue, ISqlParameterValueMap } from "../Query/IQueryParameter";
 import type { IQueryResult } from "../Query/IQueryResult";
 import type { IQueryResultParser } from "../Query/IQueryResultParser";
@@ -52,13 +52,17 @@ import { ComputedColumnMetaData } from "src/MetaData/ComputedColumnMetaData";
 import { ColumnExpression } from "src/Queryable/QueryExpression/ColumnExpression";
 import { ComputedColumnExpression } from "src/Queryable/QueryExpression/ComputedColumnExpression";
 import { isNull, mapKeepExp } from "src/Helper/Util";
-import { SqlTableValueParameterExpression } from "src/Queryable/QueryExpression/SqlTableValueParameterExpression";
+import { SqlTableValueParameterExpression, TSchema } from "src/Queryable/QueryExpression/SqlTableValueParameterExpression";
 import { TernaryExpression } from "src/ExpressionBuilder/Expression/TernaryExpression";
 import { BitwiseAndExpression } from "src/ExpressionBuilder/Expression/BitwiseAndExpression";
 import { AdditionExpression } from "src/ExpressionBuilder/Expression/AdditionExpression";
 import { IColumnMetaData } from "src/MetaData/Interface/IColumnMetaData";
 import { getColumnMetadata, getEntityMetadata } from "src/MetaData/MetaDataMapper";
 import { RelationMetaData } from "src/MetaData/Relation/RelationMetaData";
+import { CommitPlan } from "./UOW/CommitPlan";
+import { CommitPlanner } from "./UOW/CommitPlanner";
+import { IRelationMetaData } from "src/MetaData";
+import { planSelfReferenceCommit } from "./UOW/SelfReferenceCommitPlanner";
 
 const connectionManagerMap = new WeakMap<Function, IConnectionManager<any>>();
 const queryCacheManagerMap = new WeakMap<Function, IQueryCacheManager>();
@@ -116,12 +120,13 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
 
         return this._resultCacheManager;
     }
-    constructor(factory?: () => IConnectionManager<TDB> | IDriver<TDB>, types?: IObjectType[]) {
+    constructor(factory?: () => IConnectionManager<TDB> | IDriver<TDB>, types: IObjectType<object>[] = []) {
         if (factory) {
             this.factory = factory;
         }
         this.entityTypes = types;
     }
+
     public afterDelete?: <T>(entity: T, param: IDeleteEventParam) => void;
     public afterLoad?: <T>(entity: T) => void;
     public afterSave?: <T>(entity: T, param: ISaveEventParam) => void;
@@ -132,7 +137,8 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
     public connection?: IConnection;
     public deferredQueries: DeferredQuery[] = [];
     public entityEntries = new EntityChangeMap();
-    public readonly entityTypes?: Array<IObjectType>;
+    public readonly entityTypes: Array<IObjectType<object>>;
+    private commitPlan?: CommitPlan;
     public modifiedEmbeddedEntries: EmbeddedEntityEntryMap = new EmbeddedEntityEntryMap();
     protected readonly factory: () => IConnectionManager<TDB> | IDriver<TDB>;
     protected abstract readonly namingStrategy: NamingStrategy;
@@ -423,21 +429,44 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             return 0;
         }
 
-        const insertQueries: Map<IEntityMetaData, Array<DeferredQuery<IQueryResult<object>>>> = new Map();
-        const updateQueries: Map<IEntityMetaData, Array<DeferredQuery<IQueryResult<object>>>> = new Map();
-        const deleteQueries: Map<IEntityMetaData, Array<DeferredQuery<IQueryResult>>> = new Map();
+        const insertUnblockQueries: Array<DeferredQuery<IQueryResult<object>>> = [];
+        const insertCyclePatchQueries: Array<DeferredQuery<IQueryResult<object>>> = [];
+        const insertQueries: Map<IEntityMetaData, DeferredQuery<IQueryResult<Record<string, unknown>>>[][]> = new Map();
+        const updateQueries: Map<IEntityMetaData, DeferredQuery<IQueryResult>[][]> = new Map();
+        const deleteQueries: Map<IEntityMetaData, DeferredQuery<IQueryResult>[][]> = new Map();
+
+        if (!this.commitPlan) {
+            this.commitPlan = new CommitPlanner(this.entityTypes.map(o => getEntityMetadata(o))).build();
+        }
 
         // order by priority
-        const orderedEntityAdd = Enumerable.from(this.entityEntries.add).filter(o => Boolean(o[1]?.length)).orderBy([(o) => o[0].priority, "ASC"]).toMap((o) => o[0], (o) => o[1]);
-        const orderedEntityUpdate = Enumerable.from(this.entityEntries.update).filter(o => Boolean(o[1]?.length)).orderBy([(o) => o[0].priority, "ASC"]).toMap((o) => o[0], (o) => o[1]);
-        const orderedEntityDelete = Enumerable.from(this.entityEntries.delete).filter(o => Boolean(o[1]?.length)).orderBy([(o) => o[0].priority, "DESC"]).toMap((o) => o[0], (o) => o[1]);
+        const orderedEntityAdd = this.commitPlan.sort(Enumerable.from(this.entityEntries.add).filter(o => Boolean(o[1]?.length)).map(o => o[0])).toMap((o) => o.entityMeta, (o) => this.entityEntries.add.get(o.entityMeta));
+        const orderedEntityUpdate = this.commitPlan.sort(Enumerable.from(this.entityEntries.update).filter(o => Boolean(o[1]?.length)).map(o => o[0])).toMap((o) => o.entityMeta, (o) => this.entityEntries.update.get(o.entityMeta));
+        const orderedEntityDelete = this.commitPlan.reverseSort(Enumerable.from(this.entityEntries.delete).filter(o => Boolean(o[1]?.length)).map(o => o[0])).toMap((o) => o.entityMeta, (o) => this.entityEntries.delete.get(o.entityMeta));
+
+        const blockingEntities = Enumerable.from(this.entityEntries.delete)
+            .filter(o => Boolean(o[1]?.length))
+            .map(o => o[0])
+            .union(Enumerable.from(this.entityEntries.update)
+                .filter(o => Boolean(o[1]?.length))
+                .map(o => o[0])
+            )
+            .intersect(Enumerable.from(this.entityEntries.add)
+                .filter(o => Boolean(o[1]?.length))
+                .map(o => o[0]));
+        const orderedEntityUnblock = this.commitPlan.sort(blockingEntities.filter(o => Boolean(this.commitPlan.getConfig(o)?.uniqueColumns.size))).toMap((o) => o.entityMeta, (o) => ([]).concat(this.entityEntries.update.get(o.entityMeta) ?? [], this.entityEntries.delete.get(o.entityMeta) ?? []));
+
+        const cyclePatchEntities = Enumerable.from(this.entityEntries.add)
+            .filter(o => Boolean(o[1]?.length))
+            .map(o => o[0])
+            .filter(o => Boolean(this.commitPlan.getConfig(o)?.relationBreaks?.size));
+        const orderedEntityCyclePatch = this.commitPlan.sort(cyclePatchEntities).toMap(o => o.entityMeta, o => this.entityEntries.add.get(o.entityMeta));
 
         const visitor = this.queryVisitor;
         visitor.queryOption = options;
 
         // apply embedded entity changes
         for (const [, embeddedEntries] of this.modifiedEmbeddedEntries) {
-            // TODO: decide whether event emitter required here
             for (const entry of embeddedEntries) {
                 if (entry.parentEntry.state === EntityState.Unchanged) {
                     entry.parentEntry.state = EntityState.Modified;
@@ -456,7 +485,13 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             return emitter;
         };
 
-        const autoEntriesMap = new Map<IEntityMetaData, EntityEntry[]>();
+        const autoEntriesMap = new Map<DeferredQuery[], EntityEntry[]>();
+        // generate unblock query
+        for (const [entityMeta, entries] of orderedEntityUnblock) {
+            const commitOption: ICommitPlanOption = { ...options, commitConfig: this.commitPlan.getConfig(entityMeta) };
+            const unblockResult = this.getUnblockInsertQueries(entityMeta, entries, visitor, commitOption);
+            insertUnblockQueries.push(...unblockResult);
+        }
         // Before add event and generate query
         for (const [entityMeta, addEntries] of orderedEntityAdd) {
             const eventEmitter = getEventEmitter(entityMeta, this);
@@ -465,11 +500,32 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             if (useUpsert) {
                 useUpsert = !entityMeta.hasIncrementPrimary;
             }
-            const insertResult = useUpsert ? this.getUpsertQueries(entityMeta, addEntries, visitor, options) : this.getInsertQueries(entityMeta, addEntries, visitor, options);
-            if (entityMeta.hasIncrementPrimary) {
-                autoEntriesMap.set(entityMeta, addEntries);
+            const commitOption: ICommitPlanOption = { ...options, commitConfig: this.commitPlan.getConfig(entityMeta) };
+
+            if (commitOption.commitConfig?.selfReferences?.size) {
+                const insertBatches = planSelfReferenceCommit(commitOption.commitConfig.selfReferences, addEntries);
+                const insertQueryBatches: DeferredQuery<IQueryResult<Record<string, unknown>>>[][] = [];
+                insertQueries.set(entityMeta, insertQueryBatches);
+                for (const batch of insertBatches) {
+                    const insertResult = useUpsert ? this.getUpsertQueries(entityMeta, batch, visitor, commitOption) : this.getInsertQueries(entityMeta, batch, visitor, commitOption);
+                    insertQueryBatches.push(insertResult);
+                    autoEntriesMap.set(insertResult, batch);
+                }
+                continue;
             }
-            insertQueries.set(entityMeta, insertResult);
+
+            const insertResult = useUpsert ? this.getUpsertQueries(entityMeta, addEntries, visitor, commitOption) : this.getInsertQueries(entityMeta, addEntries, visitor, commitOption);
+            insertQueries.set(entityMeta, [insertResult]);
+            if (entityMeta.hasIncrementPrimary) {
+                autoEntriesMap.set(insertResult, addEntries);
+            }
+        }
+
+        // generate cycle patch query
+        for (const [entityMeta, entries] of orderedEntityCyclePatch) {
+            const commitOption: ICommitPlanOption = { ...options, commitConfig: this.commitPlan.getConfig(entityMeta) };
+            const cyclePatchResult = this.getInsertCyclePatchQueries(entityMeta, entries, visitor, commitOption);
+            insertCyclePatchQueries.push(...cyclePatchResult);
         }
 
         // Before update event and generate query
@@ -480,7 +536,9 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             if (useUpsert) {
                 useUpsert = (entityMeta.concurrencyMode ?? "NONE") === "NONE";
             }
-            updateQueries.set(entityMeta, useUpsert ? this.getUpsertQueries(entityMeta, updateEntries, visitor, options) : this.getUpdateQueries(entityMeta, updateEntries, visitor, options));
+            const commitOption: ICommitPlanOption = { ...options, commitConfig: this.commitPlan.getConfig(entityMeta) };
+            const updateResult = useUpsert ? this.getUpsertQueries(entityMeta, updateEntries, visitor, commitOption) : this.getUpdateQueries(entityMeta, updateEntries, visitor, commitOption);
+            updateQueries.set(entityMeta, [updateResult]);
         }
 
         // Before delete even and generate query
@@ -495,12 +553,17 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                 type: deleteMode ? deleteMode : entityMeta.deletedColumn ? "soft" : "hard"
             };
             eventEmitter.emitBeforeDeleteEvent(deleteParam, ...deleteEntries);
-            deleteQueries.set(entityMeta, this.getDeleteQueries(entityMeta, deleteEntries, visitor, deleteMode, options));
+            const commitOption: ICommitPlanOption = { ...options, commitConfig: this.commitPlan.getConfig(entityMeta) };
+            const deleteResult = this.getDeleteQueries(entityMeta, deleteEntries, visitor, deleteMode, commitOption);
+            deleteQueries.set(entityMeta, [deleteResult]);
         }
 
         const entityAutoIdentityMap = new Map<IEntityMetaData, Map<EntityEntry, string>>();
-        const identityParameterMap = Enumerable.from(insertQueries).concat(updateQueries)
+        const identityParameterMap = Enumerable.from<[IEntityMetaData, DeferredQuery[][]]>(insertQueries)
+            .concat(updateQueries)
             .flatMap(o => o[1])
+            .flatMap(o => o)
+            .concat(insertCyclePatchQueries)
             .flatMap(o => o.parameters)
             .flatMap(o => o[1].resolvers)
             .groupBy(o => o.entityMeta)
@@ -508,78 +571,76 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
         const entityIdRowDataMap = new Map<IEntityMetaData, Map<number, Record<string, unknown>>>();
         // execute all in transaction;
         await this.transaction(async () => {
-            // execute delete
-            if (deleteQueries.size) {
-                await this.executeDeferred(Enumerable.from(deleteQueries).flatMap((o) => o[1]));
+            if (insertUnblockQueries.length) {
+                await this.executeDeferred(insertUnblockQueries);
             }
 
             // execute all insert queries
             let insertBatches: DeferredQuery[] = [];
-            const entityAutoIndexMap = new Map<IEntityMetaData, number>();
             for (const [entityMeta, queries] of insertQueries) {
-                insertBatches.push(...queries);
                 if (!entityMeta.hasIncrementPrimary) {
+                    insertBatches.push(...queries.flatMap(o => o));
                     continue;
                 }
 
                 await this.executeDeferred(insertBatches);
                 insertBatches = [];
-                const rowValues = Enumerable.from(queries).flatMap((o) => o.value.rows as IEnumerable<Record<string, unknown>>);
-                let idRowDataMap = entityIdRowDataMap.get(entityMeta);
-                if (!(idRowDataMap instanceof Map)) {
-                    idRowDataMap = new Map();
-                    entityIdRowDataMap.set(entityMeta, idRowDataMap);
-                }
 
-                let identityRows = entityAutoIdentityMap.get(entityMeta);
-                if (isNull(identityRows)) {
-                    identityRows = new Map();
-                    entityAutoIdentityMap.set(entityMeta, identityRows);
-                }
-
-                const autoEntries = autoEntriesMap.get(entityMeta);
-                const autoAddedEntries = this.entityEntries.add.get(entityMeta);
-                for (const rowValue of rowValues) {
-                    let i = entityAutoIndexMap.get(entityMeta) ?? 0;
-                    const entry = autoEntries[i];
-                    identityRows.set(entry, this.getRowKey(entityMeta, rowValue));
-                    idRowDataMap.set(autoAddedEntries.indexOf(entry), rowValue);
-                    entityAutoIndexMap.set(entityMeta, ++i);
-                }
-
-                const params = identityParameterMap.get(entityMeta);
-                if (Array.isArray(params)) {
-                    const foundGeneratedParams = [];
-                    for (const p of params) {
-                        if (!idRowDataMap.has(p.entryIndex)) {
-                            continue;
-                        }
-
-                        foundGeneratedParams.push(p);
-                        const rowData = idRowDataMap.get(p.entryIndex);
-                        p.resolve(rowData);
+                for (const insertBatch of queries) {
+                    await this.executeDeferred(insertBatch);
+                    const rowValues = Enumerable.from(insertBatch).flatMap((o) => o.value.rows as IEnumerable<Record<string, unknown>>);
+                    let idRowDataMap = entityIdRowDataMap.get(entityMeta);
+                    if (!(idRowDataMap instanceof Map)) {
+                        idRowDataMap = new Map();
+                        entityIdRowDataMap.set(entityMeta, idRowDataMap);
                     }
-                    ArrayExtension.delete(params, ...foundGeneratedParams);
+
+                    let identityRows = entityAutoIdentityMap.get(entityMeta);
+                    if (isNull(identityRows)) {
+                        identityRows = new Map();
+                        entityAutoIdentityMap.set(entityMeta, identityRows);
+                    }
+
+                    const autoEntries = autoEntriesMap.get(insertBatch);
+                    const autoAddedEntries = this.entityEntries.add.get(entityMeta);
+                    let i = 0;
+                    for (const rowValue of rowValues) {
+                        const entry = autoEntries[i++];
+                        identityRows.set(entry, this.getRowKey(entityMeta, rowValue));
+                        idRowDataMap.set(autoAddedEntries.indexOf(entry), rowValue);
+                    }
+
+                    const params = identityParameterMap.get(entityMeta);
+                    if (Array.isArray(params)) {
+                        const foundGeneratedParams = [];
+                        for (const p of params) {
+                            if (!idRowDataMap.has(p.entryIndex)) {
+                                continue;
+                            }
+
+                            foundGeneratedParams.push(p);
+                            const rowData = idRowDataMap.get(p.entryIndex);
+                            p.resolve(rowData);
+                        }
+                        ArrayExtension.delete(params, ...foundGeneratedParams);
+                    }
                 }
             }
             if (insertBatches.length) {
                 await this.executeDeferred(insertBatches);
             }
 
-            if (updateQueries.size) {
-                await this.executeDeferred(Enumerable.from(updateQueries).flatMap((o) => o[1]));
+            if (insertCyclePatchQueries.length) {
+                await this.executeDeferred(insertCyclePatchQueries);
             }
 
-            // emit delete changes.
-            for (const [entityMeta] of deleteQueries) {
-                const eventEmitter = getEventEmitter(entityMeta, this);
-                const entityEntries = orderedEntityDelete.get(entityMeta);
-                const deleteParam: IDeleteEventParam = {
-                    type: deleteMode ? deleteMode : entityMeta.deletedColumn ? "soft" : "hard"
-                };
-                for (const entry of entityEntries) {
-                    eventEmitter.emitAfterDeleteEvent(deleteParam, entry);
-                }
+            if (updateQueries.size) {
+                await this.executeDeferred(Enumerable.from(updateQueries).flatMap((o) => o[1]).flatMap(o => o));
+            }
+
+            // execute delete
+            if (deleteQueries.size) {
+                await this.executeDeferred(Enumerable.from(deleteQueries).flatMap((o) => o[1]).flatMap(o => o));
             }
 
             // update all generated value from database. ex: identity, default, etc...
@@ -588,7 +649,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                 const parentRelations = Enumerable.from(entityMeta.relations)
                     .filter((o) => !o.nullable && !o.isMaster && o.relationType === "one" && !!o.relationMaps);
 
-                const updateData = Enumerable.from(queries).flatMap((o) => o.value.rows).toMap((o) => this.getRowKey(entityMeta, o));
+                const updateData = Enumerable.from(queries).flatMap(o => o).flatMap((o) => o.value.rows).toMap((o) => this.getRowKey(entityMeta, o));
                 const entityEntries = orderedEntityAdd.get(entityMeta);
                 const identityKeys = entityAutoIdentityMap.get(entityMeta);
                 for (let i = 0, len = entityEntries.length; i < len; i++) {
@@ -618,7 +679,6 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                         }
                     }
 
-                    // TODO: set relation property here.
                     eventEmitter.emitAfterSaveEvent({ type: "insert" }, entityEntry);
                 }
             }
@@ -631,7 +691,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                     .filter((o) => !o.nullable && !o.isMaster && o.relationType === "one" && !!o.relationMaps);
 
                 const dbSet = this.set(entityMeta.type);
-                const updateData = Enumerable.from(queries).flatMap((o) => o.value.rows).toMap((o: object) => dbSet.getKey(o), (o: object) => o);
+                const updateData = Enumerable.from(queries).flatMap(o => o).flatMap((o) => o.value.rows).toMap((o: object) => dbSet.getKey(o), (o: object) => o);
                 const entityEntries = orderedEntityUpdate.get(entityMeta);
                 for (const entityEntry of entityEntries) {
                     const data = updateData.get(entityEntry.key) as Record<string, DbValue>;
@@ -663,37 +723,51 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                 }
             }
 
+            // emit delete changes.
+            for (const [entityMeta] of deleteQueries) {
+                const eventEmitter = getEventEmitter(entityMeta, this);
+                const entityEntries = orderedEntityDelete.get(entityMeta);
+                const deleteParam: IDeleteEventParam = {
+                    type: deleteMode ? deleteMode : entityMeta.deletedColumn ? "soft" : "hard"
+                };
+                for (const entry of entityEntries) {
+                    eventEmitter.emitAfterDeleteEvent(deleteParam, entry);
+                }
+            }
+
             if (options?.acceptAllChangesOnSuccess !== false) {
                 this.acceptAllChanges();
             }
         });
 
-        const effectedRow = Enumerable.from<DeferredQuery<IQueryResult>[]>(insertQueries.values())
+        const effectedRow = Enumerable.from<DeferredQuery<IQueryResult>[][]>(insertQueries.values())
             .concat(updateQueries.values())
             .concat(deleteQueries.values())
+            .flatMap(o => o)
             .flatMap(o => o)
             .sum(o => o.value.effectedRows);
 
         return effectedRow;
     }
     protected acceptAllChanges() {
-        const deletedEntities = Enumerable.from(this.entityEntries.delete)
-            .orderBy([(o) => o[0].priority, "ASC"])
-            .flatMap(o => o[1]);
+        if (!this.commitPlan) {
+            this.commitPlan = new CommitPlanner(this.entityTypes.map(o => getEntityMetadata(o))).build();
+        }
+
+        const deletedEntities = this.commitPlan.reverseSort(Enumerable.from(this.entityEntries.delete).map(o => o[0]))
+            .flatMap(o => this.entityEntries.delete.get(o.entityMeta));
         for (const entry of deletedEntities) {
             entry.acceptChanges();
         }
 
-        const addedEntities = Enumerable.from(this.entityEntries.add)
-            .orderBy([(o) => o[0].priority, "ASC"])
-            .flatMap(o => o[1]);
+        const addedEntities = this.commitPlan.sort(Enumerable.from(this.entityEntries.add).map(o => o[0]))
+            .flatMap(o => this.entityEntries.add.get(o.entityMeta));
         for (const entry of addedEntities) {
             entry.acceptChanges();
         }
 
-        const updatedEntities = Enumerable.from(this.entityEntries.update)
-            .orderBy([(o) => o[0].priority, "ASC"])
-            .flatMap(o => o[1]);
+        const updatedEntities = this.commitPlan.sort(Enumerable.from(this.entityEntries.update).map(o => o[0]))
+            .flatMap(o => this.entityEntries.update.get(o.entityMeta));
         for (const entry of updatedEntities) {
             entry.acceptChanges();
         }
@@ -705,14 +779,14 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
         if (!isClearCache) {
             result = this._cachedDbSets.get(type);
         }
-        if (!result && this.entityTypes?.includes(type) !== false && getEntityMetadata(type)) {
+        if (!result && this.entityTypes.includes(type) && getEntityMetadata(type)) {
             result = new DbSet(type, this);
             this._cachedDbSets.set(type, result);
         }
         return result;
     }
     public async syncSchema() {
-        const schemaQuery = await this.getUpdateSchemaQueries(this.entityTypes ?? []);
+        const schemaQuery = await this.getUpdateSchemaQueries(this.entityTypes);
         const commands = this.queryBuilder.mergeQueries(schemaQuery.commit);
 
         // must be executed to all connection in case connection manager handle replication
@@ -989,10 +1063,263 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             }
         }
     }
-    protected getInsertQueries<TE extends object>(entityMeta: IEntityMetaData<TE>, entries: IEnumerable<EntityEntry<TE>>, visitor?: IQueryVisitor, option?: IQueryOption): Array<DeferredQuery<IQueryResult<FlatObjectLike<TE>>>> {
+    protected getUnblockInsertQueries<TE extends object>(entityMeta: IEntityMetaData<TE>, entries: IEnumerable<EntityEntry<TE>>, visitor?: IQueryVisitor, option?: ICommitPlanOption): Array<DeferredQuery<IQueryResult<FlatObjectLike<TE>>>> {
         const results: Array<DeferredQuery<IQueryResult<FlatObjectLike<TE>>>> = [];
-        const entryCount = Enumerable.from(entries).count();
-        if (entryCount <= 0) {
+        if (!Boolean(option?.commitConfig?.uniqueColumns?.size)) {
+            return results;
+        }
+        if (!entries.some(() => true)) {
+            return results;
+        }
+
+        const uniqueColumns = option.commitConfig.uniqueColumns;
+        const entityExp = new EntityExpression(entityMeta.type, visitor.newAlias("entity"));
+        const tvpExp = new SqlTableValueParameterExpression(new ParameterExpression<TE[]>("update", Array), {} as unknown as TSchema<TE>);
+        const flagColumn = new ColumnExpression(tvpExp, BigInt, "__flag" as StringKeyOf<TE>, "__flag", false, false);
+        const relation = new AndExpression();
+        const setter: SetterObj<TE> = {};
+        const updateableColumns: IColumnExpression<TE>[] = [];
+        for (const column of Enumerable.from(entityExp.columns)
+            .filter(o => o.isPrimary || uniqueColumns.has(o.propertyName))
+            .orderBy([o => o.isPrimary, "DESC"])
+        ) {
+            const newValueColumn = new ColumnExpression(tvpExp, column.type, column.propertyName, column.columnName, false, true, column.columnMeta.columnType);
+            tvpExp.columns.push(newValueColumn);
+            if (column.isPrimary) {
+                newValueColumn.propertyName = `_ori_${column.propertyName}` as StringKeyOf<TE>;
+                newValueColumn.columnName = `_ori_${column.columnName}`;
+                relation.operands.push(new StrictEqualExpression(column, newValueColumn));
+                continue;
+            }
+
+            updateableColumns.push(newValueColumn);
+            // NOTE: updated.flag&1 == 0 ? current.column : updated.column
+            const index = updateableColumns.length - 1;
+            setter[column.propertyName] = new TernaryExpression<TE[keyof TE]>(new StrictEqualExpression(new BitwiseAndExpression(flagColumn, new ValueExpression(Math.pow(2, index))), new ValueExpression(0)), column as IColumnExpression<TE, TE[keyof TE]>, newValueColumn as IColumnExpression<TE, TE[keyof TE]>);
+        }
+
+        tvpExp.columns.push(flagColumn);
+        const updateExp = new UpdateExpression(entityExp, setter);
+        updateExp.paramExps.push(tvpExp);
+
+        const valueSelectExp = new SelectExpression(tvpExp);
+        valueSelectExp.selects = tvpExp.columns.filter((o) => !o.isPrimary);
+        valueSelectExp.isSubSelect = true;
+        updateExp.addJoin(valueSelectExp, relation.asOperand(), "INNER");
+
+        const paramValue: IQueryParameterValue<Partial<TE>[]> = {
+            value: [],
+            resolvers: []
+        };
+        for (const entry of entries) {
+            const row: Partial<TE> = {};
+            const entity = entry.entity;
+            let modifieds = new Set(entry.getModifiedProperties());
+            const isHardDelete = entry.state === EntityState.Deleted && (!entityMeta.deletedColumn || option.forceHardDelete);
+            let flag = 0;
+            for (let i = 0, len = tvpExp.columns.length; i < len; i++) {
+                const col = tvpExp.columns[i];
+                if (col.isPrimary) {
+                    row[col.propertyName] = entity[col.propertyName];
+                    continue;
+                }
+                if (col === flagColumn) {
+                    row[col.propertyName] = flag as TE[StringKeyOf<TE>];
+                    continue;
+                }
+
+                if (col.propertyName.indexOf("_ori_") === 0) {
+                    const entityPropertyName = col.propertyName.substring("_ori_".length) as StringKeyOf<TE>;
+                    row[col.propertyName] = entry.getOriginalValue(entityPropertyName);
+                    continue;
+                }
+
+                const colMeta = entityMeta.columns.find(o => o.propertyName == col.propertyName);
+                if (isHardDelete && colMeta.nullable) {
+                    row[col.propertyName] = null;
+                }
+                else if (modifieds.has(col.propertyName)) {
+                    row[col.propertyName] = entity[col.propertyName];
+                }
+                else {
+                    continue;
+                }
+
+                flag |= Math.pow(2, updateableColumns.indexOf(col));
+            }
+
+            if (flag) {
+                paramValue.value.push(row);
+            }
+        }
+
+        if (!paramValue.value.length) {
+            return results;
+        }
+
+        const queryParameterMap: ISqlParameterValueMap = new Map([[tvpExp, paramValue]]);
+        const updateQuery = new DeferredQuery(this, updateExp, queryParameterMap, (resultMap) => {
+            let rows = Enumerable.from<unknown>([]);
+            let effectedRows = 0;
+            for (const [command, result] of resultMap) {
+                if (command.type & QueryType.ADDITIONAL) {
+                    continue;
+                }
+                if ((command.type & QueryType.DQL) && result.rows) {
+                    rows = rows.concat(result.rows);
+                }
+                if (command.type & QueryType.DML) {
+                    effectedRows += result.effectedRows;
+                }
+            }
+
+            return {
+                effectedRows: effectedRows,
+                rows: rows
+            } as IQueryResult<FlatObjectLike<TE>>;
+        }, option);
+        results.push(updateQuery);
+        return results;
+    }
+    protected getInsertCyclePatchQueries<TE extends object>(entityMeta: IEntityMetaData<TE>, entries: IEnumerable<EntityEntry<TE>>, visitor?: IQueryVisitor, option?: ICommitPlanOption): Array<DeferredQuery<IQueryResult<FlatObjectLike<TE>>>> {
+        const results: Array<DeferredQuery<IQueryResult<FlatObjectLike<TE>>>> = [];
+        if (!Boolean(option?.commitConfig?.relationBreaks?.size)) {
+            return results;
+        }
+        if (!entries.some(() => true)) {
+            return results;
+        }
+
+        const relations: Set<IRelationMetaData<TE>> = option.commitConfig.relationBreaks;
+        const relationPropertySet = Enumerable.from(option.commitConfig.relationBreaks)
+            .flatMap(o => o.relationColumns)
+            .map(o => o.propertyName)
+            .toSet();
+        const entityExp = new EntityExpression(entityMeta.type, visitor.newAlias("entity"));
+        const tvpExp = new SqlTableValueParameterExpression(new ParameterExpression<TE[]>("update", Array), {} as any);
+        const relation = new AndExpression();
+        const setter: SetterObj<TE> = {};
+        for (const column of Enumerable.from(entityExp.columns)
+            .filter(o => o.isPrimary || relationPropertySet.has(o.propertyName))
+            .orderBy([o => o.isPrimary, "DESC"])
+        ) {
+            const newValueColumn = new ColumnExpression(tvpExp, column.type, column.propertyName, column.columnName, false, true, column.columnMeta.columnType);
+            tvpExp.columns.push(newValueColumn);
+            if (column.isPrimary) {
+                newValueColumn.propertyName = `_ori_${column.propertyName}` as StringKeyOf<TE>;
+                newValueColumn.columnName = `_ori_${column.columnName}`;
+                relation.operands.push(new StrictEqualExpression(column, newValueColumn));
+                continue;
+            }
+
+            setter[column.propertyName] = newValueColumn as IColumnExpression<TE, TE[keyof TE]>;
+        }
+
+        const updateExp = new UpdateExpression(entityExp, setter);
+        updateExp.paramExps.push(tvpExp);
+
+        const valueSelectExp = new SelectExpression(tvpExp);
+        valueSelectExp.selects = tvpExp.columns.filter((o) => !o.isPrimary);
+        valueSelectExp.isSubSelect = true;
+        updateExp.addJoin(valueSelectExp, relation.asOperand(), "INNER");
+
+        const isGeneratedPrimary = entityMeta.hasIncrementPrimary;
+        const paramValue: IQueryParameterValue<Partial<TE>[]> = {
+            value: [],
+            resolvers: []
+        };
+        for (const entry of entries) {
+            const row: Partial<TE> = {};
+            const entity = entry.entity;
+
+            for (const rel of relations) {
+                const parentEntity = entry.entity[rel.propertyName] as Record<string, unknown>;
+                if (parentEntity) {
+                    const parentEntry = entry.dbSet.dbContext.entry(parentEntity);
+                    const isGeneratedPrimaryParent = parentEntry.state === EntityState.Added && typeof parentEntry.key !== "string";
+                    const index = isGeneratedPrimaryParent ? parentEntry.dbSet.dbContext.entityEntries.add.get(parentEntry.metaData).indexOf(parentEntry) : undefined;
+                    if (isGeneratedPrimaryParent) {
+                        paramValue.resolvers.push({
+                            entityMeta: parentEntry.metaData,
+                            entryIndex: index,
+                            resolve(data: Record<string, unknown>) {
+                                for (const [col, parentCol] of rel.relationMaps) {
+                                    row[col.propertyName] = data[parentCol.columnName] as TE[Extract<keyof TE, string>];
+                                }
+                            }
+                        });
+                        continue;
+                    }
+
+                    for (const [col, parentCol] of rel.relationMaps) {
+                        row[col.propertyName] = parentEntity[parentCol.propertyName] as TE[Extract<keyof TE, string>];
+                    }
+                }
+            }
+
+            for (let i = 0, len = tvpExp.columns.length; i < len; i++) {
+                const col = tvpExp.columns[i];
+                if (col.isPrimary) {
+                    row[col.propertyName] = entity[col.propertyName];
+                    continue;
+                }
+                if (col.propertyName.indexOf("_ori_") === 0) {
+                    const entityPropertyName = col.propertyName.substring("_ori_".length) as StringKeyOf<TE>;
+                    if (isGeneratedPrimary) {
+                        const index = entry.dbSet.dbContext.entityEntries.add.get(entityMeta).indexOf(entry);
+                        paramValue.resolvers.push({
+                            entityMeta: entityMeta,
+                            entryIndex: index,
+                            resolve(data: Record<string, unknown>) {
+                                // TODO: can remove this lookup if data always use propertyName instead of columnName (will speedup a lot things too)
+                                const dataColumn = entityMeta.primaryKeys.find(o => o.propertyName === entityPropertyName);
+                                row[col.propertyName] = data[dataColumn.columnName] as TE[Extract<keyof TE, string>];
+                            }
+                        });
+                        continue;
+                    }
+
+                    row[col.propertyName] = entry.getOriginalValue(entityPropertyName);
+                    continue;
+                }
+
+                row[col.propertyName] = entity[col.propertyName];
+            }
+
+            paramValue.value.push(row);
+        }
+
+        if (!paramValue.value.length) {
+            return results;
+        }
+
+        const queryParameterMap: ISqlParameterValueMap = new Map([[tvpExp, paramValue]]);
+        const updateQuery = new DeferredQuery(this, updateExp, queryParameterMap, (resultMap) => {
+            let rows = Enumerable.from<unknown>([]);
+            let effectedRows = 0;
+            for (const [command, result] of resultMap) {
+                if (command.type & QueryType.ADDITIONAL) {
+                    continue;
+                }
+                if ((command.type & QueryType.DQL) && result.rows) {
+                    rows = rows.concat(result.rows);
+                }
+                if (command.type & QueryType.DML) {
+                    effectedRows += result.effectedRows;
+                }
+            }
+
+            return {
+                effectedRows: effectedRows,
+                rows: rows
+            } as IQueryResult<FlatObjectLike<TE>>;
+        }, option);
+        results.push(updateQuery);
+        return results;
+    }
+    protected getInsertQueries<TE extends object>(entityMeta: IEntityMetaData<TE>, entries: IEnumerable<EntityEntry<TE>>, visitor?: IQueryVisitor, option?: ICommitPlanOption): Array<DeferredQuery<IQueryResult<FlatObjectLike<TE>>>> {
+        const results: Array<DeferredQuery<IQueryResult<FlatObjectLike<TE>>>> = [];
+        if (!entries.some(() => true)) {
             return results;
         }
 
@@ -1001,9 +1328,11 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
         }
         const entityExp = new EntityExpression<TE>(entityMeta.type, visitor.newAlias("entity"));
         const relations = Enumerable.from(entityMeta.relations)
-            .filter((o) => !o.nullable && !o.isMaster && o.relationType === "one" && !!o.relationMaps);
+            .filter((o) => !o.isMaster && o.relationType === "one" && !!o.relationMaps)
+            .filter(o => option?.commitConfig?.relationBreaks?.has(o) != true);
         const columns = Enumerable.from(entityExp.metaData.columns)
             .except(entityExp.metaData.insertGeneratedColumns)
+            .except(Enumerable.from(option?.commitConfig?.relationBreaks).flatMap(o => o.relationColumns))
             .toArray();
 
         let generatedColumns = Enumerable.from(entityMeta.insertGeneratedColumns)
@@ -1355,9 +1684,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             }
         }
         else {
-            const tvpExp = new SqlTableValueParameterExpression(new ParameterExpression<TE[]>("update", Array), {
-                flag: BigInt
-            } as any);
+            const tvpExp = new SqlTableValueParameterExpression(new ParameterExpression<TE[]>("update", Array), {} as unknown as TSchema<TE & { __flag: bigint }>);
             const flagColumn = new ColumnExpression(tvpExp, BigInt, "__flag" as StringKeyOf<TE>, "__flag", false, false);
             const relation = new AndExpression();
             const setter: SetterObj<TE> = {};
@@ -1393,6 +1720,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                     continue;
                 }
 
+                updateableColumns.push(newValueColumn);
                 if (entityMeta.concurrencyMode === "OPTIMISTIC DIRTY") {
                     const oriValueColumn = new ColumnExpression(tvpExp, column.type, `_ori_${column.propertyName}` as StringKeyOf<TE>, `_ori_${column.columnName}`, false, true, column.columnMeta.columnType);
                     tvpExp.columns.push(oriValueColumn);
@@ -1496,7 +1824,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                     }
 
                     if (modifiedRelations.has(col.propertyName)) {
-                        flag |= Math.pow(2, i);
+                        flag |= Math.pow(2, updateableColumns.indexOf(col));
                         continue;
                     }
 
@@ -1506,7 +1834,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                     }
 
                     row[col.propertyName] = entity[col.propertyName];
-                    flag |= Math.pow(2, i);
+                    flag |= Math.pow(2, updateableColumns.indexOf(col));
                 }
                 paramValue.value.push(row);
             }

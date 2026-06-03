@@ -536,7 +536,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                     const cloneObjectOperand = selectOperand instanceof GroupedExpression && context.scope !== "flatMap" && context.scope !== "map" && context.scope !== "queryable";
                     const oriJoinCount = selectOperand.joins.length;
 
-                    const selectorFn = (exp.params.length > 1 ? exp.params[1] : exp.params[0]) as FunctionExpression<T, [unknown]>;
+                    const selectorFn = exp.params[0] as FunctionExpression<T, [unknown]>;
                     const visitContext: IQueryVisitContext = {
                         selectExpression: selectOperand,
                         scope: exp.methodName
@@ -649,7 +649,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         }
                     }
 
-                    const type = exp.params.length > 1 ? exp.params[0] as ValueExpression<GenericType> : null;
+                    const type = exp.params[1] as ValueExpression<GenericType>;
                     if (type) {
                         selectOperand.itemExpression.type = type.value;
                     }
@@ -1660,7 +1660,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                     const resultSelector = exp.params[1] as FunctionExpression<unknown, [unknown, unknown]>;
                     const paramExp = resultSelector.params.pop();
                     this.scopeParameters.add(paramExp.name, childSelectOperand.getItemExpression());
-                    this.visit(new MethodCallExpression(selectOperand, "map", [new ValueExpression(Object), resultSelector]), resultVisitContext);
+                    this.visit(new MethodCallExpression(selectOperand, "map", [resultSelector]), resultVisitContext);
                     this.scopeParameters.remove(paramExp.name);
                     if (parentRelation) {
                         parentRelation.child = selectOperand;

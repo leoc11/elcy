@@ -30,12 +30,11 @@ import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { UpdateExpression } from "./QueryExpression/UpdateExpression";
 import { getEntityMetadata } from "src/MetaData/MetaDataMapper";
-import { QueryableChain, Unchain } from "./Interface/QueryableChain";
+import { Querify, Unquerify } from "./Interface/Querify";
 import { Decimal } from "src/Data/Decimal";
 import { AdditionExpression } from "src/ExpressionBuilder/Expression/AdditionExpression";
 import { StrictEqualExpression } from "src/ExpressionBuilder/Expression/StrictEqualExpression";
 import { IColumnExpression } from "./QueryExpression/IColumnExpression";
-
 export abstract class Queryable<T = any> implements AsyncIterable<T> {
     public get dbContext(): DbContext {
         return this.parent.dbContext;
@@ -59,11 +58,11 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
     async *[Symbol.asyncIterator](): AsyncIterator<T> {
         yield* await this.toEnumerable();
     }
-    public async every(predicate: (item: QueryableChain<T>) => boolean) {
+    public async every(predicate: (item: Querify<T>) => boolean) {
         const query = this.deferredEvery(predicate);
         return await query.execute();
     }
-    public async some(predicate?: (item: QueryableChain<T>) => boolean) {
+    public async some(predicate?: (item: Querify<T>) => boolean) {
         const query = this.deferredSome(predicate);
         return await query.execute();
     }
@@ -92,7 +91,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         const query = this.deferredCount();
         return await query.execute();
     }
-    public deferredEvery(predicate: (item: QueryableChain<T>) => boolean) {
+    public deferredEvery(predicate: (item: Querify<T>) => boolean) {
         let queryCache: IQueryCache<boolean>;
         let cacheKey: number;
         const timer = Diagnostic.timer();
@@ -148,7 +147,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         this.dbContext.deferredQueries.push(query);
         return query;
     }
-    public deferredSome(predicate?: (item: QueryableChain<T>) => boolean): DeferredQuery<boolean> {
+    public deferredSome(predicate?: (item: Querify<T>) => boolean): DeferredQuery<boolean> {
         if (!isNull(predicate)) {
             return this.filter(predicate).deferredSome();
         }
@@ -327,14 +326,14 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
     }
     public deferredDelete(mode?: DeleteMode, softDeleteCascade?: boolean): DeferredQuery<number>;
     public deferredDelete(predicate?: FunctionExpression<boolean, [T]>, mode?: DeleteMode, softDeleteCascade?: boolean): DeferredQuery<number>;
-    public deferredDelete(predicate?: (item: QueryableChain<T>) => boolean, mode?: DeleteMode, softDeleteCascade?: boolean): DeferredQuery<number>;
-    public deferredDelete(modeOrPredicate?: DeleteMode | FunctionExpression<boolean, [T]> | ((item: QueryableChain<T>) => boolean), modeOrCascade?: DeleteMode | boolean, softDeleteCascade?: boolean) {
+    public deferredDelete(predicate?: (item: Querify<T>) => boolean, mode?: DeleteMode, softDeleteCascade?: boolean): DeferredQuery<number>;
+    public deferredDelete(modeOrPredicate?: DeleteMode | FunctionExpression<boolean, [T]> | ((item: Querify<T>) => boolean), modeOrCascade?: DeleteMode | boolean, softDeleteCascade?: boolean) {
         let queryCache: IQueryCache<void>;
         let cacheKey: number;
         let mode: DeleteMode;
         const timer = Diagnostic.timer();
         const cacheManager = this.dbContext.queryCacheManager;
-        let predicate: FunctionExpression<boolean, [T]> | ((item: QueryableChain<T>) => boolean);
+        let predicate: FunctionExpression<boolean, [T]> | ((item: Querify<T>) => boolean);
         if (modeOrPredicate) {
             if (modeOrPredicate instanceof FunctionExpression) {
                 predicate = modeOrPredicate;
@@ -475,7 +474,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         this.dbContext.deferredQueries.push(query);
         return query;
     }
-    public deferredFind(idOrPredicate?: ValueType | FlatObjectLike<T> | ((item: QueryableChain<T>) => boolean)): DeferredQuery<T> {
+    public deferredFind(idOrPredicate?: ValueType | FlatObjectLike<T> | ((item: Querify<T>) => boolean)): DeferredQuery<T> {
         const predicate = idOrPredicate instanceof Function ? idOrPredicate : undefined;
         const id = isNotNull(idOrPredicate) && !(idOrPredicate instanceof Function) ? idOrPredicate : undefined;
         if (id !== undefined) {
@@ -592,7 +591,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
             visitor.queryOption = this.queryOption;
             visitor.setParameter(flatParams);
             const selectExp = this.buildQuery(visitor) as SelectExpression<object, TT>;
-            if (this.dbContext.entityTypes?.includes(selectExp.itemExpression.type as IObjectType<TT>) === false) {
+            if (!this.dbContext.entityTypes.includes(selectExp.itemExpression.type as IObjectType<TT>)) {
                 throw new QueryBuilderError(QueryBuilderErrorCode.UsageIssue, `Insert ${selectExp.itemExpression.type.name} not supported`);
             }
 
@@ -619,7 +618,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         this.dbContext.deferredQueries.push(query);
         return query;
     }
-    public deferredMax<TResult extends ValueType>(...args: T extends ValueType ? [selector?: (item: QueryableChain<T>) => TResult] : [selector: (item: QueryableChain<T>) => TResult]): DeferredQuery<TResult> {
+    public deferredMax<TResult extends ValueType>(...args: T extends ValueType ? [selector?: (item: Querify<T>) => TResult] : [selector: (item: Querify<T>) => TResult]): DeferredQuery<TResult> {
         if (!isNull(args[0])) {
             return (this.map(args[0]) as Queryable<ValueType>).deferredMax<TResult>();
         }
@@ -677,7 +676,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         this.dbContext.deferredQueries.push(query);
         return query;
     }
-    public deferredMin<TResult extends ValueType>(...args: T extends ValueType ? [selector?: (item: QueryableChain<T>) => TResult] : [selector: (item: QueryableChain<T>) => TResult]): DeferredQuery<TResult> {
+    public deferredMin<TResult extends ValueType>(...args: T extends ValueType ? [selector?: (item: Querify<T>) => TResult] : [selector: (item: Querify<T>) => TResult]): DeferredQuery<TResult> {
         if (!isNull(args[0])) {
             return (this.map(args[0]) as Queryable<ValueType>).deferredMin<TResult>();
         }
@@ -735,7 +734,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         this.dbContext.deferredQueries.push(query);
         return query;
     }
-    public deferredSum<TResult extends number | bigint | Decimal>(...args: T extends number | bigint | Decimal ? [selector?: (item: QueryableChain<T>) => TResult] : [selector: (item: QueryableChain<T>) => TResult]): DeferredQuery<TResult> {
+    public deferredSum<TResult extends number | bigint | Decimal>(...args: T extends number | bigint | Decimal ? [selector?: (item: Querify<T>) => TResult] : [selector: (item: Querify<T>) => TResult]): DeferredQuery<TResult> {
         if (!isNull(args[0])) {
             return (this.map(args[0]) as Queryable<ValueType>).deferredSum<TResult>();
         }
@@ -792,7 +791,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         this.dbContext.deferredQueries.push(query);
         return query;
     }
-    public deferredAvg<TResult extends number | bigint | Decimal>(...args: T extends number | bigint | Decimal ? [selector?: (item: QueryableChain<T>) => TResult] : [selector: (item: QueryableChain<T>) => TResult]): DeferredQuery<TResult | null> {
+    public deferredAvg<TResult extends number | bigint | Decimal>(...args: T extends number | bigint | Decimal ? [selector?: (item: Querify<T>) => TResult] : [selector: (item: Querify<T>) => TResult]): DeferredQuery<TResult | null> {
         if (!isNull(args[0])) {
             return (this.map(args[0]) as Queryable<ValueType>).deferredAvg<TResult>();
         }
@@ -969,9 +968,9 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
     public deferredToSet() {
         return this.deferredToIterable(o => new Set(o));
     }
-    public deferredToMap<K, V>(keySelector: (item: QueryableChain<T>) => K, valueSelector?: (item: QueryableChain<T>) => V) {
+    public deferredToMap<K, V>(keySelector: (item: Querify<T>) => K, valueSelector?: (item: Querify<T>) => V) {
         if (!valueSelector) {
-            valueSelector = (o: QueryableChain<T>) => (o as V);
+            valueSelector = (o: Querify<T>) => (o as V);
         }
 
         let queryCache: IQueryCache<{ Key: K, Value: V }>;
@@ -1034,12 +1033,12 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         const query = new DeferredQuery(this.dbContext, queryCache.commandQuery, params,
             (resultMap) => {
                 const result = Enumerable.from(resultMap).filter(o => Boolean(o[0].type & QueryType.DQL)).map(o => o[1]).toArray();
-                return Enumerable.from(queryCache.resultParser.parse(result, this.dbContext)).toMap((o) => o.Key as Unchain<K>, (o) => o.Value as Unchain<V>);
+                return Enumerable.from(queryCache.resultParser.parse(result, this.dbContext)).toMap((o) => o.Key as Unquerify<K>, (o) => o.Value as Unquerify<V>);
             }, this.queryOption);
         this.dbContext.deferredQueries.push(query);
         return query;
     }
-    public deferredUpdate(setter: { [TK in keyof T]?: Extract<ValueType, T[TK]> | ((item: QueryableChain<T>) => Extract<ValueType, T[TK]>) }) {
+    public deferredUpdate(setter: { [TK in keyof T]?: Extract<ValueType, T[TK]> | ((item: Querify<T>) => Extract<ValueType, T[TK]>) }) {
         let queryCache: IQueryCache<void>;
         let cacheKey: number;
         const timer = Diagnostic.timer();
@@ -1124,14 +1123,14 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
 
     public async delete(mode?: DeleteMode): Promise<number>;
     public async delete(predicate?: FunctionExpression<boolean, [T]>, mode?: DeleteMode): Promise<number>;
-    public async delete(predicate?: (item: QueryableChain<T>) => boolean, mode?: DeleteMode): Promise<number>;
-    public async delete(modeOrPredicate?: DeleteMode | FunctionExpression<boolean, [T]> | ((item: QueryableChain<T>) => boolean), mode?: DeleteMode) {
+    public async delete(predicate?: (item: Querify<T>) => boolean, mode?: DeleteMode): Promise<number>;
+    public async delete(modeOrPredicate?: DeleteMode | FunctionExpression<boolean, [T]> | ((item: Querify<T>) => boolean), mode?: DeleteMode) {
         const query = this.deferredDelete(modeOrPredicate as FunctionExpression<boolean, [T]>, mode);
         return await query.execute();
     }
-    public async find(predicate?: (item: QueryableChain<T>) => boolean): Promise<T>;
+    public async find(predicate?: (item: Querify<T>) => boolean): Promise<T>;
     public async find(id: ValueType | FlatObjectLike<T>): Promise<T>;
-    public async find(idOrPredicate?: ValueType | FlatObjectLike<T> | ((item: QueryableChain<T>) => boolean)) {
+    public async find(idOrPredicate?: ValueType | FlatObjectLike<T> | ((item: Querify<T>) => boolean)) {
         const query: DeferredQuery<T> = this.deferredFind(idOrPredicate);
         return await query.execute();
     }
@@ -1143,19 +1142,19 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         const query = this.deferredInsertInto(type);
         return await query.execute();
     }
-    public async max<TResult extends ValueType>(...args: T extends ValueType ? [selector?: (item: QueryableChain<T>) => TResult] : [selector: (item: QueryableChain<T>) => TResult]) {
+    public async max<TResult extends ValueType>(...args: T extends ValueType ? [selector?: (item: Querify<T>) => TResult] : [selector: (item: Querify<T>) => TResult]) {
         const query = this.deferredMax<TResult>(...args);
         return await query.execute();
     }
-    public async min<TResult extends ValueType>(...args: T extends ValueType ? [selector?: (item: QueryableChain<T>) => TResult] : [selector: (item: QueryableChain<T>) => TResult]) {
+    public async min<TResult extends ValueType>(...args: T extends ValueType ? [selector?: (item: Querify<T>) => TResult] : [selector: (item: Querify<T>) => TResult]) {
         const query = this.deferredMin<TResult>(...args);
         return await query.execute();
     }
-    public async sum<TResult extends number | bigint | Decimal>(...args: T extends number | bigint | Decimal ? [selector?: (item: QueryableChain<T>) => TResult] : [selector: (item: QueryableChain<T>) => TResult]) {
+    public async sum<TResult extends number | bigint | Decimal>(...args: T extends number | bigint | Decimal ? [selector?: (item: Querify<T>) => TResult] : [selector: (item: Querify<T>) => TResult]) {
         const query = this.deferredSum<TResult>(...args);
         return await query.execute();
     }
-    public async avg<TResult extends number | bigint | Decimal>(...args: T extends number | bigint | Decimal ? [selector?: (item: QueryableChain<T>) => TResult] : [selector: (item: QueryableChain<T>) => TResult]) {
+    public async avg<TResult extends number | bigint | Decimal>(...args: T extends number | bigint | Decimal ? [selector?: (item: Querify<T>) => TResult] : [selector: (item: Querify<T>) => TResult]) {
         const query = this.deferredAvg<TResult>(...args);
         return await query.execute();
     }
@@ -1175,9 +1174,9 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         const query = this.deferredToSet();
         return await query.execute();
     }
-    public async toMap<K>(keySelector: (item: QueryableChain<T>) => K): Promise<Map<Unchain<K>, Unchain<T>>>;
-    public async toMap<K, V>(keySelector: (item: QueryableChain<T>) => K, valueSelector: (item: QueryableChain<T>) => V): Promise<Map<Unchain<K>, Unchain<V>>>;
-    public async toMap<K, V>(keySelector: (item: QueryableChain<T>) => K, valueSelector?: (item: QueryableChain<T>) => V): Promise<Map<Unchain<K>, Unchain<V>>> {
+    public async toMap<K>(keySelector: (item: Querify<T>) => K): Promise<Map<Unquerify<K>, Unquerify<T>>>;
+    public async toMap<K, V>(keySelector: (item: Querify<T>) => K, valueSelector: (item: Querify<T>) => V): Promise<Map<Unquerify<K>, Unquerify<V>>>;
+    public async toMap<K, V>(keySelector: (item: Querify<T>) => K, valueSelector?: (item: Querify<T>) => V): Promise<Map<Unquerify<K>, Unquerify<V>>> {
         const query = this.deferredToMap(keySelector, valueSelector);
         return await query.execute();
     }
@@ -1226,7 +1225,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         const params = this.buildParameter(queryCache.commandQuery, flatParams);
         return queryBuilder.toString(queryCache.commandQuery, { parameters: params, queryExpression: queryCache.commandQuery });
     }
-    public async update(setter: { [TK in keyof T]?: Extract<ValueType, T[TK]> | ((item: QueryableChain<T>) => Extract<ValueType, T[TK]>) }) {
+    public async update(setter: { [TK in keyof T]?: Extract<ValueType, T[TK]> | ((item: Querify<T>) => Extract<ValueType, T[TK]>) }) {
         const query = this.deferredUpdate(setter);
         return await query.execute();
     }

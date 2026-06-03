@@ -682,6 +682,1065 @@ WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
 ]
 `;
 
+exports[`Mysql DATA MANIPULATION INSERT should insert entity with loop type reference 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": 
+Map {
+      "?0" => 21n,
+      "?1" => 0n,
+      "?2" => 21n,
+      "?3" => 22n,
+      "?4" => 21n,
+      "?5" => 22n,
+      "?6" => 51n,
+      "?7" => 51n,
+      "?8" => 54n,
+      "?9" => 54n,
+      "?10" => 31n,
+      "?11" => 0n,
+      "?12" => 31n,
+      "?13" => 33n,
+      "?14" => 31n,
+      "?15" => 54n,
+      "?16" => 33n,
+      "?17" => 52n,
+      "?18" => 33n,
+      "?19" => 52n,
+      "?20" => 55n,
+      "?21" => 51n,
+      "?22" => 55n,
+      "?23" => 1n,
+      "?24" => 0n,
+      "?25" => 2n,
+      "?26" => 32n,
+      "?27" => 33n,
+      "?28" => 32n,
+    }
+,
+    "_queries": [
+      {
+        "parameters": 
+Map {
+          "?0" => 21n,
+          "?1" => 0n,
+        }
+,
+        "query": 
+"INSERT INTO \`CycleDigon1\`(\`id\`,\`table1Id\`,\`cycleDigon2Id\`) VALUES
+(?,?,DEFAULT)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => 21n,
+        }
+,
+        "query": 
+"SELECT \`entity0\`.\`id\`
+FROM \`CycleDigon1\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=?)"
+,
+        "type": 1,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => 22n,
+          "?1" => 21n,
+        }
+,
+        "query": 
+"INSERT INTO \`CycleDigon2\`(\`id\`,\`cycleDigon1Id\`) VALUES
+(?,?)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => 22n,
+        }
+,
+        "query": 
+"SELECT \`entity1\`.\`id\`
+FROM \`CycleDigon2\` AS \`entity1\`
+WHERE (\`entity1\`.\`id\`=?)"
+,
+        "type": 1,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => 51n,
+        }
+,
+        "query": 
+"INSERT INTO \`CyclePolygon1\`(\`id\`,\`cyclePolygon2Id\`) VALUES
+(?,DEFAULT)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => 51n,
+        }
+,
+        "query": 
+"SELECT \`entity2\`.\`id\`
+FROM \`CyclePolygon1\` AS \`entity2\`
+WHERE (\`entity2\`.\`id\`=?)"
+,
+        "type": 1,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => 54n,
+        }
+,
+        "query": 
+"INSERT INTO \`CyclePolygon4\`(\`id\`,\`cyclePolygon5Id\`) VALUES
+(?,DEFAULT)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => 54n,
+        }
+,
+        "query": 
+"SELECT \`entity3\`.\`id\`
+FROM \`CyclePolygon4\` AS \`entity3\`
+WHERE (\`entity3\`.\`id\`=?)"
+,
+        "type": 1,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => 31n,
+          "?1" => 0n,
+        }
+,
+        "query": 
+"INSERT INTO \`CycleTriangle1\`(\`id\`,\`table1Id\`,\`cycleTriangle2Id\`) VALUES
+(?,?,DEFAULT)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => 31n,
+        }
+,
+        "query": 
+"SELECT \`entity4\`.\`id\`
+FROM \`CycleTriangle1\` AS \`entity4\`
+WHERE (\`entity4\`.\`id\`=?)"
+,
+        "type": 1,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => 33n,
+          "?1" => 31n,
+          "?2" => 54n,
+        }
+,
+        "query": 
+"INSERT INTO \`CycleTriangle3\`(\`id\`,\`cycleTriangle1Id\`,\`cyclePolygon4Id\`) VALUES
+(?,?,?)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => 33n,
+        }
+,
+        "query": 
+"SELECT \`entity5\`.\`id\`
+FROM \`CycleTriangle3\` AS \`entity5\`
+WHERE (\`entity5\`.\`id\`=?)"
+,
+        "type": 1,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => 52n,
+          "?1" => 33n,
+        }
+,
+        "query": 
+"INSERT INTO \`CyclePolygon2\`(\`id\`,\`cycleTriangle3Id\`) VALUES
+(?,?)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => 52n,
+        }
+,
+        "query": 
+"SELECT \`entity6\`.\`id\`
+FROM \`CyclePolygon2\` AS \`entity6\`
+WHERE (\`entity6\`.\`id\`=?)"
+,
+        "type": 1,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => 55n,
+          "?1" => 51n,
+        }
+,
+        "query": 
+"INSERT INTO \`CyclePolygon5\`(\`id\`,\`cyclePolygon1Id\`) VALUES
+(?,?)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => 55n,
+        }
+,
+        "query": 
+"SELECT \`entity7\`.\`id\`
+FROM \`CyclePolygon5\` AS \`entity7\`
+WHERE (\`entity7\`.\`id\`=?)"
+,
+        "type": 1,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => 1n,
+          "?1" => 0n,
+          "?2" => 2n,
+        }
+,
+        "query": 
+"INSERT INTO \`CycleSelf\`(\`id\`,\`table1Id\`,\`parentId\`) VALUES
+	(?,?,DEFAULT)
+	,(?,DEFAULT,DEFAULT)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => 32n,
+          "?1" => 33n,
+        }
+,
+        "query": 
+"INSERT INTO \`CycleTriangle2\`(\`id\`,\`cycleTriangle3Id\`) VALUES
+(?,?)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => 32n,
+        }
+,
+        "query": 
+"SELECT \`entity9\`.\`id\`
+FROM \`CycleTriangle2\` AS \`entity9\`
+WHERE (\`entity9\`.\`id\`=?)"
+,
+        "type": 1,
+      },
+    ],
+    "_query": 
+"INSERT INTO \`CycleDigon1\`(\`id\`,\`table1Id\`,\`cycleDigon2Id\`) VALUES
+(?,?,DEFAULT);
+
+SELECT \`entity0\`.\`id\`
+FROM \`CycleDigon1\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=?);
+
+INSERT INTO \`CycleDigon2\`(\`id\`,\`cycleDigon1Id\`) VALUES
+(?,?);
+
+SELECT \`entity1\`.\`id\`
+FROM \`CycleDigon2\` AS \`entity1\`
+WHERE (\`entity1\`.\`id\`=?);
+
+INSERT INTO \`CyclePolygon1\`(\`id\`,\`cyclePolygon2Id\`) VALUES
+(?,DEFAULT);
+
+SELECT \`entity2\`.\`id\`
+FROM \`CyclePolygon1\` AS \`entity2\`
+WHERE (\`entity2\`.\`id\`=?);
+
+INSERT INTO \`CyclePolygon4\`(\`id\`,\`cyclePolygon5Id\`) VALUES
+(?,DEFAULT);
+
+SELECT \`entity3\`.\`id\`
+FROM \`CyclePolygon4\` AS \`entity3\`
+WHERE (\`entity3\`.\`id\`=?);
+
+INSERT INTO \`CycleTriangle1\`(\`id\`,\`table1Id\`,\`cycleTriangle2Id\`) VALUES
+(?,?,DEFAULT);
+
+SELECT \`entity4\`.\`id\`
+FROM \`CycleTriangle1\` AS \`entity4\`
+WHERE (\`entity4\`.\`id\`=?);
+
+INSERT INTO \`CycleTriangle3\`(\`id\`,\`cycleTriangle1Id\`,\`cyclePolygon4Id\`) VALUES
+(?,?,?);
+
+SELECT \`entity5\`.\`id\`
+FROM \`CycleTriangle3\` AS \`entity5\`
+WHERE (\`entity5\`.\`id\`=?);
+
+INSERT INTO \`CyclePolygon2\`(\`id\`,\`cycleTriangle3Id\`) VALUES
+(?,?);
+
+SELECT \`entity6\`.\`id\`
+FROM \`CyclePolygon2\` AS \`entity6\`
+WHERE (\`entity6\`.\`id\`=?);
+
+INSERT INTO \`CyclePolygon5\`(\`id\`,\`cyclePolygon1Id\`) VALUES
+(?,?);
+
+SELECT \`entity7\`.\`id\`
+FROM \`CyclePolygon5\` AS \`entity7\`
+WHERE (\`entity7\`.\`id\`=?);
+
+INSERT INTO \`CycleSelf\`(\`id\`,\`table1Id\`,\`parentId\`) VALUES
+	(?,?,DEFAULT)
+	,(?,DEFAULT,DEFAULT);
+
+INSERT INTO \`CycleTriangle2\`(\`id\`,\`cycleTriangle3Id\`) VALUES
+(?,?);
+
+SELECT \`entity9\`.\`id\`
+FROM \`CycleTriangle2\` AS \`entity9\`
+WHERE (\`entity9\`.\`id\`=?)"
+,
+    "_type": 3,
+  },
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": Map {},
+    "_queries": [
+      {
+        "parameters": Map {},
+        "query": 
+"UPDATE \`CycleSelf\` AS \`entity10\`
+INNER JOIN (
+	SELECT 1 AS \`_ori_id\`, 2 AS \`parentId\`
+	UNION ALL
+	SELECT 2 AS \`_ori_id\`, 1 AS \`parentId\`
+) AS \`update\` ON (\`entity10\`.\`id\`=\`update\`.\`_ori_id\`)
+SET \`entity10\`.\`parentId\` = \`update\`.\`parentId\`"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"UPDATE \`CycleTriangle1\` AS \`entity11\`
+INNER JOIN (
+	SELECT 31 AS \`_ori_id\`, 32 AS \`cycleTriangle2Id\`
+) AS \`update\` ON (\`entity11\`.\`id\`=\`update\`.\`_ori_id\`)
+SET \`entity11\`.\`cycleTriangle2Id\` = \`update\`.\`cycleTriangle2Id\`"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"UPDATE \`CyclePolygon4\` AS \`entity12\`
+INNER JOIN (
+	SELECT 54 AS \`_ori_id\`, 55 AS \`cyclePolygon5Id\`
+) AS \`update\` ON (\`entity12\`.\`id\`=\`update\`.\`_ori_id\`)
+SET \`entity12\`.\`cyclePolygon5Id\` = \`update\`.\`cyclePolygon5Id\`"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"UPDATE \`CyclePolygon1\` AS \`entity13\`
+INNER JOIN (
+	SELECT 51 AS \`_ori_id\`, 52 AS \`cyclePolygon2Id\`
+) AS \`update\` ON (\`entity13\`.\`id\`=\`update\`.\`_ori_id\`)
+SET \`entity13\`.\`cyclePolygon2Id\` = \`update\`.\`cyclePolygon2Id\`"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"UPDATE \`CycleDigon1\` AS \`entity14\`
+INNER JOIN (
+	SELECT 21 AS \`_ori_id\`, 22 AS \`cycleDigon2Id\`
+) AS \`update\` ON (\`entity14\`.\`id\`=\`update\`.\`_ori_id\`)
+SET \`entity14\`.\`cycleDigon2Id\` = \`update\`.\`cycleDigon2Id\`"
+,
+        "type": 2,
+      },
+    ],
+    "_query": 
+"UPDATE \`CycleSelf\` AS \`entity10\`
+INNER JOIN (
+	SELECT 1 AS \`_ori_id\`, 2 AS \`parentId\`
+	UNION ALL
+	SELECT 2 AS \`_ori_id\`, 1 AS \`parentId\`
+) AS \`update\` ON (\`entity10\`.\`id\`=\`update\`.\`_ori_id\`)
+SET \`entity10\`.\`parentId\` = \`update\`.\`parentId\`;
+
+UPDATE \`CycleTriangle1\` AS \`entity11\`
+INNER JOIN (
+	SELECT 31 AS \`_ori_id\`, 32 AS \`cycleTriangle2Id\`
+) AS \`update\` ON (\`entity11\`.\`id\`=\`update\`.\`_ori_id\`)
+SET \`entity11\`.\`cycleTriangle2Id\` = \`update\`.\`cycleTriangle2Id\`;
+
+UPDATE \`CyclePolygon4\` AS \`entity12\`
+INNER JOIN (
+	SELECT 54 AS \`_ori_id\`, 55 AS \`cyclePolygon5Id\`
+) AS \`update\` ON (\`entity12\`.\`id\`=\`update\`.\`_ori_id\`)
+SET \`entity12\`.\`cyclePolygon5Id\` = \`update\`.\`cyclePolygon5Id\`;
+
+UPDATE \`CyclePolygon1\` AS \`entity13\`
+INNER JOIN (
+	SELECT 51 AS \`_ori_id\`, 52 AS \`cyclePolygon2Id\`
+) AS \`update\` ON (\`entity13\`.\`id\`=\`update\`.\`_ori_id\`)
+SET \`entity13\`.\`cyclePolygon2Id\` = \`update\`.\`cyclePolygon2Id\`;
+
+UPDATE \`CycleDigon1\` AS \`entity14\`
+INNER JOIN (
+	SELECT 21 AS \`_ori_id\`, 22 AS \`cycleDigon2Id\`
+) AS \`update\` ON (\`entity14\`.\`id\`=\`update\`.\`_ori_id\`)
+SET \`entity14\`.\`cycleDigon2Id\` = \`update\`.\`cycleDigon2Id\`"
+,
+    "_type": 2,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION INSERT should insert entity with auto pk and self reference nullable 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": 
+Map {
+      "?0" => "1",
+      "?1" => "2",
+      "?2" => "3",
+      "?3" => "4",
+      "?4" => "5",
+      "?5" => "6",
+      "?6" => "7",
+      "?7" => "8",
+    }
+,
+    "_queries": [
+      {
+        "parameters": 
+Map {
+          "?0" => "1",
+        }
+,
+        "query": 
+"INSERT INTO \`CycleSelfAutoNull\`(\`name\`,\`parentId\`) VALUES
+(?,DEFAULT)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`
+FROM \`CycleSelfAutoNull\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
+,
+        "type": 1,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => "2",
+        }
+,
+        "query": 
+"INSERT INTO \`CycleSelfAutoNull\`(\`name\`,\`parentId\`) VALUES
+(?,DEFAULT)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`
+FROM \`CycleSelfAutoNull\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
+,
+        "type": 1,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => "3",
+        }
+,
+        "query": 
+"INSERT INTO \`CycleSelfAutoNull\`(\`name\`,\`parentId\`) VALUES
+(?,DEFAULT)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`
+FROM \`CycleSelfAutoNull\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
+,
+        "type": 1,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => "4",
+        }
+,
+        "query": 
+"INSERT INTO \`CycleSelfAutoNull\`(\`name\`,\`parentId\`) VALUES
+(?,DEFAULT)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`
+FROM \`CycleSelfAutoNull\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
+,
+        "type": 1,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => "5",
+        }
+,
+        "query": 
+"INSERT INTO \`CycleSelfAutoNull\`(\`name\`,\`parentId\`) VALUES
+(?,DEFAULT)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`
+FROM \`CycleSelfAutoNull\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
+,
+        "type": 1,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => "6",
+        }
+,
+        "query": 
+"INSERT INTO \`CycleSelfAutoNull\`(\`name\`,\`parentId\`) VALUES
+(?,DEFAULT)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`
+FROM \`CycleSelfAutoNull\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
+,
+        "type": 1,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => "7",
+        }
+,
+        "query": 
+"INSERT INTO \`CycleSelfAutoNull\`(\`name\`,\`parentId\`) VALUES
+(?,DEFAULT)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`
+FROM \`CycleSelfAutoNull\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
+,
+        "type": 1,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => "8",
+        }
+,
+        "query": 
+"INSERT INTO \`CycleSelfAutoNull\`(\`name\`,\`parentId\`) VALUES
+(?,DEFAULT)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`
+FROM \`CycleSelfAutoNull\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
+,
+        "type": 1,
+      },
+    ],
+    "_query": 
+"INSERT INTO \`CycleSelfAutoNull\`(\`name\`,\`parentId\`) VALUES
+(?,DEFAULT);
+
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`
+FROM \`CycleSelfAutoNull\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID());
+
+INSERT INTO \`CycleSelfAutoNull\`(\`name\`,\`parentId\`) VALUES
+(?,DEFAULT);
+
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`
+FROM \`CycleSelfAutoNull\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID());
+
+INSERT INTO \`CycleSelfAutoNull\`(\`name\`,\`parentId\`) VALUES
+(?,DEFAULT);
+
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`
+FROM \`CycleSelfAutoNull\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID());
+
+INSERT INTO \`CycleSelfAutoNull\`(\`name\`,\`parentId\`) VALUES
+(?,DEFAULT);
+
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`
+FROM \`CycleSelfAutoNull\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID());
+
+INSERT INTO \`CycleSelfAutoNull\`(\`name\`,\`parentId\`) VALUES
+(?,DEFAULT);
+
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`
+FROM \`CycleSelfAutoNull\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID());
+
+INSERT INTO \`CycleSelfAutoNull\`(\`name\`,\`parentId\`) VALUES
+(?,DEFAULT);
+
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`
+FROM \`CycleSelfAutoNull\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID());
+
+INSERT INTO \`CycleSelfAutoNull\`(\`name\`,\`parentId\`) VALUES
+(?,DEFAULT);
+
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`
+FROM \`CycleSelfAutoNull\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID());
+
+INSERT INTO \`CycleSelfAutoNull\`(\`name\`,\`parentId\`) VALUES
+(?,DEFAULT);
+
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`
+FROM \`CycleSelfAutoNull\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
+,
+    "_type": 3,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"UPDATE \`CycleSelfAutoNull\` AS \`entity1\`
+INNER JOIN (
+	SELECT 11 AS \`_ori_id\`, 1 AS \`parentId\`
+	UNION ALL
+	SELECT 12 AS \`_ori_id\`, 11 AS \`parentId\`
+	UNION ALL
+	SELECT 13 AS \`_ori_id\`, 12 AS \`parentId\`
+	UNION ALL
+	SELECT 14 AS \`_ori_id\`, 13 AS \`parentId\`
+	UNION ALL
+	SELECT 15 AS \`_ori_id\`, 12 AS \`parentId\`
+	UNION ALL
+	SELECT 16 AS \`_ori_id\`, 2 AS \`parentId\`
+	UNION ALL
+	SELECT 17 AS \`_ori_id\`, 16 AS \`parentId\`
+	UNION ALL
+	SELECT 18 AS \`_ori_id\`, 16 AS \`parentId\`
+) AS \`update\` ON (\`entity1\`.\`id\`=\`update\`.\`_ori_id\`)
+SET \`entity1\`.\`parentId\` = \`update\`.\`parentId\`"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION INSERT should insert entity with auto pk and self reference 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": 
+Map {
+      "?0" => "1",
+      "?1" => 1n,
+      "?2" => "6",
+      "?3" => 2n,
+    }
+,
+    "_queries": [
+      {
+        "parameters": 
+Map {
+          "?0" => "1",
+          "?1" => 1n,
+        }
+,
+        "query": 
+"INSERT INTO \`CycleSelfAuto\`(\`table1Id\`,\`name\`,\`parentId\`) VALUES
+(DEFAULT,?,?)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`
+FROM \`CycleSelfAuto\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
+,
+        "type": 1,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => "6",
+          "?1" => 2n,
+        }
+,
+        "query": 
+"INSERT INTO \`CycleSelfAuto\`(\`table1Id\`,\`name\`,\`parentId\`) VALUES
+(DEFAULT,?,?)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`
+FROM \`CycleSelfAuto\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
+,
+        "type": 1,
+      },
+    ],
+    "_query": 
+"INSERT INTO \`CycleSelfAuto\`(\`table1Id\`,\`name\`,\`parentId\`) VALUES
+(DEFAULT,?,?);
+
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`
+FROM \`CycleSelfAuto\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID());
+
+INSERT INTO \`CycleSelfAuto\`(\`table1Id\`,\`name\`,\`parentId\`) VALUES
+(DEFAULT,?,?);
+
+SELECT \`entity0\`.\`id\`,
+	\`entity0\`.\`id\`
+FROM \`CycleSelfAuto\` AS \`entity0\`
+WHERE (\`entity0\`.\`id\`=LAST_INSERT_ID())"
+,
+    "_type": 3,
+  },
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": 
+Map {
+      "?0" => "2",
+      "?1" => 11n,
+      "?2" => "7",
+      "?3" => 16n,
+      "?4" => "8",
+      "?5" => 16n,
+    }
+,
+    "_queries": [
+      {
+        "parameters": 
+Map {
+          "?0" => "2",
+          "?1" => 11n,
+        }
+,
+        "query": 
+"INSERT INTO \`CycleSelfAuto\`(\`table1Id\`,\`name\`,\`parentId\`) VALUES
+(DEFAULT,?,?)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"SELECT \`entity1\`.\`id\`,
+	\`entity1\`.\`id\`
+FROM \`CycleSelfAuto\` AS \`entity1\`
+WHERE (\`entity1\`.\`id\`=LAST_INSERT_ID())"
+,
+        "type": 1,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => "7",
+          "?1" => 16n,
+        }
+,
+        "query": 
+"INSERT INTO \`CycleSelfAuto\`(\`table1Id\`,\`name\`,\`parentId\`) VALUES
+(DEFAULT,?,?)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"SELECT \`entity1\`.\`id\`,
+	\`entity1\`.\`id\`
+FROM \`CycleSelfAuto\` AS \`entity1\`
+WHERE (\`entity1\`.\`id\`=LAST_INSERT_ID())"
+,
+        "type": 1,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => "8",
+          "?1" => 16n,
+        }
+,
+        "query": 
+"INSERT INTO \`CycleSelfAuto\`(\`table1Id\`,\`name\`,\`parentId\`) VALUES
+(DEFAULT,?,?)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"SELECT \`entity1\`.\`id\`,
+	\`entity1\`.\`id\`
+FROM \`CycleSelfAuto\` AS \`entity1\`
+WHERE (\`entity1\`.\`id\`=LAST_INSERT_ID())"
+,
+        "type": 1,
+      },
+    ],
+    "_query": 
+"INSERT INTO \`CycleSelfAuto\`(\`table1Id\`,\`name\`,\`parentId\`) VALUES
+(DEFAULT,?,?);
+
+SELECT \`entity1\`.\`id\`,
+	\`entity1\`.\`id\`
+FROM \`CycleSelfAuto\` AS \`entity1\`
+WHERE (\`entity1\`.\`id\`=LAST_INSERT_ID());
+
+INSERT INTO \`CycleSelfAuto\`(\`table1Id\`,\`name\`,\`parentId\`) VALUES
+(DEFAULT,?,?);
+
+SELECT \`entity1\`.\`id\`,
+	\`entity1\`.\`id\`
+FROM \`CycleSelfAuto\` AS \`entity1\`
+WHERE (\`entity1\`.\`id\`=LAST_INSERT_ID());
+
+INSERT INTO \`CycleSelfAuto\`(\`table1Id\`,\`name\`,\`parentId\`) VALUES
+(DEFAULT,?,?);
+
+SELECT \`entity1\`.\`id\`,
+	\`entity1\`.\`id\`
+FROM \`CycleSelfAuto\` AS \`entity1\`
+WHERE (\`entity1\`.\`id\`=LAST_INSERT_ID())"
+,
+    "_type": 3,
+  },
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": 
+Map {
+      "?0" => "3",
+      "?1" => 12n,
+      "?2" => "4",
+      "?3" => 12n,
+    }
+,
+    "_queries": [
+      {
+        "parameters": 
+Map {
+          "?0" => "3",
+          "?1" => 12n,
+        }
+,
+        "query": 
+"INSERT INTO \`CycleSelfAuto\`(\`table1Id\`,\`name\`,\`parentId\`) VALUES
+(DEFAULT,?,?)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"SELECT \`entity2\`.\`id\`,
+	\`entity2\`.\`id\`
+FROM \`CycleSelfAuto\` AS \`entity2\`
+WHERE (\`entity2\`.\`id\`=LAST_INSERT_ID())"
+,
+        "type": 1,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => "4",
+          "?1" => 12n,
+        }
+,
+        "query": 
+"INSERT INTO \`CycleSelfAuto\`(\`table1Id\`,\`name\`,\`parentId\`) VALUES
+(DEFAULT,?,?)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"SELECT \`entity2\`.\`id\`,
+	\`entity2\`.\`id\`
+FROM \`CycleSelfAuto\` AS \`entity2\`
+WHERE (\`entity2\`.\`id\`=LAST_INSERT_ID())"
+,
+        "type": 1,
+      },
+    ],
+    "_query": 
+"INSERT INTO \`CycleSelfAuto\`(\`table1Id\`,\`name\`,\`parentId\`) VALUES
+(DEFAULT,?,?);
+
+SELECT \`entity2\`.\`id\`,
+	\`entity2\`.\`id\`
+FROM \`CycleSelfAuto\` AS \`entity2\`
+WHERE (\`entity2\`.\`id\`=LAST_INSERT_ID());
+
+INSERT INTO \`CycleSelfAuto\`(\`table1Id\`,\`name\`,\`parentId\`) VALUES
+(DEFAULT,?,?);
+
+SELECT \`entity2\`.\`id\`,
+	\`entity2\`.\`id\`
+FROM \`CycleSelfAuto\` AS \`entity2\`
+WHERE (\`entity2\`.\`id\`=LAST_INSERT_ID())"
+,
+    "_type": 3,
+  },
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": 
+Map {
+      "?0" => "5",
+      "?1" => 13n,
+    }
+,
+    "_queries": [
+      {
+        "parameters": 
+Map {
+          "?0" => "5",
+          "?1" => 13n,
+        }
+,
+        "query": 
+"INSERT INTO \`CycleSelfAuto\`(\`table1Id\`,\`name\`,\`parentId\`) VALUES
+(DEFAULT,?,?)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"SELECT \`entity3\`.\`id\`,
+	\`entity3\`.\`id\`
+FROM \`CycleSelfAuto\` AS \`entity3\`
+WHERE (\`entity3\`.\`id\`=LAST_INSERT_ID())"
+,
+        "type": 1,
+      },
+    ],
+    "_query": 
+"INSERT INTO \`CycleSelfAuto\`(\`table1Id\`,\`name\`,\`parentId\`) VALUES
+(DEFAULT,?,?);
+
+SELECT \`entity3\`.\`id\`,
+	\`entity3\`.\`id\`
+FROM \`CycleSelfAuto\` AS \`entity3\`
+WHERE (\`entity3\`.\`id\`=LAST_INSERT_ID())"
+,
+    "_type": 3,
+  },
+]
+`;
+
 exports[`Mysql DATA MANIPULATION UPDATE should update entity 1 1`] = `
 [
   {
@@ -1951,6 +3010,284 @@ INNER JOIN (
 SET \`entity0\`.\`deleted\` = true,
 	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
 WHERE (\`entity0\`.\`deleted\`=false)"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION DELETE should delete with correct order 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": Map {},
+    "_queries": [
+      {
+        "parameters": Map {},
+        "query": 
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+INNER JOIN (
+	SELECT 10 AS \`id\`
+) AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
+SET \`entity0\`.\`deleted\` = true,
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
+WHERE (\`entity0\`.\`deleted\`=false)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": Map {},
+        "query": 
+"UPDATE \`Table1Manies\` AS \`entity1\`
+INNER JOIN (
+	SELECT 1 AS \`id\`
+) AS \`delete\` ON (\`entity1\`.\`id\`=\`delete\`.\`id\`)
+SET \`entity1\`.\`deleted\` = true
+WHERE (\`entity1\`.\`deleted\`=false)"
+,
+        "type": 2,
+      },
+    ],
+    "_query": 
+"UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
+INNER JOIN (
+	SELECT 10 AS \`id\`
+) AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
+SET \`entity0\`.\`deleted\` = true,
+	\`entity0\`.\`modifiedDate\` = UTC_TIMESTAMP()
+WHERE (\`entity0\`.\`deleted\`=false);
+
+UPDATE \`Table1Manies\` AS \`entity1\`
+INNER JOIN (
+	SELECT 1 AS \`id\`
+) AS \`delete\` ON (\`entity1\`.\`id\`=\`delete\`.\`id\`)
+SET \`entity1\`.\`deleted\` = true
+WHERE (\`entity1\`.\`deleted\`=false)"
+,
+    "_type": 2,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION SAVE should unblock insert unique constraint hard delete: set null 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"UPDATE \`Unblock\` AS \`entity0\`
+INNER JOIN (
+	SELECT 10 AS \`_ori_id\`, NULL AS \`unique\`, 1 AS \`__flag\`
+) AS \`update\` ON (\`entity0\`.\`id\`=\`update\`.\`_ori_id\`)
+SET \`entity0\`.\`unique\` = (
+	CASE WHEN (((\`update\`.\`__flag\`&1)=0)) 
+	THEN \`entity0\`.\`unique\`
+	ELSE \`update\`.\`unique\`
+	END
+)"
+,
+    "type": 2,
+  },
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": 
+Map {
+      "?0" => 11n,
+      "?1" => 0n,
+      "?2" => "new",
+      "?3" => 11n,
+    }
+,
+    "_queries": [
+      {
+        "parameters": 
+Map {
+          "?0" => 11n,
+          "?1" => 0n,
+          "?2" => "new",
+        }
+,
+        "query": 
+"INSERT INTO \`Unblock\`(\`id\`,\`unique\`,\`name\`,\`deleted\`) VALUES
+(?,?,?,DEFAULT)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => 11n,
+        }
+,
+        "query": 
+"SELECT \`entity1\`.\`id\`,
+	\`entity1\`.\`id\`,
+	\`entity1\`.\`deleted\`
+FROM \`Unblock\` AS \`entity1\`
+WHERE (\`entity1\`.\`id\`=?)"
+,
+        "type": 1,
+      },
+    ],
+    "_query": 
+"INSERT INTO \`Unblock\`(\`id\`,\`unique\`,\`name\`,\`deleted\`) VALUES
+(?,?,?,DEFAULT);
+
+SELECT \`entity1\`.\`id\`,
+	\`entity1\`.\`id\`,
+	\`entity1\`.\`deleted\`
+FROM \`Unblock\` AS \`entity1\`
+WHERE (\`entity1\`.\`id\`=?)"
+,
+    "_type": 3,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"DELETE \`entity2\`
+FROM \`Unblock\` AS \`entity2\`
+INNER JOIN (
+	SELECT 10 AS \`id\`
+) AS \`delete\` ON (\`entity2\`.\`id\`=\`delete\`.\`id\`)"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION SAVE should unblock insert unique constraint: set new value 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": 
+Map {
+      "?0" => 11n,
+      "?1" => 0n,
+      "?2" => "new",
+      "?3" => 11n,
+    }
+,
+    "_queries": [
+      {
+        "parameters": 
+Map {
+          "?0" => 11n,
+          "?1" => 0n,
+          "?2" => "new",
+        }
+,
+        "query": 
+"INSERT INTO \`Unblock\`(\`id\`,\`unique\`,\`name\`,\`deleted\`) VALUES
+(?,?,?,DEFAULT)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => 11n,
+        }
+,
+        "query": 
+"SELECT \`entity1\`.\`id\`,
+	\`entity1\`.\`id\`,
+	\`entity1\`.\`deleted\`
+FROM \`Unblock\` AS \`entity1\`
+WHERE (\`entity1\`.\`id\`=?)"
+,
+        "type": 1,
+      },
+    ],
+    "_query": 
+"INSERT INTO \`Unblock\`(\`id\`,\`unique\`,\`name\`,\`deleted\`) VALUES
+(?,?,?,DEFAULT);
+
+SELECT \`entity1\`.\`id\`,
+	\`entity1\`.\`id\`,
+	\`entity1\`.\`deleted\`
+FROM \`Unblock\` AS \`entity1\`
+WHERE (\`entity1\`.\`id\`=?)"
+,
+    "_type": 3,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"UPDATE \`Unblock\` AS \`entity2\`
+INNER JOIN (
+	SELECT 10 AS \`id\`
+) AS \`delete\` ON (\`entity2\`.\`id\`=\`delete\`.\`id\`)
+SET \`entity2\`.\`deleted\` = true
+WHERE (\`entity2\`.\`deleted\`=false)"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Mysql DATA MANIPULATION SAVE should unblock insert unique constraint: ignore 1`] = `
+[
+  BatchedQuery {
+    "_isProcessed": true,
+    "_parameters": 
+Map {
+      "?0" => 11n,
+      "?1" => 0n,
+      "?2" => "new",
+      "?3" => 11n,
+    }
+,
+    "_queries": [
+      {
+        "parameters": 
+Map {
+          "?0" => 11n,
+          "?1" => 0n,
+          "?2" => "new",
+        }
+,
+        "query": 
+"INSERT INTO \`Unblock\`(\`id\`,\`unique\`,\`name\`,\`deleted\`) VALUES
+(?,?,?,DEFAULT)"
+,
+        "type": 2,
+      },
+      {
+        "parameters": 
+Map {
+          "?0" => 11n,
+        }
+,
+        "query": 
+"SELECT \`entity1\`.\`id\`,
+	\`entity1\`.\`id\`,
+	\`entity1\`.\`deleted\`
+FROM \`Unblock\` AS \`entity1\`
+WHERE (\`entity1\`.\`id\`=?)"
+,
+        "type": 1,
+      },
+    ],
+    "_query": 
+"INSERT INTO \`Unblock\`(\`id\`,\`unique\`,\`name\`,\`deleted\`) VALUES
+(?,?,?,DEFAULT);
+
+SELECT \`entity1\`.\`id\`,
+	\`entity1\`.\`id\`,
+	\`entity1\`.\`deleted\`
+FROM \`Unblock\` AS \`entity1\`
+WHERE (\`entity1\`.\`id\`=?)"
+,
+    "_type": 3,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"UPDATE \`Unblock\` AS \`entity2\`
+INNER JOIN (
+	SELECT 10 AS \`id\`
+) AS \`delete\` ON (\`entity2\`.\`id\`=\`delete\`.\`id\`)
+SET \`entity2\`.\`deleted\` = true
+WHERE (\`entity2\`.\`deleted\`=false)"
 ,
     "type": 2,
   },

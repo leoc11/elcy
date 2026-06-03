@@ -1,5 +1,5 @@
 import { Uuid } from "../../../src/Data/Uuid";
-import { Entity, IdentifierColumn, PrimaryKey, RealColumn, Relationship, SerializeColumn, StringColumn } from "../../../src/Decorator";
+import { Entity, IdentifierColumn, PrimaryKey, RealColumn, ReverseRelation, SerializeColumn, StringColumn } from "../../../src/Decorator";
 import { Json1 } from "./Json1";
 import { Table1Table3 } from "./Table1Table3";
 import { Table2Table3 } from "./Table2Table3";
@@ -21,8 +21,8 @@ export class Table3 {
     @SerializeColumn(Json1)
     serialize: Json1;
 
-    @Relationship("Table1Table3")
+    @ReverseRelation(() => Table1Table3, o => o.table3)
     table1Table3s: Table1Table3[];
-    @Relationship("Table2Table3")
+    @ReverseRelation(() => Table2Table3, o => o.table3)
     table2Table3s: Table2Table3[];
 }

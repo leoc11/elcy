@@ -13,11 +13,12 @@ import { trackEntity } from "./EntityChangeTracker";
 import { EntityState } from "./EntityState";
 import { IEntityEntry } from "./Interface/IEntityEntry";
 import { ArrayExtension } from "src/Extensions/ArrayExtension";
-import { QueryableChain } from "src/Queryable/Interface/QueryableChain";
+import { Querify } from "src/Queryable/Interface/Querify";
 import { AndExpression } from "src/ExpressionBuilder/Expression/AndExpression";
 import { isColumnMetaData, isRelationMetaData } from "src/Helper/Util";
 import { StrictEqualExpression } from "src/ExpressionBuilder/Expression/StrictEqualExpression";
 
+const EmbeddedEntityEntry = await import("./EmbeddedEntityEntry").then(o => o.EmbeddedEntityEntry);
 export class EntityEntry<TE extends object = any> implements IEntityEntry<TE> {
     public get isCompletelyLoaded() {
         return this.dbSet.metaData.columns.every((o) => this.entity[o.propertyName] !== undefined);
@@ -51,10 +52,6 @@ export class EntityEntry<TE extends object = any> implements IEntityEntry<TE> {
                     if (typedEntries) {
                         ArrayExtension.delete(typedEntries, this);
                     }
-                    break;
-                }
-                case EntityState.Detached: {
-                    // load all relation
                     break;
                 }
             }
@@ -276,7 +273,7 @@ export class EntityEntry<TE extends object = any> implements IEntityEntry<TE> {
     /**
      * Load relation to this entity.
      */
-    public async loadRelated(...relations: Array<(entity: QueryableChain<TE>) => Exclude<object, ValueType>>) {
+    public async loadRelated(...relations: Array<(entity: Querify<TE>) => Exclude<object, ValueType>>) {
         if (!relations.length) {
             return;
         }
@@ -404,7 +401,7 @@ export class EntityEntry<TE extends object = any> implements IEntityEntry<TE> {
 
             if (oldValue !== newValue && metadata instanceof EmbeddedRelationMetaData) {
                 const embeddedDbSet = this.dbSet.dbContext.set(metadata.target.type);
-                void import("./EmbeddedEntityEntry").then(o => new o.EmbeddedEntityEntry(embeddedDbSet, newValue as object, this));
+                new EmbeddedEntityEntry(embeddedDbSet, newValue as object, this);
             }
 
             if (!this.enableTrackChanges) {
@@ -420,7 +417,7 @@ export class EntityEntry<TE extends object = any> implements IEntityEntry<TE> {
                     this.state = EntityState.Unchanged;
                 }
             }
-            if (oldValue !== newValue && (this.state === EntityState.Modified || this.state === EntityState.Unchanged)) {
+            if (oldValue !== newValue && this.state >= EntityState.Unchanged) {
                 if (this._originalValues.has(metadata.propertyName)) {
                     const oriValue = this._originalValues.get(metadata.propertyName);
                     if (oriValue === newValue) {
@@ -436,12 +433,10 @@ export class EntityEntry<TE extends object = any> implements IEntityEntry<TE> {
                         }
                     }
                 }
-                else {
-                    if (oldValue !== undefined && !metadata.isReadOnly) {
-                        this._originalValues.set(metadata.propertyName, oldValue as TE[StringKeyOf<TE>]);
-                        if (this.state === EntityState.Unchanged) {
-                            this.state = EntityState.Modified;
-                        }
+                else if (oldValue !== undefined && !metadata.isReadOnly) {
+                    this._originalValues.set(metadata.propertyName, oldValue as TE[StringKeyOf<TE>]);
+                    if (this.state === EntityState.Unchanged) {
+                        this.state = EntityState.Modified;
                     }
                 }
             }

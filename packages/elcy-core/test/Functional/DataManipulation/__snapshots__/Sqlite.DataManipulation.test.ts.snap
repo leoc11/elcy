@@ -338,6 +338,478 @@ RETURNING "entity0"."id",("entity0"."integer" + "entity0"."decimalNumber") AS "c
 ]
 `;
 
+exports[`Sqlite DATA MANIPULATION INSERT should insert entity with loop type reference 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      ":param0" => 21n,
+      ":param1" => 0n,
+    }
+,
+    "query": 
+"INSERT INTO "CycleDigon1" AS "entity0"("id","table1Id","cycleDigon2Id") VALUES
+	(:param0,:param1,DEFAULT)"
+,
+    "type": 2,
+  },
+  {
+    "parameters": 
+Map {
+      ":param2" => 22n,
+      ":param3" => 21n,
+    }
+,
+    "query": 
+"INSERT INTO "CycleDigon2" AS "entity1"("id","cycleDigon1Id") VALUES
+	(:param2,:param3)"
+,
+    "type": 2,
+  },
+  {
+    "parameters": 
+Map {
+      ":param4" => 51n,
+    }
+,
+    "query": 
+"INSERT INTO "CyclePolygon1" AS "entity2"("id","cyclePolygon2Id") VALUES
+	(:param4,DEFAULT)"
+,
+    "type": 2,
+  },
+  {
+    "parameters": 
+Map {
+      ":param5" => 54n,
+    }
+,
+    "query": 
+"INSERT INTO "CyclePolygon4" AS "entity3"("id","cyclePolygon5Id") VALUES
+	(:param5,DEFAULT)"
+,
+    "type": 2,
+  },
+  {
+    "parameters": 
+Map {
+      ":param6" => 31n,
+      ":param7" => 0n,
+    }
+,
+    "query": 
+"INSERT INTO "CycleTriangle1" AS "entity4"("id","table1Id","cycleTriangle2Id") VALUES
+	(:param6,:param7,DEFAULT)"
+,
+    "type": 2,
+  },
+  {
+    "parameters": 
+Map {
+      ":param8" => 33n,
+      ":param9" => 31n,
+      ":param10" => 54n,
+    }
+,
+    "query": 
+"INSERT INTO "CycleTriangle3" AS "entity5"("id","cycleTriangle1Id","cyclePolygon4Id") VALUES
+	(:param8,:param9,:param10)"
+,
+    "type": 2,
+  },
+  {
+    "parameters": 
+Map {
+      ":param11" => 52n,
+      ":param12" => 33n,
+    }
+,
+    "query": 
+"INSERT INTO "CyclePolygon2" AS "entity6"("id","cycleTriangle3Id") VALUES
+	(:param11,:param12)"
+,
+    "type": 2,
+  },
+  {
+    "parameters": 
+Map {
+      ":param13" => 55n,
+      ":param14" => 51n,
+    }
+,
+    "query": 
+"INSERT INTO "CyclePolygon5" AS "entity7"("id","cyclePolygon1Id") VALUES
+	(:param13,:param14)"
+,
+    "type": 2,
+  },
+  {
+    "parameters": 
+Map {
+      ":param15" => 1n,
+      ":param16" => 0n,
+      ":param17" => 2n,
+    }
+,
+    "query": 
+"INSERT INTO "CycleSelf" AS "entity8"("id","table1Id","parentId") VALUES
+	(:param15,:param16,DEFAULT),
+	(:param17,DEFAULT,DEFAULT)"
+,
+    "type": 2,
+  },
+  {
+    "parameters": 
+Map {
+      ":param18" => 32n,
+      ":param19" => 33n,
+    }
+,
+    "query": 
+"INSERT INTO "CycleTriangle2" AS "entity9"("id","cycleTriangle3Id") VALUES
+	(:param18,:param19)"
+,
+    "type": 2,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"UPDATE "CycleSelf" AS "entity10"
+SET "parentId" = "update"."parentId"
+FROM (
+	SELECT
+		column1 AS "_ori_id", column2 AS "parentId"
+	FROM (
+		VALUES
+		(1, 2),
+		(2, 1)
+	)
+) AS "update"
+WHERE ("entity10"."id"="update"."_ori_id")"
+,
+    "type": 2,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"UPDATE "CycleTriangle1" AS "entity11"
+SET "cycleTriangle2Id" = "update"."cycleTriangle2Id"
+FROM (
+	SELECT
+		column1 AS "_ori_id", column2 AS "cycleTriangle2Id"
+	FROM (
+		VALUES
+		(31, 32)
+	)
+) AS "update"
+WHERE ("entity11"."id"="update"."_ori_id")"
+,
+    "type": 2,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"UPDATE "CyclePolygon4" AS "entity12"
+SET "cyclePolygon5Id" = "update"."cyclePolygon5Id"
+FROM (
+	SELECT
+		column1 AS "_ori_id", column2 AS "cyclePolygon5Id"
+	FROM (
+		VALUES
+		(54, 55)
+	)
+) AS "update"
+WHERE ("entity12"."id"="update"."_ori_id")"
+,
+    "type": 2,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"UPDATE "CyclePolygon1" AS "entity13"
+SET "cyclePolygon2Id" = "update"."cyclePolygon2Id"
+FROM (
+	SELECT
+		column1 AS "_ori_id", column2 AS "cyclePolygon2Id"
+	FROM (
+		VALUES
+		(51, 52)
+	)
+) AS "update"
+WHERE ("entity13"."id"="update"."_ori_id")"
+,
+    "type": 2,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"UPDATE "CycleDigon1" AS "entity14"
+SET "cycleDigon2Id" = "update"."cycleDigon2Id"
+FROM (
+	SELECT
+		column1 AS "_ori_id", column2 AS "cycleDigon2Id"
+	FROM (
+		VALUES
+		(21, 22)
+	)
+) AS "update"
+WHERE ("entity14"."id"="update"."_ori_id")"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Sqlite DATA MANIPULATION INSERT should insert entity with auto pk and self reference nullable 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      ":param0" => "1",
+    }
+,
+    "query": 
+"INSERT INTO "CycleSelfAutoNull" AS "entity0"("name","parentId") VALUES
+	(:param0,DEFAULT)
+RETURNING "entity0"."id""
+,
+    "type": 3,
+  },
+  {
+    "parameters": 
+Map {
+      ":param1" => "2",
+    }
+,
+    "query": 
+"INSERT INTO "CycleSelfAutoNull" AS "entity0"("name","parentId") VALUES
+	(:param1,DEFAULT)
+RETURNING "entity0"."id""
+,
+    "type": 3,
+  },
+  {
+    "parameters": 
+Map {
+      ":param2" => "3",
+    }
+,
+    "query": 
+"INSERT INTO "CycleSelfAutoNull" AS "entity0"("name","parentId") VALUES
+	(:param2,DEFAULT)
+RETURNING "entity0"."id""
+,
+    "type": 3,
+  },
+  {
+    "parameters": 
+Map {
+      ":param3" => "4",
+    }
+,
+    "query": 
+"INSERT INTO "CycleSelfAutoNull" AS "entity0"("name","parentId") VALUES
+	(:param3,DEFAULT)
+RETURNING "entity0"."id""
+,
+    "type": 3,
+  },
+  {
+    "parameters": 
+Map {
+      ":param4" => "5",
+    }
+,
+    "query": 
+"INSERT INTO "CycleSelfAutoNull" AS "entity0"("name","parentId") VALUES
+	(:param4,DEFAULT)
+RETURNING "entity0"."id""
+,
+    "type": 3,
+  },
+  {
+    "parameters": 
+Map {
+      ":param5" => "6",
+    }
+,
+    "query": 
+"INSERT INTO "CycleSelfAutoNull" AS "entity0"("name","parentId") VALUES
+	(:param5,DEFAULT)
+RETURNING "entity0"."id""
+,
+    "type": 3,
+  },
+  {
+    "parameters": 
+Map {
+      ":param6" => "7",
+    }
+,
+    "query": 
+"INSERT INTO "CycleSelfAutoNull" AS "entity0"("name","parentId") VALUES
+	(:param6,DEFAULT)
+RETURNING "entity0"."id""
+,
+    "type": 3,
+  },
+  {
+    "parameters": 
+Map {
+      ":param7" => "8",
+    }
+,
+    "query": 
+"INSERT INTO "CycleSelfAutoNull" AS "entity0"("name","parentId") VALUES
+	(:param7,DEFAULT)
+RETURNING "entity0"."id""
+,
+    "type": 3,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"UPDATE "CycleSelfAutoNull" AS "entity1"
+SET "parentId" = "update"."parentId"
+FROM (
+	SELECT
+		column1 AS "_ori_id", column2 AS "parentId"
+	FROM (
+		VALUES
+		(11, 1),
+		(12, 11),
+		(13, 12),
+		(14, 13),
+		(15, 12),
+		(16, 2),
+		(17, 16),
+		(18, 16)
+	)
+) AS "update"
+WHERE ("entity1"."id"="update"."_ori_id")"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Sqlite DATA MANIPULATION INSERT should insert entity with auto pk and self reference 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      ":param0" => "1",
+      ":param1" => 1n,
+    }
+,
+    "query": 
+"INSERT INTO "CycleSelfAuto" AS "entity0"("table1Id","name","parentId") VALUES
+	(DEFAULT,:param0,:param1)
+RETURNING "entity0"."id""
+,
+    "type": 3,
+  },
+  {
+    "parameters": 
+Map {
+      ":param2" => "6",
+      ":param3" => 2n,
+    }
+,
+    "query": 
+"INSERT INTO "CycleSelfAuto" AS "entity0"("table1Id","name","parentId") VALUES
+	(DEFAULT,:param2,:param3)
+RETURNING "entity0"."id""
+,
+    "type": 3,
+  },
+  {
+    "parameters": 
+Map {
+      ":param0" => 11n,
+      ":param1" => "2",
+    }
+,
+    "query": 
+"INSERT INTO "CycleSelfAuto" AS "entity1"("table1Id","name","parentId") VALUES
+	(DEFAULT,:param1,:param0)
+RETURNING "entity1"."id""
+,
+    "type": 3,
+  },
+  {
+    "parameters": 
+Map {
+      ":param2" => 16n,
+      ":param3" => "7",
+    }
+,
+    "query": 
+"INSERT INTO "CycleSelfAuto" AS "entity1"("table1Id","name","parentId") VALUES
+	(DEFAULT,:param3,:param2)
+RETURNING "entity1"."id""
+,
+    "type": 3,
+  },
+  {
+    "parameters": 
+Map {
+      ":param4" => 16n,
+      ":param5" => "8",
+    }
+,
+    "query": 
+"INSERT INTO "CycleSelfAuto" AS "entity1"("table1Id","name","parentId") VALUES
+	(DEFAULT,:param5,:param4)
+RETURNING "entity1"."id""
+,
+    "type": 3,
+  },
+  {
+    "parameters": 
+Map {
+      ":param0" => 12n,
+      ":param1" => "3",
+    }
+,
+    "query": 
+"INSERT INTO "CycleSelfAuto" AS "entity2"("table1Id","name","parentId") VALUES
+	(DEFAULT,:param1,:param0)
+RETURNING "entity2"."id""
+,
+    "type": 3,
+  },
+  {
+    "parameters": 
+Map {
+      ":param2" => 12n,
+      ":param3" => "4",
+    }
+,
+    "query": 
+"INSERT INTO "CycleSelfAuto" AS "entity2"("table1Id","name","parentId") VALUES
+	(DEFAULT,:param3,:param2)
+RETURNING "entity2"."id""
+,
+    "type": 3,
+  },
+  {
+    "parameters": 
+Map {
+      ":param0" => 13n,
+      ":param1" => "5",
+    }
+,
+    "query": 
+"INSERT INTO "CycleSelfAuto" AS "entity3"("table1Id","name","parentId") VALUES
+	(DEFAULT,:param1,:param0)
+RETURNING "entity3"."id""
+,
+    "type": 3,
+  },
+]
+`;
+
 exports[`Sqlite DATA MANIPULATION UPDATE should update entity 1 1`] = `
 [
   {
@@ -1214,6 +1686,222 @@ FROM (
 	)
 ) AS "delete"
 WHERE ("entity0"."id"="delete"."id") AND ("entity0"."deleted"=false)"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Sqlite DATA MANIPULATION DELETE should delete with correct order 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      ":param0" => 10n,
+    }
+,
+    "query": 
+"SELECT "entity0"."id",
+	"entity0"."bigint",
+	"entity0"."binary",
+	"entity0"."boolean",
+	"entity0"."date",
+	"entity0"."plainDate",
+	"entity0"."dateTime",
+	"entity0"."instant",
+	"entity0"."decimal",
+	"entity0"."decimalNumber",
+	"entity0"."decimalDecimal",
+	"entity0"."deleted",
+	"entity0"."identifier",
+	"entity0"."identifierString",
+	"entity0"."integer",
+	"entity0"."real",
+	"entity0"."string",
+	"entity0"."time",
+	"entity0"."plainTime",
+	"entity0"."createdDate",
+	"entity0"."modifiedDate"
+FROM "fixture"."Table1s" AS "entity0"
+WHERE (("entity0"."deleted"=false) AND ("entity0"."id"=:param0))
+LIMIT 1"
+,
+    "type": 1,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"UPDATE "fixture"."Table1s" AS "entity0"
+SET "deleted" = true,
+	"modifiedDate" = STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW')
+FROM (
+	SELECT
+		column1 AS "id"
+	FROM (
+		VALUES
+		(10)
+	)
+) AS "delete"
+WHERE ("entity0"."id"="delete"."id") AND ("entity0"."deleted"=false)"
+,
+    "type": 2,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"UPDATE "Table1Manies" AS "entity1"
+SET "deleted" = true
+FROM (
+	SELECT
+		column1 AS "id"
+	FROM (
+		VALUES
+		(1)
+	)
+) AS "delete"
+WHERE ("entity1"."id"="delete"."id") AND ("entity1"."deleted"=false)"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Sqlite DATA MANIPULATION SAVE should unblock insert unique constraint hard delete: set null 1`] = `
+[
+  {
+    "parameters": Map {},
+    "query": 
+"UPDATE "Unblock" AS "entity0"
+SET "unique" = (
+	CASE WHEN ((("update"."__flag"&1)=0)) 
+	THEN "entity0"."unique"
+	ELSE "update"."unique"
+	END
+)
+FROM (
+	SELECT
+		column1 AS "_ori_id", column2 AS "unique", column3 AS "__flag"
+	FROM (
+		VALUES
+		(10, NULL, 1)
+	)
+) AS "update"
+WHERE ("entity0"."id"="update"."_ori_id")"
+,
+    "type": 2,
+  },
+  {
+    "parameters": 
+Map {
+      ":param0" => 11n,
+      ":param1" => 0n,
+      ":param2" => "new",
+    }
+,
+    "query": 
+"INSERT INTO "Unblock" AS "entity1"("id","unique","name","deleted") VALUES
+	(:param0,:param1,:param2,DEFAULT)
+RETURNING "entity1"."id","entity1"."deleted""
+,
+    "type": 3,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"DELETE FROM "Unblock" AS "entity2"
+WHERE EXISTS(
+	SELECT "entity2_1"."id"
+	FROM (
+		SELECT "entity2"."id",
+			"entity2"."unique",
+			"entity2"."name",
+			"entity2"."deleted"
+		FROM "Unblock" AS "entity2"
+		INNER JOIN (
+			SELECT
+				column1 AS "id"
+			FROM (
+				VALUES
+				(10)
+			)
+		) AS "delete" ON ("entity2"."id"="delete"."id")
+	) AS "entity2_1"
+	WHERE ("entity2_1"."id"="entity2"."id")
+)"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Sqlite DATA MANIPULATION SAVE should unblock insert unique constraint: set new value 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      ":param0" => 11n,
+      ":param1" => 0n,
+      ":param2" => "new",
+    }
+,
+    "query": 
+"INSERT INTO "Unblock" AS "entity1"("id","unique","name","deleted") VALUES
+	(:param0,:param1,:param2,DEFAULT)
+RETURNING "entity1"."id","entity1"."deleted""
+,
+    "type": 3,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"UPDATE "Unblock" AS "entity2"
+SET "deleted" = true
+FROM (
+	SELECT
+		column1 AS "id"
+	FROM (
+		VALUES
+		(10)
+	)
+) AS "delete"
+WHERE ("entity2"."id"="delete"."id") AND ("entity2"."deleted"=false)"
+,
+    "type": 2,
+  },
+]
+`;
+
+exports[`Sqlite DATA MANIPULATION SAVE should unblock insert unique constraint: ignore 1`] = `
+[
+  {
+    "parameters": 
+Map {
+      ":param0" => 11n,
+      ":param1" => 0n,
+      ":param2" => "new",
+    }
+,
+    "query": 
+"INSERT INTO "Unblock" AS "entity1"("id","unique","name","deleted") VALUES
+	(:param0,:param1,:param2,DEFAULT)
+RETURNING "entity1"."id","entity1"."deleted""
+,
+    "type": 3,
+  },
+  {
+    "parameters": Map {},
+    "query": 
+"UPDATE "Unblock" AS "entity2"
+SET "deleted" = true
+FROM (
+	SELECT
+		column1 AS "id"
+	FROM (
+		VALUES
+		(10)
+	)
+) AS "delete"
+WHERE ("entity2"."id"="delete"."id") AND ("entity2"."deleted"=false)"
 ,
     "type": 2,
   },

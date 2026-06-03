@@ -1,4 +1,4 @@
-import { BigIntColumn, Entity, IntegerColumn, PrimaryKey, Relationship, StringColumn } from "../../../src/Decorator";
+import { BigIntColumn, Entity, IntegerColumn, PrimaryKey, Relation, ReverseRelation, StringColumn } from "../../../src/Decorator";
 import { Table1 } from "./Table1";
 import { Table1Table2Many } from "./Table1Table2Many";
 import { Table1Table2One } from "./Table1Table2One";
@@ -17,23 +17,23 @@ export class Table1Table2 {
     @StringColumn()
     option12: string;
 
-    @Relationship(Table1, {
+    @Relation(() => Table1, {
         name: "table1_relation",
-        relationMap: new Map([
+        relationMap: [
             [o => o.table1Id, o => o.id]
-        ])
+        ]
     })
     table1?: Table1;
-    @Relationship(Table2, {
+    @Relation(() => Table2, {
         name: "table2_relation",
-        relationMap: new Map([
+        relationMap: [
             [o => o.table2Id, o => o.id]
-        ])
+        ]
     })
     table2?: Table2;
 
-    @Relationship("Table1Table2Many")
+    @ReverseRelation(() => Table1Table2Many, o => o.table1table2)
     table1Table2Manies: Table1Table2Many[];
-    @Relationship("Table1Table2One")
+    @ReverseRelation(() => Table1Table2One, o => o.table1table2)
     table1Table2One: Table1Table2One;
 }

@@ -58,7 +58,7 @@ export function Entity<TC extends IObjectType<object>, TE extends TC extends IOb
                 handler(entityMetadata);
             }
         }
-        
+
         if (option.defaultOrders) {
             entityMetadata.defaultOrders = option.defaultOrders.map((o) => {
                 const selector = o[0];
@@ -146,9 +146,9 @@ export function Entity<TC extends IObjectType<object>, TE extends TC extends IOb
             }
         }
 
-        let relationHandlers = context.metadata.relations as Array<(entityMeta: IEntityMetaData<TE>) => void>;
-        if (Array.isArray(relationHandlers)) {
-            for (const handler of relationHandlers) {
+        const handlers = context.metadata.behaviors as Array<(entityMeta: IEntityMetaData<TE>) => void>;
+        if (Array.isArray(handlers)) {
+            for (const handler of handlers) {
                 handler(entityMetadata);
             }
         }

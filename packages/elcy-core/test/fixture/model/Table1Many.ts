@@ -1,4 +1,4 @@
-import { BigIntColumn, DeletedColumn, Entity, IntegerColumn, PrimaryKey, Relationship, StringColumn } from "../../../src/Decorator";
+import { BigIntColumn, DeletedColumn, Entity, IntegerColumn, PrimaryKey, Relation, StringColumn } from "../../../src/Decorator";
 import { Table1 } from "./Table1";
 
 @Entity("Table1Manies")
@@ -15,6 +15,6 @@ export class Table1Many {
     @DeletedColumn()
     deleted!: boolean;
 
-    @Relationship(Table1, new Map([[o => o.table1Id, o => o.id]]))
+    @Relation(() => Table1, o => o.table1Id, o => o.id)
     table1: Table1;
 }

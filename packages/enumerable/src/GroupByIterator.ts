@@ -1,41 +1,4 @@
-import { Enumerable } from "./Enumerable.internal";
 import { GroupedEnumerable } from "./GroupedEnumerable";
-
-const keyString = (a: unknown): string | object => {
-  if (a == null) {
-    return undefined;
-  }
-  if ((a as { toJSON(): string }).toJSON) {
-    return (a as { toJSON(): string }).toJSON();
-  }
-  switch (true) {
-    case a instanceof Object: {
-      try {
-        return JSON.stringify(
-          Enumerable.from(Object.entries(a))
-            .filter(([, v]) => typeof v !== "function")
-            .orderBy([([k]) => k])
-            .reduce(
-              (res, [k, v]) => {
-                res[k] = v;
-                return res;
-              },
-              {} as Record<string, unknown>,
-            ),
-        );
-      }
-      catch {
-        return a;
-      }
-    }
-    case typeof a === "string": {
-      return a;
-    }
-    default: {
-      return String(a);
-    }
-  }
-};
 
 export class GroupByIterator<K, T> implements Iterator<T, unknown, unknown> {
   public get isDone() {
@@ -43,23 +6,24 @@ export class GroupByIterator<K, T> implements Iterator<T, unknown, unknown> {
   }
   private _isDone: boolean;
   public readonly result: GroupedEnumerable<K, T>[] = [];
-  public readonly groupResultMap: Map<string | object, T[]> = new Map();
+  public readonly groupResultMap: Map<unknown, T[]> = new Map();
   constructor(
     protected readonly source: IterableIterator<T>,
     protected readonly keySelector: (item: T) => K,
-  ) { }
+    public readonly keyHash?: (item: K) => unknown,
+  ) {}
 
   public next(...value: [] | [unknown]) {
     const a = this.source.next(...value);
     if (a.done !== true) {
       const key = this.keySelector(a.value);
-      const keyStr = keyString(key);
-      let groupResult = this.groupResultMap.get(keyStr);
+      const keyHash = this.keyHash?.(key) ?? key;
+      let groupResult = this.groupResultMap.get(keyHash);
       if (!groupResult) {
         groupResult = [];
         const group = new GroupedEnumerable(this, key, groupResult);
         this.result.push(group);
-        this.groupResultMap.set(keyStr, groupResult);
+        this.groupResultMap.set(keyHash, groupResult);
       }
       groupResult.push(a.value);
     } else if (!this._isDone) {
