@@ -9,7 +9,7 @@ import { DbSet } from "../Data/DbSet";
 import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
 import { DeleteMode } from "../Common/StringType";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
-import { QueryableChain } from "./Interface/QueryableChain";
+import { Querify } from "./Interface/Querify";
 import { DeferredQuery } from "../Query/DeferredQuery";
 import { EntityMetaData } from "../MetaData/EntityMetaData";
 import { DbContext } from "../Data/DbContext";
@@ -87,28 +87,28 @@ export class RawQueryable<TE extends object> extends Queryable<TE> {
 
     override delete(mode?: DeleteMode): Promise<number>;
     override delete(predicate?: FunctionExpression<boolean, [TE]>, mode?: DeleteMode): Promise<number>;
-    override delete(predicate?: (item: QueryableChain<TE>) => boolean, mode?: DeleteMode): Promise<number>;
-    override delete(modeOrPredicate?: DeleteMode | FunctionExpression<boolean, [TE]> | ((item: QueryableChain<TE>) => boolean), mode?: DeleteMode): Promise<number> {
+    override delete(predicate?: (item: Querify<TE>) => boolean, mode?: DeleteMode): Promise<number>;
+    override delete(modeOrPredicate?: DeleteMode | FunctionExpression<boolean, [TE]> | ((item: Querify<TE>) => boolean), mode?: DeleteMode): Promise<number> {
         throw new Error("not supported");
     }
     override deferredDelete(mode?: DeleteMode): DeferredQuery<number>;
     override deferredDelete(predicate?: FunctionExpression<boolean, [TE]>, mode?: DeleteMode): DeferredQuery<number>;
-    override deferredDelete(predicate?: (item: QueryableChain<TE>) => boolean, mode?: DeleteMode): DeferredQuery<number>;
-    override deferredDelete(modeOrPredicate?: DeleteMode | FunctionExpression<boolean, [TE]> | ((item: QueryableChain<TE>) => boolean), mode?: DeleteMode): DeferredQuery<number> {
+    override deferredDelete(predicate?: (item: Querify<TE>) => boolean, mode?: DeleteMode): DeferredQuery<number>;
+    override deferredDelete(modeOrPredicate?: DeleteMode | FunctionExpression<boolean, [TE]> | ((item: Querify<TE>) => boolean), mode?: DeleteMode): DeferredQuery<number> {
         if (this.isView) {
             throw new Error("not supported");
         }
         return super.deferredDelete(modeOrPredicate as FunctionExpression<boolean, [TE]>, mode);
     }
-    override deferredUpdate(setter: { [TK in keyof TE]?: (TE[TK] & ValueType) | ((item: QueryableChain<TE>) => TE[TK] & ValueType) }): DeferredQuery<number> {
+    override deferredUpdate(setter: { [TK in keyof TE]?: Extract<ValueType, TE[TK]> | ((item: Querify<TE>) => Extract<ValueType, TE[TK]>) }): DeferredQuery<number> {
         if (this.isView) {
             throw new Error("not supported");
         }
         return super.deferredUpdate(setter);
     }
     override withRelated<TLoad extends object>(...includes: Array<FunctionExpression<TLoad extends ValueType ? never: TLoad, [TE]>>): Queryable<TE>;
-    override withRelated<TLoad extends object>(...includes: Array<(item: QueryableChain<TE>) => TLoad extends ValueType ? never: TLoad>): Queryable<TE>;
-    override withRelated<TLoad extends object>(...includes: Array<FunctionExpression<TLoad extends ValueType ? never: TLoad, [TE]> | ((item: QueryableChain<TE>) => TLoad extends ValueType ? never: TLoad)>): Queryable<TE> {
+    override withRelated<TLoad extends object>(...includes: Array<(item: Querify<TE>) => TLoad extends ValueType ? never: TLoad>): Queryable<TE>;
+    override withRelated<TLoad extends object>(...includes: Array<FunctionExpression<TLoad extends ValueType ? never: TLoad, [TE]> | ((item: Querify<TE>) => TLoad extends ValueType ? never: TLoad)>): Queryable<TE> {
         if (this.isView) {
             throw new Error("not supported");
         }

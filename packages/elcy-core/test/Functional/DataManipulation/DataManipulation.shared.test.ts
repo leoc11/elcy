@@ -250,9 +250,9 @@ export const dataManipulationTest = (db: ITestContext) => {
 
                 const effected = await db.table1s
                     .filter((o) => o.table1Manies.count() <= 0)
-                    .map(Table1Many, (o) => ({
+                    .map((o) => ({
                         name: "Detail of parent " + o.id
-                    })).insertInto(Table1Many);
+                    }), Table1Many).insertInto(Table1Many);
 
                 const queries = spy.mock.calls.flatMap(o => o) as unknown as IQuery[];
                 expect(queries).toMatchSnapshot();

@@ -1,4 +1,4 @@
-import type { QueryableChain } from "src/Queryable/Interface/QueryableChain";
+import type { Querify } from "src/Queryable/Interface/Querify";
 import type { TimeSpan } from "../Data/TimeSpan";
 import type { Uuid } from "../Data/Uuid";
 import type { IExpression } from "../ExpressionBuilder/Expression/IExpression";
@@ -9,11 +9,11 @@ export type IObjectType<T = unknown, TArgs extends readonly unknown[] = unknown[
 export type GenericType<T = unknown, TArgs extends readonly unknown[] = unknown[]> = PrimitiveType<T, TArgs> | IObjectType<T, TArgs>;
 export type InferType<T> = T extends PrimitiveType<T> ? ReturnType<T> : T extends IObjectType<T> ? InstanceType<T> : never;
 export type IEnumType<T extends string | number> = { [key: string]: T; };
-export type PivotD<TE, TD extends { [key: string]: (item: QueryableChain<TE>) => ValueType }> = { [key in StringKeyOf<TD>]: ReturnType<TD[key]> };
-export type PivotM<TE, TM extends { [key: string]: (item: QueryableChain<TE[]>) => ValueType }> = { [key in StringKeyOf<TM>]: ReturnType<TM[key]> };
+export type PivotD<TE, TD extends { [key: string]: (item: Querify<TE>) => ValueType }> = { [key in StringKeyOf<TD>]: ReturnType<TD[key]> };
+export type PivotM<TE, TM extends { [key: string]: (item: Querify<TE[]>) => ValueType }> = { [key in StringKeyOf<TM>]: ReturnType<TM[key]> };
 export type Pivot<TE,
-    TD extends { [key: string]: (item: QueryableChain<TE>) => ValueType },
-    TM extends { [key: string]: (item: QueryableChain<TE[]>) => ValueType }>
+    TD extends { [key: string]: (item: Querify<TE>) => ValueType },
+    TM extends { [key: string]: (item: Querify<TE[]>) => ValueType }>
     = PivotD<TE, TD> & PivotM<TE, TM>;
 export type ObjectLike<T> = { [key in keyof T]?: T[key] };
 export type FlatObjectLike<T> = { [K in keyof T as T[K] extends ValueType ? K : never]?: Extract<T[K], ValueType> };

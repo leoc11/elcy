@@ -1,4 +1,4 @@
-export interface IGroupArray<T, TKey> extends Array<T> {
+export interface IGroupArray<K = unknown, T = unknown> extends Array<T> {
     [key: string]: unknown;
-    key: TKey;
+    key: K;
 }

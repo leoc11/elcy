@@ -8,7 +8,7 @@ import { getEntityMetadata } from "../../../src/MetaData/MetaDataMapper";
 import { Table1, Table1Many, Table1One, Table1Table2, Table1Table2Many, Table2, Table2Table3, Table3 } from "../../fixture";
 import { ITestContext } from "../../fixture/ITestContext";
 import { Temporal } from "@js-temporal/polyfill";
-import { QueryableChain } from "../../../src/Queryable/Interface/QueryableChain";
+import { Querify } from "../../../src/Queryable/Interface/Querify";
 
 const table1ManyMeta = getEntityMetadata(Table1Many);
 const table1Meta = getEntityMetadata(Table1);
@@ -2014,8 +2014,8 @@ export const queryableTest = (db: ITestContext) => {
                         month: (o) => o.dateTime.getMonth()
                     },
                     {
-                        total: (o) => Enumerable.from(o).sum((o) => o.decimalNumber),
-                        qty: (o) => Enumerable.from(o).flatMap((o) => o.table1Manies).map((o) => o.integer).sum()
+                        total: (o) => o.sum((o) => o.decimalNumber),
+                        qty: (o) => o.flatMap((o) => o.table1Manies).map((o) => o.integer).sum()
                     });
                 const results = await pivot.toArray();
 
@@ -2108,7 +2108,7 @@ export const queryableTest = (db: ITestContext) => {
             it("should pass function to query", async () => {
                 const spy = vi.spyOn(db.connection, "query");
 
-                const fn = (o: QueryableChain<Table1>) => o.integer / o.table1Manies.count();
+                const fn = (o: Querify<Table1>) => o.integer / o.table1Manies.count();
                 const parameter = db.table1s.parameter({ fn }).map((o) => fn(o));
                 const results = await parameter.toArray();
 
@@ -2125,7 +2125,7 @@ export const queryableTest = (db: ITestContext) => {
                 const spy = vi.spyOn(db.connection, "query");
 
                 const multi = 10;
-                const fn = (o: QueryableChain<Table1>) => o.real * multi / o.table1Manies.count();
+                const fn = (o: Querify<Table1>) => o.real * multi / o.table1Manies.count();
                 const parameter = db.table1s.parameter({ fn, multi }).map((o) => fn(o));
                 const results = await parameter.toArray();
 

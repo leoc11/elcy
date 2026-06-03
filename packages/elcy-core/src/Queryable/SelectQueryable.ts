@@ -38,7 +38,7 @@ export class SelectQueryable<S, T> extends Queryable<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<object, S>;
         const params: IExpression[] = [this.selector.clone()];
         if (this.type !== Object) {
-            params.unshift(new ValueExpression(this.type));
+            params.push(new ValueExpression(this.type));
         }
         const methodExpression = new MethodCallExpression(objectOperand, "map", params);
         const context: IQueryVisitContext = { selectExpression: objectOperand, scope: "queryable" };

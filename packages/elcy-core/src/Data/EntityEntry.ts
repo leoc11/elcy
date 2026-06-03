@@ -13,7 +13,7 @@ import { trackEntity } from "./EntityChangeTracker";
 import { EntityState } from "./EntityState";
 import { IEntityEntry } from "./Interface/IEntityEntry";
 import { ArrayExtension } from "src/Extensions/ArrayExtension";
-import { QueryableChain } from "src/Queryable/Interface/QueryableChain";
+import { Querify } from "src/Queryable/Interface/Querify";
 import { AndExpression } from "src/ExpressionBuilder/Expression/AndExpression";
 import { isColumnMetaData, isRelationMetaData } from "src/Helper/Util";
 import { StrictEqualExpression } from "src/ExpressionBuilder/Expression/StrictEqualExpression";
@@ -273,7 +273,7 @@ export class EntityEntry<TE extends object = any> implements IEntityEntry<TE> {
     /**
      * Load relation to this entity.
      */
-    public async loadRelated(...relations: Array<(entity: QueryableChain<TE>) => Exclude<object, ValueType>>) {
+    public async loadRelated(...relations: Array<(entity: Querify<TE>) => Exclude<object, ValueType>>) {
         if (!relations.length) {
             return;
         }

@@ -57,6 +57,7 @@ export class MockConnection implements IConnection {
     public set results(value) {
         this._results = value;
     }
+
     constructor(database?: string) {
         this.database = database || "database";
         [this.errorEvent, this.onError] = EventHandlerFactory(this);

@@ -5,7 +5,7 @@ import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterEx
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
 import { Queryable } from "./Queryable";
-import { QueryableChain } from "./Interface/QueryableChain";
+import { Querify } from "./Interface/Querify";
 import { IGroupArray } from "src/Common/IGroupArray";
 import { IExpression } from "src/ExpressionBuilder/Expression/IExpression";
 import { MemberAccessExpression } from "src/ExpressionBuilder/Expression/MemberAccessExpression";
@@ -31,18 +31,18 @@ const toFunctionExpression = <TE,
         }
 
         fnExpression.params = [param];
-        objExp.object[prop as unknown as keyof T] = fnExpression.body;
+        objExp.object[prop] = fnExpression.body;
     }
     return new FunctionExpression(objExp, [param]);
 }
 
 export class PivotQueryable<TE,
-    TD extends { [key: string]: (o: QueryableChain<TE>) => ValueType },
-    TM extends { [key: string]: (o: QueryableChain<TE[]>) => ValueType }>
+    TD extends { [key: string]: (o: Querify<TE>) => ValueType },
+    TM extends { [key: string]: (o: Querify<TE[]>) => ValueType }>
     extends Queryable<Pivot<TE, TD, TM>> {
     protected get dimensions() {
         if (!this._dimensions && this.dimensionFn) {
-            this._dimensions = toFunctionExpression(this.parent.type as GenericType<QueryableChain<TE>>, this.dimensionFn, this.parameters) as FunctionExpression<PivotD<TE, TD>, [TE]>;
+            this._dimensions = toFunctionExpression(this.parent.type as GenericType<Querify<TE>>, this.dimensionFn, this.parameters) as FunctionExpression<PivotD<TE, TD>, [TE]>;
         }
         return this._dimensions;
     }
@@ -51,7 +51,7 @@ export class PivotQueryable<TE,
     }
     protected get metrics() {
         if (!this._metrics && this.metricFn) {
-            this._metrics = toFunctionExpression(Array as unknown as GenericType<QueryableChain<TE[]>>, this.metricFn, this.parameters) as FunctionExpression<PivotM<TE, TM>, [IEnumerable<TE>]>;
+            this._metrics = toFunctionExpression(Array as unknown as GenericType<Querify<IEnumerable<TE>>>, this.metricFn, this.parameters) as unknown as FunctionExpression<PivotM<TE, TM>, [IEnumerable<TE>]>;
         }
         return this._metrics;
     }
@@ -84,7 +84,7 @@ export class PivotQueryable<TE,
             const dObject = (this.dimensions.body as ObjectValueExpression<PivotD<TE, TD>>).object;
             const mObject = (this.metrics.body as ObjectValueExpression<PivotM<TE, TM>>).object;
             const setterObj: Record<string, IExpression> = {};
-            const paramExp = this.metrics.params[0] as ParameterExpression<IGroupArray<TE, PivotD<TE, TD>>>;
+            const paramExp = this.metrics.params[0] as ParameterExpression<IGroupArray<PivotD<TE, TD>, TE>>;
             for (const prop in dObject) {
                 const valueExp = dObject[prop];
                 setterObj[prop] = new MemberAccessExpression(new MemberAccessExpression(paramExp, "key"), prop as StringKeyOf<TD>, valueExp.type);
@@ -95,7 +95,7 @@ export class PivotQueryable<TE,
 
             const pivotObjExp = new ObjectValueExpression<Pivot<TE, TD, TM>>(setterObj as SetterObj<Pivot<TE, TD, TM>>);
             const selectorFn = new FunctionExpression(pivotObjExp, [paramExp]);
-            this._pivotQueryable = this.parent.groupBy(this.dimensions).map(selectorFn) as Queryable<Pivot<TE, TD, TM>>;
+            this._pivotQueryable = this.parent.groupBy(this.dimensions).map(selectorFn);
         }
         return this._pivotQueryable;
     }

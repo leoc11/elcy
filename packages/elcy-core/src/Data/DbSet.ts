@@ -25,7 +25,7 @@ import { DbContext } from "./DbContext";
 import { EntityEntry } from "./EntityEntry";
 import { getEntityMetadata } from "src/MetaData/MetaDataMapper";
 import { RawQueryable } from "src/Queryable/RawQueryable";
-import { QueryableChain } from "src/Queryable/Interface/QueryableChain";
+import { Querify } from "src/Queryable/Interface/Querify";
 
 export class DbSet<TE extends object = any> extends Queryable<TE> {
     public override get dbContext(): DbContext {
@@ -63,8 +63,8 @@ export class DbSet<TE extends object = any> extends Queryable<TE> {
     // simple delete.
     public override deferredDelete(mode: DeleteMode): DeferredQuery<number>;
     public override deferredDelete(key: ObjectLike<TE>, mode?: DeleteMode): DeferredQuery<number>;
-    public override deferredDelete(predicate?: FunctionExpression<boolean, [TE]> | ((item: QueryableChain<TE>) => boolean), mode?: DeleteMode): DeferredQuery<number>;
-    public override deferredDelete(modeOrKeyOrPredicate?: ObjectLike<TE> | FunctionExpression<boolean, [TE]> | ((item: QueryableChain<TE>) => boolean) | DeleteMode, mode?: DeleteMode): DeferredQuery<number> {
+    public override deferredDelete(predicate?: FunctionExpression<boolean, [TE]> | ((item: Querify<TE>) => boolean), mode?: DeleteMode): DeferredQuery<number>;
+    public override deferredDelete(modeOrKeyOrPredicate?: ObjectLike<TE> | FunctionExpression<boolean, [TE]> | ((item: Querify<TE>) => boolean) | DeleteMode, mode?: DeleteMode): DeferredQuery<number> {
         if (modeOrKeyOrPredicate instanceof Function || modeOrKeyOrPredicate instanceof FunctionExpression || typeof modeOrKeyOrPredicate === "string") {
             return super.deferredDelete(modeOrKeyOrPredicate as FunctionExpression<boolean, [TE]>, mode);
         }
@@ -138,12 +138,12 @@ export class DbSet<TE extends object = any> extends Queryable<TE> {
         return query;
     }
     // simple update.
-    public override deferredUpdate(setter: { [TK in keyof TE]?: Extract<ValueType, TE[TK]> | ((item: QueryableChain<TE>) => Extract<ValueType, TE[TK]>) }) {
+    public override deferredUpdate(setter: { [TK in keyof TE]?: Extract<ValueType, TE[TK]> | ((item: Querify<TE>) => Extract<ValueType, TE[TK]>) }) {
         const pkFilter = new AndExpression();
         const paramExp = new ParameterExpression("o", this.type);
         const idParamExp = new ParameterExpression("key", this.type);
         const pkMap = Enumerable.from(this.metaData.primaryKeys).map(o => o.propertyName).toSet();
-        const realSetter: { [TK in keyof TE]?: Extract<ValueType, TE[TK]> | ((item: QueryableChain<TE>) => Extract<ValueType, TE[TK]>) } = {};
+        const realSetter: { [TK in keyof TE]?: Extract<ValueType, TE[TK]> | ((item: Querify<TE>) => Extract<ValueType, TE[TK]>) } = {};
         for (const prop in setter) {
             const setValue = setter[prop];
 
@@ -223,9 +223,9 @@ export class DbSet<TE extends object = any> extends Queryable<TE> {
         }
         return entry;
     }
-    public override async find(predicate?: (item: QueryableChain<TE>) => boolean): Promise<TE>;
+    public override async find(predicate?: (item: Querify<TE>) => boolean): Promise<TE>;
     public override async find(id: ValueType | FlatObjectLike<TE>, forceReload?: boolean): Promise<TE>;
-    public override async find(idOrPredicate?: ValueType | FlatObjectLike<TE> | ((item: QueryableChain<TE>) => boolean), forceReload?: boolean) {
+    public override async find(idOrPredicate?: ValueType | FlatObjectLike<TE> | ((item: Querify<TE>) => boolean), forceReload?: boolean) {
         let entity: TE;
         if (!idOrPredicate) {
             entity = await super.find();
@@ -286,8 +286,8 @@ export class DbSet<TE extends object = any> extends Queryable<TE> {
     public override async delete(mode?: DeleteMode): Promise<number>;
     public override async delete(key: ObjectLike<TE>, mode?: DeleteMode): Promise<number>;
     public override async delete(predicate?: FunctionExpression<boolean, [TE]>, mode?: DeleteMode): Promise<number>;
-    public override async delete(predicate?: (item: QueryableChain<TE>) => boolean, mode?: DeleteMode): Promise<number>;
-    public override async delete(modeOrKeyOrPredicate?: ObjectLike<TE> | FunctionExpression<boolean, [TE]> | ((item: QueryableChain<TE>) => boolean) | DeleteMode, mode?: DeleteMode) {
+    public override async delete(predicate?: (item: Querify<TE>) => boolean, mode?: DeleteMode): Promise<number>;
+    public override async delete(modeOrKeyOrPredicate?: ObjectLike<TE> | FunctionExpression<boolean, [TE]> | ((item: Querify<TE>) => boolean) | DeleteMode, mode?: DeleteMode) {
         const query = this.deferredDelete(modeOrKeyOrPredicate as FunctionExpression<boolean, [TE]>, mode);
         return await query.execute();
     }

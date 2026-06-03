@@ -264,7 +264,7 @@ class SelectExpressionParserFactory<TE extends object, T> {
             do {
                 if (iterResult?.done) {
                     if (isGroup) {
-                        const groupData = groupedDataMap.get(idKey) as IGroupArray<any, any>;
+                        const groupData = groupedDataMap.get(idKey) as IGroupArray;
                         yield groupData;
                     }
                     return;
@@ -283,7 +283,7 @@ class SelectExpressionParserFactory<TE extends object, T> {
                         }
                         let compareResult = compare(row, id);
                         if (compareResult === 1) {
-                            const groupData = groupedDataMap.get(idKey) as IGroupArray<any, any>;
+                            const groupData = groupedDataMap.get(idKey) as IGroupArray;
                             yield groupData as T;
 
                             compareResult = 0;
@@ -298,9 +298,9 @@ class SelectExpressionParserFactory<TE extends object, T> {
                         }
                         if (compareResult === 0) {
                             const item = context.parseRow(row, dbContext, dbSet, dbEventEmitter, parseMap);
-                            let groupDatas = groupedDataMap.get(idKey) as IGroupArray<T, unknown>;
+                            let groupDatas = groupedDataMap.get(idKey) as IGroupArray<unknown, T>;
                             if (!Array.isArray(groupDatas)) {
-                                groupDatas = [] as IGroupArray<T, unknown>;
+                                groupDatas = [] as IGroupArray<unknown, T>;
                                 groupedDataMap.set(idKey, groupDatas);
 
                                 const keyExp = groupSelectExp.key;

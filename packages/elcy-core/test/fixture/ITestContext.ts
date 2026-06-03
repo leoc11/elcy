@@ -1,5 +1,5 @@
-import { DbContext } from "packages/elcy-core/src/Data/DbContext";
-import type { DbSet } from "packages/elcy-core/src/Data/DbSet";
+import type { DbContext } from "../../src/Data/DbContext";
+import type { DbSet } from "../../src/Data/DbSet";
 import { Table1 } from "./model/Table1";
 import { Table2 } from "./model/Table2";
 import { Table1Many } from "./model/Table1Many";
