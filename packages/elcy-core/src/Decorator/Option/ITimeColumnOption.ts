@@ -1,10 +1,9 @@
-import type { Temporal } from "@js-temporal/polyfill";
 import { TimeColumnType } from "../../Common/ColumnType";
 import { TimeZoneHandling } from "../../Common/StringType";
-import { TimeSpan } from "../../Data/TimeSpan";
 import { IColumnOption } from "./IColumnOption";
+import { TimeValueType } from "src/Common/Type";
 
-export interface ITimeColumnOption extends IColumnOption<TimeSpan | Temporal.PlainTime> {
+export interface ITimeColumnOption<T extends TimeValueType> extends IColumnOption<T> {
     columnType?: TimeColumnType;
     precision?: number;
     timeZoneHandling?: TimeZoneHandling;

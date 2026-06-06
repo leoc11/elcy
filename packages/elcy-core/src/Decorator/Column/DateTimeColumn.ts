@@ -1,15 +1,15 @@
-import type { Temporal } from "@js-temporal/polyfill";
 import { DateTimeColumnType } from "../../Common/ColumnType";
 import { TimeZoneHandling } from "../../Common/StringType";
 import { DateTimeColumnMetaData } from "../../MetaData/DateTimeColumnMetaData";
 import { IDateTimeColumnOption } from "../Option/IDateTimeColumnOption";
 import { ClassPropertyDecorator } from "../Type";
 import { Column } from "./Column";
+import { DateTimeValueType } from "src/Common/Type";
 
-export function DateTimeColumn<TE extends object, T extends Date | Temporal.Instant>(option?: IDateTimeColumnOption): ClassPropertyDecorator<TE, Date | Temporal.Instant>;
-export function DateTimeColumn<TE extends object, T extends Date | Temporal.Instant>(name: string, dbtype?: DateTimeColumnType, defaultValue?: () => Date, timeZoneHanding?: TimeZoneHandling): ClassPropertyDecorator<TE, Date | Temporal.Instant>;
-export function DateTimeColumn<TE extends object, T extends Date | Temporal.Instant>(optionOrName?: IDateTimeColumnOption | string, dbtype?: DateTimeColumnType, defaultValue?: () => T, timeZoneHanding?: TimeZoneHandling):ClassPropertyDecorator<TE, Date | Temporal.Instant> {
-    let option: IDateTimeColumnOption = {};
+export function DateTimeColumn<TE extends object, T extends DateTimeValueType>(option?: IDateTimeColumnOption<T>): ClassPropertyDecorator<TE, DateTimeValueType>;
+export function DateTimeColumn<TE extends object, T extends DateTimeValueType>(name: string, dbtype?: DateTimeColumnType, defaultValue?: () => Date, timeZoneHanding?: TimeZoneHandling): ClassPropertyDecorator<TE, DateTimeValueType>;
+export function DateTimeColumn<TE extends object, T extends DateTimeValueType>(optionOrName?: IDateTimeColumnOption<T> | string, dbtype?: DateTimeColumnType, defaultValue?: () => T, timeZoneHanding?: TimeZoneHandling):ClassPropertyDecorator<TE, DateTimeValueType> {
+    let option: IDateTimeColumnOption<T> = {};
     if (typeof optionOrName === "string") {
         option.columnName = optionOrName;
         if (defaultValue !== undefined) {
@@ -26,5 +26,5 @@ export function DateTimeColumn<TE extends object, T extends Date | Temporal.Inst
         option = optionOrName;
     }
 
-    return Column<TE, Date | Temporal.Instant>(option.type ?? Date, DateTimeColumnMetaData, option);
+    return Column<TE, DateTimeValueType>(option.type ?? Date, DateTimeColumnMetaData, option);
 }

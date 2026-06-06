@@ -1,13 +1,12 @@
-import type { Temporal } from "@js-temporal/polyfill";
 import { TimeColumnType } from "../Common/ColumnType";
 import { TimeZoneHandling } from "../Common/StringType";
 import { TimeSpan } from "../Data/TimeSpan";
 import { ColumnMetaData } from "./ColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
-import { GenericType } from "src/Common/Type";
+import { GenericType, TimeValueType } from "src/Common/Type";
 
-export class TimeColumnMetaData<TE extends object = object, T extends string | TimeSpan | Temporal.PlainTime = string | TimeSpan | Temporal.PlainTime> extends ColumnMetaData<TE, T> {
-    constructor(entity?: IEntityMetaData<TE>, type = TimeSpan as unknown as GenericType<T>) {
+export class TimeColumnMetaData<TE extends object, T extends TimeValueType> extends ColumnMetaData<TE, T> {
+    constructor(entity?: IEntityMetaData<TE>, type: GenericType<T> = TimeSpan as GenericType<TimeSpan> as GenericType<Extract<TimeSpan, T>>) {
         super(entity, type);
     }
     public override columnType: TimeColumnType = "time";

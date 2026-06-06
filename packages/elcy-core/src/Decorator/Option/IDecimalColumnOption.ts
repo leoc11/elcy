@@ -1,7 +1,7 @@
-import type Decimal from "decimal.js";
 import { DecimalColumnType } from "../../Common/ColumnType";
 import { IColumnOption } from "./IColumnOption";
-export interface IDecimalColumnOption extends IColumnOption<number | Decimal> {
+import { DecimalValueType } from "src/Common/Type";
+export interface IDecimalColumnOption<T extends DecimalValueType> extends IColumnOption<T> {
     columnType?: DecimalColumnType;
     precision?: number;
     scale?: number;

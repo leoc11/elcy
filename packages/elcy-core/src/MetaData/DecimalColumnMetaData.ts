@@ -1,10 +1,9 @@
-import type Decimal from "decimal.js";
 import { DecimalColumnType } from "../Common/ColumnType";
 import { ColumnMetaData } from "./ColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
-import { GenericType } from "src/Common/Type";
-export class DecimalColumnMetaData<TE extends object = object> extends ColumnMetaData<TE, string | number | Decimal> {
-    constructor(entityMeta?: IEntityMetaData<TE>, type?: GenericType<string | number | Decimal>) {
+import { DecimalValueType, GenericType } from "src/Common/Type";
+export class DecimalColumnMetaData<TE extends object = object> extends ColumnMetaData<TE, DecimalValueType> {
+    constructor(entityMeta?: IEntityMetaData<TE>, type?: GenericType<DecimalValueType>) {
         super(entityMeta, type ?? String);
     }
     public override columnType: DecimalColumnType = "decimal";
