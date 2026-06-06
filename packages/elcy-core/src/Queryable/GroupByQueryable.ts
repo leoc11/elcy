@@ -33,7 +33,7 @@ export class GroupByQueryable<K, T> extends Queryable<IGroupArray<K, T>> {
     private _keySelector: FunctionExpression<K, [T]>;
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<IGroupArray<K, T>> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<object, T>;
-        const methodExpression = new MethodCallExpression(objectOperand, "groupBy" as MethodKey<T[]>, [this.keySelector.clone()]);
+        const methodExpression = new MethodCallExpression(objectOperand, "groupBy" as MethodKey<T[]>, [this.keySelector]);
         const context: IQueryVisitContext = { selectExpression: objectOperand, scope: "queryable" };
         const result = queryVisitor.visit(methodExpression, context) as SelectExpression<object, IGroupArray<K, T>>;
         result.parentRelation = null;

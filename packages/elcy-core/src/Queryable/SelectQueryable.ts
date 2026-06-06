@@ -36,7 +36,7 @@ export class SelectQueryable<S, T> extends Queryable<T> {
     protected readonly selectorFn: (item: S) => T;
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<object, S>;
-        const params: IExpression[] = [this.selector.clone()];
+        const params: IExpression[] = [this.selector];
         if (this.type !== Object) {
             params.push(new ValueExpression(this.type));
         }

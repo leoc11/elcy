@@ -45,8 +45,7 @@ export class OrderQueryable<T> extends Queryable<T> {
     protected readonly selectorsFn: Array<IOrderDefinition<T>>;
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<object, T>;
-        const selectors = this.selectors.map((o) => o.clone());
-        const methodExpression = new MethodCallExpression(objectOperand, "orderBy" as MethodKey<[]>, selectors);
+        const methodExpression = new MethodCallExpression(objectOperand, "orderBy" as MethodKey<[]>, this.selectors);
         const context: IQueryVisitContext = { selectExpression: objectOperand, scope: "queryable" };
         return queryVisitor.visit(methodExpression, context) as IQueryExpression<T>;
     }

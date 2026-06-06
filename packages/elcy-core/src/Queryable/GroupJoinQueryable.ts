@@ -55,7 +55,7 @@ export class GroupJoinQueryable<T = any, T2 = any, R = any> extends Queryable<R>
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<R> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<object, T>;
         const childOperand = this.parent2.buildQuery(queryVisitor) as SelectExpression<object, T2>;
-        const methodExpression = new MethodCallExpression(objectOperand, "groupJoin" as MethodKey<T[]>, [childOperand, this.relation.clone(), this.resultSelector.clone()]);
+        const methodExpression = new MethodCallExpression(objectOperand, "groupJoin" as MethodKey<T[]>, [childOperand, this.relation, this.resultSelector]);
         const context: IQueryVisitContext = { selectExpression: objectOperand, scope: "queryable" };
         return queryVisitor.visit(methodExpression, context) as any;
     }

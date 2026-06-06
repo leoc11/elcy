@@ -35,7 +35,7 @@ export class SelectManyQueryable<S, T> extends Queryable<T> {
     protected readonly selectorFn: ((item: S) => IEnumerable<T>);
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<S & object>;
-        const methodExpression = new MethodCallExpression(objectOperand, "flatMap", [this.selector.clone()]);
+        const methodExpression = new MethodCallExpression(objectOperand, "flatMap", [this.selector]);
         const context: IQueryVisitContext = {
             selectExpression: objectOperand,
             scope: "queryable"

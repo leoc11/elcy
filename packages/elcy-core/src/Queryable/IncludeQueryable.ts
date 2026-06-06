@@ -34,8 +34,7 @@ export class IncludeQueryable<T> extends Queryable<T> {
     private _selectors: FunctionExpression<Exclude<object, ValueType>, [T]>[];
     public buildQuery(queryVisitor: IQueryVisitor): IQueryExpression<T> {
         const objectOperand = this.parent.buildQuery(queryVisitor) as SelectExpression<object, T>;
-        const selectors = this.selectors.map((o) => o.clone());
-        const methodExpression = new MethodCallExpression(objectOperand, "withRelated" as MethodKey<T[]>, selectors);
+        const methodExpression = new MethodCallExpression(objectOperand, "withRelated" as MethodKey<T[]>, this.selectors);
         const context: IQueryVisitContext = { selectExpression: objectOperand, scope: "queryable" };
         return queryVisitor.visit(methodExpression, context) as any;
     }

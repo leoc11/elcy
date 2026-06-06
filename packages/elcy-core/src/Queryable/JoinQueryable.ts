@@ -67,9 +67,9 @@ export abstract class JoinQueryable<T = unknown, T2 = unknown, R = unknown> exte
         const type = this.joinType.toLowerCase() + "Join";
         const params: IExpression[] = [childOperand];
         if (this.joinType !== "CROSS") {
-            params.push(this.relation.clone());
+            params.push(this.relation);
         }
-        params.push(this.resultSelector.clone());
+        params.push(this.resultSelector);
         const methodExpression = new MethodCallExpression(objectOperand, type as any, params);
         const context: IQueryVisitContext = { selectExpression: objectOperand, scope: "queryable" };
         return queryVisitor.visit(methodExpression, context) as any;
