@@ -1,9 +1,9 @@
+import { LazyFunctionExpression } from "src/ExpressionBuilder/Expression/LazyFunctionExpression";
 import { ColumnType } from "../Common/ColumnType";
 import { ColumnGeneration } from "../Common/Enum";
 import { DbValue, GenericType, PrimitiveType, StringKeyOf, ValueType } from "../Common/Type";
 import { IColumnOption } from "../Decorator/Option/IColumnOption";
-import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
-import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
+import type { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { IColumnMetaData, CustomDataMapper } from "./Interface/IColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 
@@ -17,7 +17,7 @@ export abstract class ColumnMetaData<TE extends object = any, T = ValueType, TDb
     }
     public get defaultExp() {
         if (!this._defaultExp && this.default) {
-            this._defaultExp = ExpressionBuilder.parse(this.default);
+            this._defaultExp = new LazyFunctionExpression(this.default);
         }
         return this._defaultExp;
     }

@@ -2,7 +2,6 @@ import { ClassBase } from "../../Common/Constant";
 import { InheritanceType } from "../../Common/Enum";
 import type { IObjectType, StringKeyOf, ValueType } from "../../Common/Type";
 import type { IOrderDefinition } from "@elcy/enumerable";
-import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
 import { AbstractEntityMetaData } from "../../MetaData/AbstractEntityMetaData";
 import { ComputedColumnMetaData } from "../../MetaData/ComputedColumnMetaData";
 import { EntityMetaData } from "../../MetaData/EntityMetaData";
@@ -19,6 +18,7 @@ import { getEntityMetadata, setColumnMetadata, setEntityMetadata } from "../../M
 import { ClassDecorator } from "../Type";
 import { IColumnMetaData } from "src/MetaData/Interface/IColumnMetaData";
 import { proxyEntityType } from "src/Data/EntityChangeTracker";
+import { LazyFunctionExpression } from "src/ExpressionBuilder/Expression/LazyFunctionExpression";
 
 export function Entity<TC extends IObjectType<object>, TE extends TC extends IObjectType<infer U> ? U : never>(option: IEntityOption<TE>): ClassDecorator<TC>;
 export function Entity<TC extends IObjectType<object>, TE extends TC extends IObjectType<infer U> ? U : never>(name?: string, defaultOrders?: Array<IOrderDefinition<TE>>, allowInheritance?: boolean): ClassDecorator<TC>;
@@ -64,7 +64,7 @@ export function Entity<TC extends IObjectType<object>, TE extends TC extends IOb
                 const selector = o[0];
                 const direction = o[1];
                 const itemArray: Array<IExpression<((...param: TE[]) => ValueType) | OrderDirection>> = [];
-                itemArray.push(selector instanceof FunctionExpression ? selector as FunctionExpression<ValueType, [TE]> : ExpressionBuilder.parse<ValueType, [TE]>(selector, [type]));
+                itemArray.push(selector instanceof FunctionExpression ? selector as FunctionExpression<ValueType, [TE]> : new LazyFunctionExpression(selector, [proxyType]));
                 itemArray.push(new ValueExpression(direction ? direction : "ASC"));
                 return new ArrayValueExpression(...itemArray);
             });

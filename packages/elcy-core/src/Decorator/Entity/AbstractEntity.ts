@@ -15,6 +15,7 @@ import { InheritedColumnMetaData } from "../../MetaData/Relation/InheritedColumn
 import { InheritedComputedColumnMetaData } from "../../MetaData/Relation/InheritedComputedColumnMetaData";
 import { IEntityOption } from "../Option/IEntityOption";
 import { ArrayExtension } from "src/Extensions/ArrayExtension";
+import { LazyFunctionExpression } from "src/ExpressionBuilder/Expression/LazyFunctionExpression";
 
 export function AbstractEntity<T extends TParent = any, TParent extends object = object>(option: IEntityOption<T>): ClassDecorator;
 export function AbstractEntity<T extends TParent = any, TParent extends object = object>(name?: string, defaultOrders?: Array<IOrderDefinition<T>>, allowInheritance?: boolean): ClassDecorator;
@@ -38,7 +39,7 @@ export function AbstractEntity<T extends TParent = any, TParent extends object =
         const entityMetadata = new AbstractEntityMetaData(type, option.name);
 
         if (defaultOrders) {
-            entityMetadata.defaultOrders = defaultOrders.map((o) => new ArrayValueExpression<OrderDirection | ((...param: T[]) => unknown)>(ExpressionBuilder.parse(o[0], [type]), new ValueExpression(o[1])));
+            entityMetadata.defaultOrders = defaultOrders.map((o) => new ArrayValueExpression<OrderDirection | ((...param: T[]) => unknown)>(new LazyFunctionExpression(o[0], [type]), new ValueExpression(o[1])));
         }
 
         const parentType = Object.getPrototypeOf(type) as IObjectType<TParent>;

@@ -1,9 +1,9 @@
 import { IEntityMetaData } from "src/MetaData/Interface/IEntityMetaData";
 import { StringKeyOf, ValueType } from "../../Common/Type";
 import { ClassAccessor, ClassAccessorDecorator } from "../Type";
-import { ExpressionBuilder } from "src/ExpressionBuilder/ExpressionBuilder";
 import { ComputedColumnMetaData } from "src/MetaData/ComputedColumnMetaData";
 import { setColumnMetadata } from "src/MetaData/MetaDataMapper";
+import { LazyFunctionExpression } from "src/ExpressionBuilder/Expression/LazyFunctionExpression";
 
 // TODO: types: Persisted, Virtual, Query
 export function ComputedColumn<TE extends object = object, T extends ValueType = ValueType>(fn: (o: TE) => T): ClassAccessorDecorator<TE, T> {
@@ -17,7 +17,7 @@ export function ComputedColumn<TE extends object = object, T extends ValueType =
                 throw new Error(`Cannot re-declare column: ${String(context.name)}`);
             }
 
-            const fnExp = ExpressionBuilder.parse(fn, [entityMeta.type]);
+            const fnExp = new LazyFunctionExpression(fn, [entityMeta.type]);
             const propertyKey = context.name as StringKeyOf<TE>;
             const column = new ComputedColumnMetaData(entityMeta, fnExp, propertyKey);
             entityMeta.columns.push(column);
