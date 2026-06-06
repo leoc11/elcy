@@ -5,5 +5,4 @@ export * from "./Option";
 export * from "./Relation";
 export * from "./CheckConstraint";
 export * from "./ColumnIndex";
-export * from "./DecoratorKey";
 export * from "./UniqueConstraint";
