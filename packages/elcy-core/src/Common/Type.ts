@@ -31,22 +31,39 @@ export type PropertySelectorType<TE, T = ValueType> = ((source: TE) => T | undef
 export type RelationSelector<TSource, TTarget, T = ValueType> = T extends any ? [PropertySelectorType<TSource, T>, PropertySelectorType<TTarget, T>] : never;
 
 declare global {
-    interface ValueTypeRegistry {
+    interface ValueTypeRegistry extends DateValueTypeRegistry, TimeValueTypeRegistry, DateTimeValueTypeRegistry, DecimalValueTypeRegistry {
         number: number;
         ArrayBufferLike: ArrayBufferLike;
         bigint: bigint;
         string: string;
         boolean: boolean;
-        Date: Date;
-        TimeSpan: TimeSpan;
         Uuid: Uuid;
         ArrayBufferView: ArrayBufferView;
         ArrayBuffer: ArrayBuffer;
     }
+    interface DateValueTypeRegistry {
+        Date: Date;
+    }
+    interface TimeValueTypeRegistry {
+        string: string;
+        Date: Date;
+        TimeSpan: TimeSpan;
+    }
+    interface DateTimeValueTypeRegistry {
+        Date: Date;
+    }
+    interface DecimalValueTypeRegistry {
+        string: string;
+        number: number;
+    }
 }
 
-export type DbValue = string | number | boolean | null | bigint | Date | Uint8Array;
+export type DecimalValueType = DecimalValueTypeRegistry[keyof DecimalValueTypeRegistry];
+export type DateValueType = DateValueTypeRegistry[keyof DateValueTypeRegistry];
+export type TimeValueType = TimeValueTypeRegistry[keyof TimeValueTypeRegistry];
+export type DateTimeValueType = DateTimeValueTypeRegistry[keyof DateTimeValueTypeRegistry];
 export type ValueType = ValueTypeRegistry[keyof ValueTypeRegistry];
+export type DbValue = string | number | boolean | null | bigint | Date | Uint8Array;
 export type ArrayView = Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array
     | Uint32Array | Uint8ClampedArray | Float32Array | Float64Array | ArrayBufferView;
 export type ElementType<T> = T extends (infer K)[] ? K : never;

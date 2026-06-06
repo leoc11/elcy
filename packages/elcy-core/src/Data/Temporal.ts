@@ -20,9 +20,13 @@ export namespace Temporal {
 }
 
 declare global {
-    interface ValueTypeRegistry {
-        Temporal_Instant: Temporal.Instant;
+    interface DateValueTypeRegistry {
         Temporal_PlainDate: Temporal.PlainDate;
+    }
+    interface TimeValueTypeRegistry {
         Temporal_PlainTime: Temporal.PlainTime;
+    }
+    interface DateTimeValueTypeRegistry {
+        Temporal_Instant: Temporal.Instant;
     }
 }

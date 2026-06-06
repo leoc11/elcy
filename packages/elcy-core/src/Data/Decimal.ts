@@ -1,7 +1,7 @@
 import type { Decimal as DecimalModule } from "decimal.js";
 
 declare global {
-    interface ValueTypeRegistry {
+    interface DecimalValueTypeRegistry {
         Decimal: Decimal;
     }
 }
