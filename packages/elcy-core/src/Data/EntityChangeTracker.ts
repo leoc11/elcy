@@ -1,6 +1,6 @@
-import { Enumerable, isNull } from "@elcy/enumerable";
+import { Enumerable } from "@elcy/enumerable";
 import { IEventEmitter } from "src/Event/IEventHandler";
-import { isEqual, isIterable, isValue } from "src/Helper/Util";
+import { isEqual, isIterable, isNull, isValue } from "src/Helper/Util";
 import { IChangeEventParam } from "src/MetaData/Interface/IChangeEventParam";
 import { eventEmitterFactory } from "src/Event/EventHandlerFactory";
 import { IObjectType, StringKeyOf } from "src/Common/Type";

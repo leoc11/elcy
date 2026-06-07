@@ -7,7 +7,7 @@ import { FunctionHelper } from "src/Helper/FunctionHelper";
 import { IObjectType, PropertySelectorType, RelationSelector, StringKeyOf, ValueType } from "src/Common/Type";
 import { getEntityMetadata, setRelationMetadata } from "src/MetaData/MetaDataMapper";
 import { IRelationMetaData } from "src/MetaData";
-import { registerRelationFinalizer, scheduleRelationFinalizer } from "./RelationFinalizer";
+import { registerRelationFinalizer } from "./RelationFinalizer";
 
 export function Relation<TE extends object, TT extends object, T extends ValueType>(type: () => IObjectType<TT>, sourceSelector: PropertySelectorType<TE, T>, targetSelector: PropertySelectorType<TT, T>): ClassPropertyDecorator<TE, TT | undefined>;
 export function Relation<TE extends object, T extends object>(type: () => IObjectType<T>, map: RelationSelector<TE, T>[]): ClassPropertyDecorator<TE, T | undefined>;
@@ -61,10 +61,10 @@ export function Relation<TE extends object, T extends object>(type: () => IObjec
                     propertyName: context.name as StringKeyOf<TE>,
                     name: option.name,
                     relationKeyName: option.relationKeyName,
-                    relationMap: relationMap,
+                    relationMap: relationMap as any,
                 };
                 const childRelationMeta = new RelationMetaData(childData);
-                setRelationMetadata(childData.metaData.type, childData.propertyName, childRelationMeta);
+                setRelationMetadata(childData.metaData.type, childData.propertyName, childRelationMeta as any);
                 entityMeta.relations.push(childRelationMeta);
 
                 const parentRelationMeta = new RelationMetaData({
@@ -75,7 +75,6 @@ export function Relation<TE extends object, T extends object>(type: () => IObjec
                 }) as IRelationMetaData<T>;
                 parentRelationMeta.completeRelation(childRelationMeta);
             });
-            scheduleRelationFinalizer();
         });
     }
 }

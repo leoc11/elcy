@@ -51,7 +51,8 @@ import { RawQueryView } from "./RawQueryView";
 import { ComputedColumnMetaData } from "src/MetaData/ComputedColumnMetaData";
 import { ColumnExpression } from "src/Queryable/QueryExpression/ColumnExpression";
 import { ComputedColumnExpression } from "src/Queryable/QueryExpression/ComputedColumnExpression";
-import { isNull, mapKeepExp } from "src/Helper/Util";
+import { isNull } from "src/Helper/Util";
+import { mapKeepExp } from "src/Helper/Expression";
 import { SqlTableValueParameterExpression, TSchema } from "src/Queryable/QueryExpression/SqlTableValueParameterExpression";
 import { TernaryExpression } from "src/ExpressionBuilder/Expression/TernaryExpression";
 import { BitwiseAndExpression } from "src/ExpressionBuilder/Expression/BitwiseAndExpression";
@@ -63,6 +64,7 @@ import { CommitPlan } from "./UOW/CommitPlan";
 import { CommitPlanner } from "./UOW/CommitPlanner";
 import { IRelationMetaData } from "src/MetaData";
 import { planSelfReferenceCommit } from "./UOW/SelfReferenceCommitPlanner";
+import { finalizeRelation } from "src/Decorator/Relation/RelationFinalizer";
 
 const connectionManagerMap = new WeakMap<Function, IConnectionManager<any>>();
 const queryCacheManagerMap = new WeakMap<Function, IQueryCacheManager>();
@@ -125,6 +127,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             this.factory = factory;
         }
         this.entityTypes = types;
+        finalizeRelation();
     }
 
     public afterDelete?: <T>(entity: T, param: IDeleteEventParam) => void;
@@ -1615,7 +1618,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                     setter[entityMeta.modifiedDateColumn.propertyName] = entityMeta.modifiedDateColumn.defaultExp.body as IExpression<TE[keyof TE]>;
                 }
                 if (entityMeta.versionColumn && entityMeta.versionColumn.type === BigInt as GenericType) {
-                    setter[entityMeta.versionColumn.propertyName] = new AdditionExpression(entityExp.columns.find(o => o.columnName == entityMeta.versionColumn.columnName) as IExpression<bigint>, new ValueExpression(1n));
+                    setter[entityMeta.versionColumn.propertyName] = new AdditionExpression(entityExp.columns.find(o => o.columnName == entityMeta.versionColumn.columnName) as IColumnExpression<TE, bigint>, new ValueExpression(1n));
                 }
 
                 const updateExp = new UpdateExpression(entityExp, setter);

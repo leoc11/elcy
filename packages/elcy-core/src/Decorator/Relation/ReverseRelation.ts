@@ -6,7 +6,7 @@ import { IEnumerable } from "@elcy/enumerable";
 import { FunctionHelper } from "src/Helper/FunctionHelper";
 import { IObjectType, PropertySelectorType, StringKeyOf, StringKeyOfValue } from "src/Common/Type";
 import { getEntityMetadata, setRelationMetadata } from "src/MetaData/MetaDataMapper";
-import { registerRelationFinalizer, scheduleRelationFinalizer } from "./RelationFinalizer";
+import { registerRelationFinalizer } from "./RelationFinalizer";
 
 export function ReverseRelation<TE extends object, T extends object>(type: () => IObjectType<T>, relation: StringKeyOfValue<T, TE>): ClassPropertyDecorator<TE, T | IEnumerable<T> | undefined>;
 export function ReverseRelation<TE extends object, T extends object>(type: () => IObjectType<T>, relation: (source: T) => TE | undefined): ClassPropertyDecorator<TE, T | IEnumerable<T> | undefined>;
@@ -28,14 +28,13 @@ export function ReverseRelation<TE extends object, T extends object>(type: () =>
                     name: `${targetType.name.toLocaleLowerCase()}_${reverseRelation}`
                 };
                 const parentRelationMeta = new RelationMetaData(parentData);
-                setRelationMetadata(parentData.metaData.type, parentData.propertyName, parentRelationMeta);
+                setRelationMetadata(parentData.metaData.type, parentData.propertyName, parentRelationMeta as any);
                 entityMeta.relations.push(parentRelationMeta);
 
                 const targetMetaData = getEntityMetadata(targetType);
                 let childRelationMeta = targetMetaData.relations.find(o => o.propertyName === reverseRelation && !o.isMaster);
                 parentRelationMeta.completeRelation(childRelationMeta);
             });
-            scheduleRelationFinalizer();
         });
     }
 }
