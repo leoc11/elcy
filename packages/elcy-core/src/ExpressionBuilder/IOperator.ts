@@ -77,52 +77,58 @@ export interface IOperator {
 export interface IUnaryOperator extends IOperator {
     position: UnaryPosition;
 }
-export const operators: IOperator[] = [
-    { identifier: "[", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 20, associativity: Associativity.None } } as IUnaryOperator,
-    { identifier: "(", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 20, associativity: Associativity.None } } as IUnaryOperator,
-    { identifier: "...", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 20, associativity: Associativity.None }, expressionFactory: (op: ParameterExpression<unknown[]>) => new SpreadExpression(op) } as IUnaryOperator,
-    { identifier: ".", type: OperatorType.Binary, precedence: { precedence: 19, associativity: Associativity.Left }, expressionFactory: <T extends object>(objectExp: IExpression<T>, memberName: IExpression<unknown>) => new MemberAccessExpression(objectExp, memberName.toString() as StringKeyOf<T>) },
-    { identifier: "?.", type: OperatorType.Binary, precedence: { precedence: 19, associativity: Associativity.Left }, expressionFactory: <T extends object>(objectExp: IExpression<T>, memberName: IExpression<unknown>) => { const exp = new MemberAccessExpression(objectExp, memberName.toString() as StringKeyOf<T>); exp.isOptional = true; return exp; } },
-    { identifier: "[", type: OperatorType.Binary, precedence: { precedence: 19, associativity: Associativity.Left } },
-    { identifier: "new", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 19, associativity: Associativity.None } } as IUnaryOperator,
-    { identifier: "(", type: OperatorType.Binary, precedence: { precedence: 18, associativity: Associativity.Left } },
-    // <IUnaryOperator>{ identifier: "function", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 19, associativity: Associativity.Left } },
-    // <IUnaryOperator>{ identifier: "new", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 18, associativity: Associativity.Right } },
-    { identifier: "++", type: OperatorType.Unary, position: UnaryPosition.Postfix, precedence: { precedence: 17, associativity: Associativity.None }, expressionFactory: (op: ParameterExpression<number>) => new RightIncrementExpression(op) } as IUnaryOperator,
-    { identifier: "--", type: OperatorType.Unary, position: UnaryPosition.Postfix, precedence: { precedence: 17, associativity: Associativity.None }, expressionFactory: (op: ParameterExpression<number>) => new RightDecrementExpression(op) } as IUnaryOperator,
-    { identifier: "!", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right }, expressionFactory: (op: IExpression) => new NotExpression(op) } as IUnaryOperator,
-    { identifier: "~", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right }, expressionFactory: (op: IExpression) => new BitwiseNotExpression(op) } as IUnaryOperator,
-    { identifier: "+", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right }, expressionFactory: (exp: IExpression) => exp } as IUnaryOperator,
-    { identifier: "-", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right }, expressionFactory: (op: IExpression<number>) => new NegationExpression(op) } as IUnaryOperator,
-    { identifier: "++", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right }, expressionFactory: (op: ParameterExpression<number>) => new LeftIncrementExpression(op) } as IUnaryOperator,
-    { identifier: "--", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right }, expressionFactory: (op: ParameterExpression<number>) => new LeftDecrementExpression(op) } as IUnaryOperator,
-    { identifier: "typeof", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right }, expressionFactory: (op: IExpression) => new TypeofExpression(op) } as IUnaryOperator,
-    // <IUnaryOperator>{ identifier: "void", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right } },
-    // <IUnaryOperator>{ identifier: "delete", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right } },
-    // <IUnaryOperator>{ identifier: "await", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right } },
-    { identifier: "**", type: OperatorType.Binary, precedence: { precedence: 15, associativity: Associativity.Right }, expressionFactory: (op1: IExpression<number>, op2: IExpression<number>) => new ExponentiationExpression(op1, op2) },
-    { identifier: "*", type: OperatorType.Binary, precedence: { precedence: 14, associativity: Associativity.Left }, expressionFactory: (op1: IExpression<number>, op2: IExpression<number>) => new MultiplicationExpression(op1, op2) },
-    { identifier: "/", type: OperatorType.Binary, precedence: { precedence: 14, associativity: Associativity.Left }, expressionFactory: (op1: IExpression<number>, op2: IExpression<number>) => new DivisionExpression(op1, op2) },
-    { identifier: "%", type: OperatorType.Binary, precedence: { precedence: 14, associativity: Associativity.Left }, expressionFactory: (op1: IExpression<number>, op2: IExpression<number>) => new ModulusExpression(op1, op2) },
-    { identifier: "+", type: OperatorType.Binary, precedence: { precedence: 13, associativity: Associativity.Left }, expressionFactory: (op1: IExpression<string | number>, op2: IExpression<string | number>) => new AdditionExpression(op1, op2) },
-    { identifier: "-", type: OperatorType.Binary, precedence: { precedence: 13, associativity: Associativity.Left }, expressionFactory: (op1: IExpression<number>, op2: IExpression<number>) => new SubstractionExpression(op1, op2) },
-    { identifier: "<<", type: OperatorType.Binary, precedence: { precedence: 12, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new BitwiseZeroLeftShiftExpression(op1, op2) },
-    { identifier: ">>", type: OperatorType.Binary, precedence: { precedence: 12, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new BitwiseZeroRightShiftExpression(op1, op2) },
-    { identifier: ">>>", type: OperatorType.Binary, precedence: { precedence: 12, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new BitwiseSignedRightShiftExpression(op1, op2) },
-    { identifier: "<", type: OperatorType.Binary, precedence: { precedence: 11, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new LessThanExpression(op1, op2) },
-    { identifier: "<=", type: OperatorType.Binary, precedence: { precedence: 11, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new LessEqualExpression(op1, op2) },
-    { identifier: ">", type: OperatorType.Binary, precedence: { precedence: 11, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new GreaterThanExpression(op1, op2) },
-    { identifier: ">=", type: OperatorType.Binary, precedence: { precedence: 11, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new GreaterEqualExpression(op1, op2) },
-    { identifier: "in", type: OperatorType.Binary, precedence: { precedence: 11, associativity: Associativity.Left }, expressionFactory: () => { throw new Error("operator not supported"); } },
-    { identifier: "instanceof", type: OperatorType.Binary, precedence: { precedence: 11, associativity: Associativity.Left }, expressionFactory: <T>(op1: IExpression<T>, op2: IExpression<GenericType<T>>) => new InstanceofExpression(op1, op2) },
-    { identifier: "==", type: OperatorType.Binary, precedence: { precedence: 10, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new EqualExpression(op1, op2) },
-    { identifier: "!=", type: OperatorType.Binary, precedence: { precedence: 10, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new NotEqualExpression(op1, op2) },
-    { identifier: "===", type: OperatorType.Binary, precedence: { precedence: 10, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new StrictEqualExpression(op1, op2) },
-    { identifier: "!==", type: OperatorType.Binary, precedence: { precedence: 10, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new StrictNotEqualExpression(op1, op2) },
-    { identifier: "&", type: OperatorType.Binary, precedence: { precedence: 9, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new BitwiseAndExpression(op1, op2) },
-    { identifier: "^", type: OperatorType.Binary, precedence: { precedence: 8, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new BitwiseXorExpression(op1, op2) },
-    { identifier: "|", type: OperatorType.Binary, precedence: { precedence: 7, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new BitwiseOrExpression(op1, op2) },
-    {
+
+export const keywordOperators = ["new", "typeof", "in", "instanceof"];
+export const prefixOperators = new Map<string, IOperator>([
+    ["[", { identifier: "[", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 20, associativity: Associativity.None } } as IUnaryOperator],
+    ["(", { identifier: "(", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 20, associativity: Associativity.None } } as IUnaryOperator],
+    ["...", { identifier: "...", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 20, associativity: Associativity.None }, expressionFactory: (op: ParameterExpression<unknown[]>) => new SpreadExpression(op) } as IUnaryOperator],
+    ["new", { identifier: "new", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 19, associativity: Associativity.None } } as IUnaryOperator],
+    // <IUnaryOperator>[ "function", { identifier: "function", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 19, associativity: Associativity.Left } } ],
+    // <IUnaryOperator>[ "new", { identifier: "new", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 18, associativity: Associativity.Right } } ],
+    ["!", { identifier: "!", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right }, expressionFactory: (op: IExpression) => new NotExpression(op) } as IUnaryOperator],
+    ["~", { identifier: "~", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right }, expressionFactory: (op: IExpression) => new BitwiseNotExpression(op) } as IUnaryOperator],
+    ["+", { identifier: "+", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right }, expressionFactory: (exp: IExpression) => exp } as IUnaryOperator],
+    ["-", { identifier: "-", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right }, expressionFactory: (op: IExpression<number>) => new NegationExpression(op) } as IUnaryOperator],
+    ["++", { identifier: "++", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right }, expressionFactory: (op: ParameterExpression<number>) => new LeftIncrementExpression(op) } as IUnaryOperator],
+    ["--", { identifier: "--", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right }, expressionFactory: (op: ParameterExpression<number>) => new LeftDecrementExpression(op) } as IUnaryOperator],
+    ["typeof", { identifier: "typeof", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right }, expressionFactory: (op: IExpression) => new TypeofExpression(op) } as IUnaryOperator],
+    // <IUnaryOperator>[ "yield*", { identifier: "yield*", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 2, associativity: Associativity.Right } } ],
+    // <IUnaryOperator>[ "yield", { identifier: "yield", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 2, associativity: Associativity.Right } } ],
+]);
+export const postfixOperators = new Map<string, IOperator>([
+    [".", { identifier: ".", type: OperatorType.Binary, precedence: { precedence: 19, associativity: Associativity.Left }, expressionFactory: <T extends object>(objectExp: IExpression<T>, memberName: IExpression<unknown>) => new MemberAccessExpression(objectExp, memberName.toString() as StringKeyOf<T>) }],
+    ["?.", { identifier: "?.", type: OperatorType.Binary, precedence: { precedence: 19, associativity: Associativity.Left }, expressionFactory: <T extends object>(objectExp: IExpression<T>, memberName: IExpression<unknown>) => { const exp = new MemberAccessExpression(objectExp, memberName.toString() as StringKeyOf<T>); exp.isOptional = true; return exp; } }],
+    ["[", { identifier: "[", type: OperatorType.Binary, precedence: { precedence: 19, associativity: Associativity.Left } }],
+    ["(", { identifier: "(", type: OperatorType.Binary, precedence: { precedence: 18, associativity: Associativity.Left } }],
+    ["++", { identifier: "++", type: OperatorType.Unary, position: UnaryPosition.Postfix, precedence: { precedence: 17, associativity: Associativity.None }, expressionFactory: (op: ParameterExpression<number>) => new RightIncrementExpression(op) } as IUnaryOperator],
+    ["--", { identifier: "--", type: OperatorType.Unary, position: UnaryPosition.Postfix, precedence: { precedence: 17, associativity: Associativity.None }, expressionFactory: (op: ParameterExpression<number>) => new RightDecrementExpression(op) } as IUnaryOperator],
+    // <IUnaryOperator>[ "void", { identifier: "void", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right } } ],
+    // <IUnaryOperator>[ "delete", { identifier: "delete", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right } } ],
+    // <IUnaryOperator>[ "await", { identifier: "await", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 16, associativity: Associativity.Right } } ],
+    ["**", { identifier: "**", type: OperatorType.Binary, precedence: { precedence: 15, associativity: Associativity.Right }, expressionFactory: (op1: IExpression<number>, op2: IExpression<number>) => new ExponentiationExpression(op1, op2) }],
+    ["*", { identifier: "*", type: OperatorType.Binary, precedence: { precedence: 14, associativity: Associativity.Left }, expressionFactory: (op1: IExpression<number>, op2: IExpression<number>) => new MultiplicationExpression(op1, op2) }],
+    ["/", { identifier: "/", type: OperatorType.Binary, precedence: { precedence: 14, associativity: Associativity.Left }, expressionFactory: (op1: IExpression<number>, op2: IExpression<number>) => new DivisionExpression(op1, op2) }],
+    ["%", { identifier: "%", type: OperatorType.Binary, precedence: { precedence: 14, associativity: Associativity.Left }, expressionFactory: (op1: IExpression<number>, op2: IExpression<number>) => new ModulusExpression(op1, op2) }],
+    ["+", { identifier: "+", type: OperatorType.Binary, precedence: { precedence: 13, associativity: Associativity.Left }, expressionFactory: (op1: IExpression<string | number>, op2: IExpression<string | number>) => new AdditionExpression(op1, op2) }],
+    ["-", { identifier: "-", type: OperatorType.Binary, precedence: { precedence: 13, associativity: Associativity.Left }, expressionFactory: (op1: IExpression<number>, op2: IExpression<number>) => new SubstractionExpression(op1, op2) }],
+    ["<<", { identifier: "<<", type: OperatorType.Binary, precedence: { precedence: 12, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new BitwiseZeroLeftShiftExpression(op1, op2) }],
+    [">>", { identifier: ">>", type: OperatorType.Binary, precedence: { precedence: 12, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new BitwiseZeroRightShiftExpression(op1, op2) }],
+    [">>>", { identifier: ">>>", type: OperatorType.Binary, precedence: { precedence: 12, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new BitwiseSignedRightShiftExpression(op1, op2) }],
+    ["<", { identifier: "<", type: OperatorType.Binary, precedence: { precedence: 11, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new LessThanExpression(op1, op2) }],
+    ["<=", { identifier: "<=", type: OperatorType.Binary, precedence: { precedence: 11, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new LessEqualExpression(op1, op2) }],
+    [">", { identifier: ">", type: OperatorType.Binary, precedence: { precedence: 11, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new GreaterThanExpression(op1, op2) }],
+    [">=", { identifier: ">=", type: OperatorType.Binary, precedence: { precedence: 11, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new GreaterEqualExpression(op1, op2) }],
+    ["in", { identifier: "in", type: OperatorType.Binary, precedence: { precedence: 11, associativity: Associativity.Left }, expressionFactory: () => { throw new Error("operator not supported"); } }],
+    ["instanceof", { identifier: "instanceof", type: OperatorType.Binary, precedence: { precedence: 11, associativity: Associativity.Left }, expressionFactory: <T>(op1: IExpression<T>, op2: IExpression<GenericType<T>>) => new InstanceofExpression(op1, op2) }],
+    ["==", { identifier: "==", type: OperatorType.Binary, precedence: { precedence: 10, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new EqualExpression(op1, op2) }],
+    ["!=", { identifier: "!=", type: OperatorType.Binary, precedence: { precedence: 10, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new NotEqualExpression(op1, op2) }],
+    ["===", { identifier: "===", type: OperatorType.Binary, precedence: { precedence: 10, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new StrictEqualExpression(op1, op2) }],
+    ["!==", { identifier: "!==", type: OperatorType.Binary, precedence: { precedence: 10, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new StrictNotEqualExpression(op1, op2) }],
+    ["&", { identifier: "&", type: OperatorType.Binary, precedence: { precedence: 9, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new BitwiseAndExpression(op1, op2) }],
+    ["^", { identifier: "^", type: OperatorType.Binary, precedence: { precedence: 8, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new BitwiseXorExpression(op1, op2) }],
+    ["|", { identifier: "|", type: OperatorType.Binary, precedence: { precedence: 7, associativity: Associativity.Left }, expressionFactory: (op1: IExpression, op2: IExpression) => new BitwiseOrExpression(op1, op2) }],
+    ["&&", {
         identifier: "&&", type: OperatorType.Binary, precedence: { precedence: 6, associativity: Associativity.Left }, expressionFactory: (op1: IExpression<boolean>, op2: IExpression<boolean>) => {
             if (op1 instanceof AndExpression) {
                 op1.operands.push(op2);
@@ -134,8 +140,8 @@ export const operators: IOperator[] = [
             }
             return new AndExpression(op1, op2);
         }
-    },
-    {
+    }],
+    ["||", {
         identifier: "||", type: OperatorType.Binary, precedence: { precedence: 5, associativity: Associativity.Left }, expressionFactory: (op1: IExpression<boolean>, op2: IExpression<boolean>) => {
             if (op1 instanceof OrExpression) {
                 op1.operands.push(op2);
@@ -147,24 +153,22 @@ export const operators: IOperator[] = [
             }
             return new OrExpression(op1, op2);
         }
-    },
-    { identifier: "??", type: OperatorType.Binary, precedence: { precedence: 5, associativity: Associativity.Left }, expressionFactory: (op1: IExpression<boolean>, op2: IExpression<boolean>) => new NullCoalesceExpression(op1, op2) },
-    { identifier: "?", type: OperatorType.Ternary, precedence: { precedence: 4, associativity: Associativity.Right }, expressionFactory: (op1: IExpression<boolean>, op2: IExpression, op3: IExpression) => new TernaryExpression(op1, op2, op3) },
-    { identifier: "=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression, op2: IExpression) => new AssignmentExpression(op1, op2) },
-    { identifier: "+=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression<string | number>, op2: IExpression<string | number>) => new AdditionAssignmentExpression(op1, op2) },
-    { identifier: "-=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression<number>, op2: IExpression<number>) => new SubstractionAssignmentExpression(op1, op2) },
-    { identifier: "**=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression<number>, op2: IExpression<number>) => new ExponentiationAssignmentExpression(op1, op2) },
-    { identifier: "*=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression<number>, op2: IExpression<number>) => new MultiplicationAssignmentExpression(op1, op2) },
-    { identifier: "/=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression<number>, op2: IExpression<number>) => new DivisionAssignmentExpression(op1, op2) },
-    { identifier: "%=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression<number>, op2: IExpression<number>) => new ModulusAssignmentExpression(op1, op2) },
-    { identifier: "<<=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression<number>, op2: IExpression<number>) => new BitwiseZeroLeftShiftAssignmentExpression(op1, op2) },
-    { identifier: ">>=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression<number>, op2: IExpression<number>) => new BitwiseZeroRightShiftAssignmentExpression(op1, op2) },
-    { identifier: ">>>=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression<number>, op2: IExpression<number>) => new BitwiseSignedRightShiftAssignmentExpression(op1, op2) },
-    { identifier: "&=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression<number>, op2: IExpression<number>) => new BitwiseAndAssignmentExpression(op1, op2) },
-    { identifier: "^=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression<number>, op2: IExpression<number>) => new BitwiseXorAssignmentExpression(op1, op2) },
-    { identifier: "|=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression<number>, op2: IExpression<number>) => new BitwiseOrAssignmentExpression(op1, op2) }
-    // <IUnaryOperator>{ identifier: "yield*", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 2, associativity: Associativity.Right } },
-    // <IUnaryOperator>{ identifier: "yield", type: OperatorType.Unary, position: UnaryPosition.Prefix, precedence: { precedence: 2, associativity: Associativity.Right } },
+    }],
+    ["??", { identifier: "??", type: OperatorType.Binary, precedence: { precedence: 5, associativity: Associativity.Left }, expressionFactory: (op1: IExpression<boolean>, op2: IExpression<boolean>) => new NullCoalesceExpression(op1, op2) }],
+    ["?", { identifier: "?", type: OperatorType.Ternary, precedence: { precedence: 4, associativity: Associativity.Right }, expressionFactory: (op1: IExpression<boolean>, op2: IExpression, op3: IExpression) => new TernaryExpression(op1, op2, op3) }],
+    ["=", { identifier: "=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression, op2: IExpression) => new AssignmentExpression(op1, op2) }],
+    ["+=", { identifier: "+=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression<string | number>, op2: IExpression<string | number>) => new AdditionAssignmentExpression(op1, op2) }],
+    ["-=", { identifier: "-=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression<number>, op2: IExpression<number>) => new SubstractionAssignmentExpression(op1, op2) }],
+    ["**=", { identifier: "**=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression<number>, op2: IExpression<number>) => new ExponentiationAssignmentExpression(op1, op2) }],
+    ["*=", { identifier: "*=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression<number>, op2: IExpression<number>) => new MultiplicationAssignmentExpression(op1, op2) }],
+    ["/=", { identifier: "/=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression<number>, op2: IExpression<number>) => new DivisionAssignmentExpression(op1, op2) }],
+    ["%=", { identifier: "%=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression<number>, op2: IExpression<number>) => new ModulusAssignmentExpression(op1, op2) }],
+    ["<<=", { identifier: "<<=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression<number>, op2: IExpression<number>) => new BitwiseZeroLeftShiftAssignmentExpression(op1, op2) }],
+    [">>=", { identifier: ">>=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression<number>, op2: IExpression<number>) => new BitwiseZeroRightShiftAssignmentExpression(op1, op2) }],
+    [">>>=", { identifier: ">>>=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression<number>, op2: IExpression<number>) => new BitwiseSignedRightShiftAssignmentExpression(op1, op2) }],
+    ["&=", { identifier: "&=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression<number>, op2: IExpression<number>) => new BitwiseAndAssignmentExpression(op1, op2) }],
+    ["^=", { identifier: "^=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression<number>, op2: IExpression<number>) => new BitwiseXorAssignmentExpression(op1, op2) }],
+    ["|=", { identifier: "|=", type: OperatorType.Binary, precedence: { precedence: 3, associativity: Associativity.Right }, expressionFactory: (op1: ParameterExpression<number>, op2: IExpression<number>) => new BitwiseOrAssignmentExpression(op1, op2) }],
     // coma used as a breaker
-    // { identifier: ",", type: OperatorType.Binary, precedence: { precedence: 1, associativity: Associativity.Left } }
-];
+    // [ ",", { identifier: ",", type: OperatorType.Binary, precedence: { precedence: 1, associativity: Associativity.Left } }]
+]);

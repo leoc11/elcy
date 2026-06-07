@@ -13,12 +13,10 @@ import { ObjectValueExpression } from "./Expression/ObjectValueExpression";
 import { ParameterExpression } from "./Expression/ParameterExpression";
 import { StringTemplateExpression } from "./Expression/StringTemplateExpression";
 import { ValueExpression } from "./Expression/ValueExpression";
-import { Associativity, IOperator, IOperatorPrecedence, IUnaryOperator, operators, OperatorType, UnaryPosition } from "./IOperator";
+import { Associativity, IOperator, IOperatorPrecedence, IUnaryOperator, prefixOperators, postfixOperators, OperatorType, UnaryPosition } from "./IOperator";
 import { ILexicalToken, LexicalTokenType } from "./LexicalAnalyzer";
 import { Enumerable } from "@elcy/enumerable";
 import { TimeSpan } from "src/Data/TimeSpan";
-import { Temporal } from "src/Data/Temporal";
-import { Decimal } from "src/Data/Decimal";
 
 interface SyntaticParameter {
     index: number;
@@ -86,18 +84,8 @@ const globalObjectMaps = new Map<string, unknown>([
     ["TimeSpan", TimeSpan]
 ]);
 
-if (Temporal) {
-    globalObjectMaps.set("Temporal", Temporal);
-}
-if (Decimal) {
-    globalObjectMaps.set("Decimal", Decimal);
-}
-
-const [prefixOperators, postfixOperators] = Enumerable.from(operators)
-    .groupBy(o => o.type === OperatorType.Unary && (o as IUnaryOperator).position === UnaryPosition.Prefix)
-    .orderBy([o => o.key, "DESC"])
-    .map(d => d.toMap((o) => o.identifier));
 export class SyntacticAnalyzer {
+    public static readonly globalObjectMap = globalObjectMaps;
     public static parse(tokens: ILexicalToken[], paramTypes?: GenericType[], userParameters?: { [key: string]: unknown }) {
         if (!userParameters) {
             userParameters = {};
