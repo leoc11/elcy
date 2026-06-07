@@ -145,8 +145,6 @@ export class Enumerable<T = unknown> implements IEnumerable<T> {
   public min<
     TArgs extends T extends ValueType
       ? [selector?: (item: T) => ValueType]
-      : [selector: (item: T) => ValueType] = T extends ValueType
-      ? [selector?: (item: T) => ValueType]
       : [selector: (item: T) => ValueType],
     TResult extends TArgs extends [undefined?] ? T : ReturnType<TArgs[0]> =
       TArgs extends [undefined?] ? T : ReturnType<TArgs[0]>,
