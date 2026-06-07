@@ -1,7 +1,8 @@
 import { Enumerable } from "@elcy/enumerable";
 import { IObjectType, SetterObj, StringKeyOf } from "../../Common/Type";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
+import { resolveClone } from "../../Helper/Expression";
+import { hashCode, hashCodeAdd } from "../../Helper/Hash";
 import { EntityExpression } from "./EntityExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { IQueryExpression } from "./IQueryExpression";

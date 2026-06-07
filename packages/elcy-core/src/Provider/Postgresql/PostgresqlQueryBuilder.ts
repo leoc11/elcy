@@ -1,4 +1,4 @@
-import { Enumerable, IEnumerable, isNull } from "@elcy/enumerable";
+import { Enumerable, IEnumerable } from "@elcy/enumerable";
 import { IQuery } from "src/Query/IQuery";
 import { GenericType, StringKeyOf, ValueType } from "../../Common/Type";
 import { IQueryLimit } from "../../Data/Interface/IQueryLimit";
@@ -21,6 +21,7 @@ import { ProjectionEntityExpression } from "src/Queryable/QueryExpression/Projec
 import { AndExpression } from "src/ExpressionBuilder/Expression/AndExpression";
 import { UpsertExpression } from "src/Queryable/QueryExpression/UpsertExpression";
 import { Null } from "src/Common/Constant";
+import { isNull } from "src/Helper/Util";
 
 export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
     public queryLimit: IQueryLimit = {

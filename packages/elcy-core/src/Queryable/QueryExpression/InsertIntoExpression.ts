@@ -1,6 +1,7 @@
 import { GenericType, IObjectType } from "../../Common/Type";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { hashCode, resolveClone } from "../../Helper/Util";
+import { resolveClone } from "../../Helper/Expression";
+import { hashCode } from "../../Helper/Hash";
 import { EntityExpression } from "./EntityExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { IQueryExpression } from "./IQueryExpression";

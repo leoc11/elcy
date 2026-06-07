@@ -1,5 +1,6 @@
 import { PrimitiveType } from "src/Common/Type";
-import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
+import { resolveClone } from "../../Helper/Expression";
+import { hashCode, hashCodeAdd } from "../../Helper/Hash";
 import { IBinaryOperatorExpression } from "./IBinaryOperatorExpression";
 import { IExpression } from "./IExpression";
 export class LessThanExpression implements IBinaryOperatorExpression<boolean> {

@@ -1,6 +1,7 @@
 import { GenericType, StringKeyOf, ValueType } from "../../Common/Type";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
+import { resolveClone } from "../../Helper/Expression";
+import { hashCode, hashCodeAdd } from "../../Helper/Hash";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 

@@ -1,5 +1,5 @@
 import { GenericType, PrimitiveType } from "../../Common/Type";
-import { hashCode } from "../../Helper/Util";
+import { hashCode } from "../../Helper/Hash";
 import { IExpression } from "./IExpression";
 
 export class ParameterExpression<T = unknown> implements IExpression<T> {

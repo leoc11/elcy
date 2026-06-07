@@ -1,5 +1,5 @@
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { resolveClone } from "../../Helper/Util";
+import { resolveClone } from "../../Helper/Expression";
 import { JoinRelation } from "./JoinRelation";
 
 export class HavingJoinRelation<TE extends object = object, TChild extends object = object> extends JoinRelation<TE, TChild> {

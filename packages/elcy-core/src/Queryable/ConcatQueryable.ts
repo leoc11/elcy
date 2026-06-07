@@ -3,8 +3,8 @@ import type { IQueryVisitContext } from "../Query/IQueryVisitContext";
 import type { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import type { SelectExpression } from "./QueryExpression/SelectExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
-import { hashCode } from "../Helper/Util";
-import { Queryable } from "./Queryable";
+import { hashCode } from "../Helper/Hash";
+import { Queryable } from "./Queryable.internal";
 
 export class ConcatQueryable<T> extends Queryable<T> {
     public override get parameters() {

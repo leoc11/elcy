@@ -1,5 +1,8 @@
+import { tryCreateInstance } from "src/Helper/Type";
 import { ElementType, GenericType, IObjectType, PrimitiveType, StringKeyOf, ValueType } from "../../Common/Type";
-import { hashCode, isNull, resolveClone, tryCreateInstance } from "../../Helper/Util";
+import { isNull } from "../../Helper/Util";
+import { resolveClone } from "../../Helper/Expression";
+import { hashCode } from "../../Helper/Hash";
 import { getColumnMetadata, getRelationMetadata } from "../../MetaData/MetaDataMapper";
 import { IExpression } from "./IExpression";
 import { IMemberOperatorExpression } from "./IMemberOperatorExpression";

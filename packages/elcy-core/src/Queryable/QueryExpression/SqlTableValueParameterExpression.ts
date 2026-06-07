@@ -1,5 +1,7 @@
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { hashCode, isNull, resolveClone } from "../../Helper/Util";
+import { isNull } from "../../Helper/Util";
+import { resolveClone } from "../../Helper/Expression";
+import { hashCode } from "../../Helper/Hash";
 import { ISqlParameterExpression } from "./ISqlParameterExpression";
 import { ParameterExpression } from "src/ExpressionBuilder/Expression/ParameterExpression";
 import { IEntityExpression } from "./IEntityExpression";

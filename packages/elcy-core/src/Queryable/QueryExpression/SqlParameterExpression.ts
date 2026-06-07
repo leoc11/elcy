@@ -1,6 +1,6 @@
 import { GenericType } from "../../Common/Type";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { resolveClone } from "../../Helper/Util";
+import { resolveClone } from "../../Helper/Expression";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { ISqlParameterExpression } from "./ISqlParameterExpression";
 

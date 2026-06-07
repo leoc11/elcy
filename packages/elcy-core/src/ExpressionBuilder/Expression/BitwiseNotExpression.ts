@@ -1,4 +1,5 @@
-import { hashCode, resolveClone } from "../../Helper/Util";
+import { resolveClone } from "../../Helper/Expression";
+import { hashCode } from "../../Helper/Hash";
 import { BitwiseExpression } from "./BitwiseExpression";
 import { IExpression } from "./IExpression";
 import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";

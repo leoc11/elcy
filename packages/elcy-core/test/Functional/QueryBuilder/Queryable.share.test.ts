@@ -7,7 +7,7 @@ import { IQuery } from "../../../src/Query/IQuery";
 import { getEntityMetadata } from "../../../src/MetaData/MetaDataMapper";
 import { Table1, Table1Many, Table1One, Table1Table2, Table1Table2Many, Table2, Table2Table3, Table3 } from "../../fixture";
 import { ITestContext } from "../../fixture/ITestContext";
-import { Temporal } from "@js-temporal/polyfill";
+import { Temporal } from "../../../src/Data/Temporal";
 import { Querify } from "../../../src/Queryable/Interface/Querify";
 
 const table1ManyMeta = getEntityMetadata(Table1Many);

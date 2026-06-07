@@ -1,6 +1,6 @@
-import { clone } from "../Helper/Util";
+import { clone } from "src/Helper/Util";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
-import { Queryable } from "./Queryable";
+import { Queryable } from "./Queryable.internal";
 import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 
 export class ParameterQueryable<T> extends Queryable<T> {

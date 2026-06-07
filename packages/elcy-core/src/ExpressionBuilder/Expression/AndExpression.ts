@@ -1,7 +1,10 @@
-import { Enumerable, PrimitiveType } from "@elcy/enumerable";
-import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
-import { IExpression } from "./IExpression";
-import { IMultiOperatorExpression } from "./IMultiOperatorExpression";
+import { Enumerable } from "@elcy/enumerable";
+import { resolveClone } from "../../Helper/Expression";
+import { hashCode, hashCodeAdd } from "../../Helper/Hash";
+import type { IExpression } from "./IExpression";
+import type { IMultiOperatorExpression } from "./IMultiOperatorExpression";
+import { PrimitiveType } from "src/Common/Type";
+
 export class AndExpression implements IMultiOperatorExpression<boolean> {
     constructor(...operands: IExpression<boolean>[]) {
         this.operands = operands.flatMap(o => o instanceof AndExpression ? o.operands : o);

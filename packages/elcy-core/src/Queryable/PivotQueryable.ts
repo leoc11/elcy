@@ -4,7 +4,7 @@ import { ObjectValueExpression } from "../ExpressionBuilder/Expression/ObjectVal
 import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
-import { Queryable } from "./Queryable";
+import { Queryable } from "./Queryable.internal";
 import { Querify } from "./Interface/Querify";
 import { IGroupArray } from "src/Common/IGroupArray";
 import { IExpression } from "src/ExpressionBuilder/Expression/IExpression";

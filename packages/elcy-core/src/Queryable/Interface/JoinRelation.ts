@@ -1,12 +1,13 @@
-import { JoinType } from "../../Common/StringType";
+import type { JoinType } from "../../Common/StringType";
 import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression";
 import { EqualExpression } from "../../ExpressionBuilder/Expression/EqualExpression";
-import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
+import type { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
-import { isColumnExp, resolveClone, visitExpression } from "../../Helper/Util";
-import { IColumnExpression } from "../QueryExpression/IColumnExpression";
-import { SelectExpression } from "../QueryExpression/SelectExpression";
-import { ISelectRelation } from "./ISelectRelation";
+import { isColumnExp } from "../../Helper/Util";
+import { visitExpression, resolveClone } from "../../Helper/Expression";
+import type { IColumnExpression } from "../QueryExpression/IColumnExpression";
+import type { SelectExpression } from "../QueryExpression/SelectExpression";
+import type { ISelectRelation } from "./ISelectRelation";
 
 export class JoinRelation<TE extends object = any, TChild extends object = any> implements ISelectRelation<TE, TChild> {
     public get childColumns() {

@@ -1,6 +1,6 @@
 import { Null } from "../../Common/Constant";
 import { GenericType } from "../../Common/Type";
-import { hashCode } from "../../Helper/Util";
+import { hashCode } from "../../Helper/Hash";
 import { IExpression } from "./IExpression";
 
 export class ValueExpression<T = unknown> implements IExpression<T> {

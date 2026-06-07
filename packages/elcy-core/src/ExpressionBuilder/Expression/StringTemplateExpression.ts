@@ -1,5 +1,5 @@
 import { PrimitiveType } from "src/Common/Type";
-import { hashCode } from "../../Helper/Util";
+import { hashCode } from "../../Helper/Hash";
 import { IExpression } from "./IExpression";
 
 export class StringTemplateExpression implements IExpression<string> {

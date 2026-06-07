@@ -1,5 +1,6 @@
 import { GenericType } from "../../Common/Type";
-import { hashCodeAdd, resolveClone } from "../../Helper/Util";
+import { resolveClone } from "../../Helper/Expression";
+import { hashCodeAdd } from "../../Helper/Hash";
 import { IExpression } from "./IExpression";
 
 export class ArrayValueExpression<T = unknown> implements IExpression<T[]> {

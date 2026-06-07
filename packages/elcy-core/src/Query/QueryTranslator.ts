@@ -11,12 +11,12 @@ import { IQueryBuilderContext } from "./IQueryBuilderContext";
 import { IQueryTranslatorItem } from "./IQueryTranslatorItem";
 import { IMultiOperatorExpression } from "src/ExpressionBuilder/Expression/IMultiOperatorExpression";
 import { ICompleteColumnType } from "src/Common/ICompleteColumnType";
-import { registerValueType } from "src/Helper/Util";
+import { registerValueType } from "src/Helper/Type";
 import { IColumnMetaData } from "src/MetaData/Interface/IColumnMetaData";
 
 type ValueTypeConfig<T extends ValueType = any> = {
-    hydrate(value: DbValue): T;
-    persist(value: T): DbValue;
+    hydrate(value: DbValue, meta: IColumnMetaData<any, T>): T;
+    persist(value: T, meta: IColumnMetaData<any, T>): DbValue;
     toQueryValue(value: T): string;
     columnType: ICompleteColumnType;
 };
@@ -25,6 +25,13 @@ type ColumnTypeConfig<T = any> = {
     persist(value: T, meta: IColumnMetaData<any, T>, t: QueryTranslator): DbValue;
     columnType: ICompleteColumnType;
 };
+type ValueTypeOption<T extends ValueType = any> = {
+    columnType?: ICompleteColumnType;
+    hydrate?: (value: DbValue, meta: IColumnMetaData<any, T>) => T;
+    persist?: (value: T, meta: IColumnMetaData<any, T>) => DbValue;
+    queryValue?: (value: T) => string;
+    instance?: T;
+}
 
 export class QueryTranslator {
     constructor(public key: symbol) { }
@@ -127,22 +134,24 @@ export class QueryTranslator {
 
         return config;
     }
-    public registerValueType<T extends ValueType>(type: PrimitiveType<T>, columnType?: ICompleteColumnType, hydrate?: (value: DbValue) => T, persist?: (value: T) => DbValue, queryValue?: (value: T) => string): void;
-    public registerValueType<T extends ValueType>(type: IObjectType<T>, columnType?: ICompleteColumnType, hydrate?: (value: DbValue) => T, persist?: (value: T) => DbValue, queryValue?: (value: T) => string): void;
-    public registerValueType<T extends ValueType>(type: GenericType<T>, columnType?: ICompleteColumnType, hydrate?: (value: DbValue) => T, persist?: (value: T) => DbValue, queryValue?: (value: T) => string) {
+    public registerValueType<T extends ValueType>(type: PrimitiveType<T>, option: ValueTypeOption<T>): void;
+    public registerValueType<T extends ValueType>(type: IObjectType<T>, option: ValueTypeOption<T>): void;
+    public registerValueType<T extends ValueType>(type: GenericType<T>, option: ValueTypeOption<T>) {
         const baseConfig = this.resolveValueType(type);
         let config: ValueTypeConfig<T> = {
-            columnType: columnType ?? baseConfig?.columnType,
-            toQueryValue: queryValue ?? baseConfig?.toQueryValue ?? ((value: T) => `'${value?.toString().replace(/'/ig, "''")}'`),
-            persist: persist ?? baseConfig?.persist ?? ((value: T) => String(value)),
-            hydrate: hydrate ?? baseConfig?.hydrate ?? ((value: DbValue) => value as T)
+            columnType: option.columnType ?? baseConfig?.columnType,
+            persist: option.persist ?? baseConfig?.persist ?? ((value: T) => String(value)),
+            hydrate: option.hydrate ?? baseConfig?.hydrate ?? ((value: DbValue) => value as T),
+            toQueryValue: option.queryValue ?? baseConfig?.toQueryValue ?? ((value: T) => `'${value?.toString().replace(/'/ig, "''")}'`),
         };
 
         if (!config.columnType || !config.persist || !config.toQueryValue) {
             throw "missing parameter";
         }
 
-        registerValueType(type);
+        if ("instance" in option) {
+            registerValueType(type, option.instance);
+        }
         this._valueTypeConfig.set(type, config);
     }
 
@@ -164,8 +173,8 @@ export class QueryTranslator {
         const baseConfig = this.resolveColumnType(columnMeta);
         let config: ColumnTypeConfig<T> = {
             columnType: columnType ?? baseConfig?.columnType,
-            hydrate: hydrate ?? baseConfig?.hydrate ?? ((value, meta, t) => t.resolveValueType(meta.type).hydrate(value)),
-            persist: persist ?? baseConfig?.persist ?? ((value, meta, t) => t.resolveValueType(meta.type).persist(value))
+            hydrate: hydrate ?? baseConfig?.hydrate ?? ((value, meta, t) => t.resolveValueType(meta.type)?.hydrate(value, meta)),
+            persist: persist ?? baseConfig?.persist ?? ((value, meta, t) => t.resolveValueType(meta.type)?.persist(value, meta))
         };
 
         if (!config.columnType || !config.hydrate || !config.persist) {

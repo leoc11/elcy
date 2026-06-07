@@ -1,4 +1,4 @@
-import type { Queryable } from "../Queryable";
+import type { Queryable } from "../Queryable.internal";
 import type { Enumerable, GroupedEnumerable, IEnumerable, IOrderDefinition } from "@elcy/enumerable";
 import type { IGroupArray } from "src/Common/IGroupArray";
 import type { ValueType } from "src/Common/Type";

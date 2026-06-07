@@ -8,7 +8,7 @@ import { IQuery } from "../../../src/Query/IQuery";
 import { getEntityMetadata, getRelationMetadata } from "../../../src/MetaData/MetaDataMapper";
 import { CycleDigon1, CycleDigon2, CyclePolygon1, CyclePolygon2, CyclePolygon4, CyclePolygon5, CycleSelf, CycleSelfAuto, CycleSelfAutoNull, CycleTriangle1, CycleTriangle2, CycleTriangle3, Table1, Table1Many, Table1One, Table2, Unblock } from "../../fixture/model";
 import { ITestContext } from "../../fixture";
-import { Temporal } from "@js-temporal/polyfill";
+import { Temporal } from "../../../src/Data/Temporal";
 import { matchSnapShot } from "../../fixture/Utilities";
 import { Enumerable } from "@elcy/enumerable";
 import { EntityState } from "../../../src/Data/EntityState";

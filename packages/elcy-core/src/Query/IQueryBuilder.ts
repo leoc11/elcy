@@ -12,7 +12,6 @@ import { ISqlParameterValueMap } from "./IQueryParameter";
 import { NamingStrategy } from "./NamingStrategy";
 
 export interface IQueryBuilder {
-    lastInsertIdQuery: string;
     namingStrategy: NamingStrategy;
     queryLimit: IQueryLimit;
     columnTypeString(columnType: ICompleteColumnType): string;

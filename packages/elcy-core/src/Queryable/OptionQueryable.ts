@@ -1,7 +1,7 @@
-import { clone } from "../Helper/Util";
+import { clone } from "src/Helper/Util";
 import { IQueryOption } from "../Query/IQueryOption";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
-import { Queryable } from "./Queryable";
+import { Queryable } from "./Queryable.internal";
 import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 
 export class OptionQueryable<T> extends Queryable<T> {

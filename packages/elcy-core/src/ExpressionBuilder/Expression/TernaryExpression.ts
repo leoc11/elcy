@@ -1,7 +1,8 @@
 import type { GenericType } from "../../Common/Type";
 import type { IExpression } from "./IExpression";
 import { Null } from "../../Common/Constant";
-import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
+import { resolveClone } from "../../Helper/Expression";
+import { hashCode, hashCodeAdd } from "../../Helper/Hash";
 
 export class TernaryExpression<T = unknown> implements IExpression<T> {
     public get type(): GenericType<T> {

@@ -6,7 +6,11 @@ import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression"
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
-import { hashCode, hashCodeAdd, isColumnExp, mapReplaceExp, resolveClone, visitExpression } from "../../Helper/Util";
+import { isColumnExp } from "../../Helper/Util";
+import { visitExpression } from "src/Helper/Expression";
+import { mapReplaceExp } from "src/Helper/Expression";
+import { resolveClone } from "src/Helper/Expression";
+import { hashCode, hashCodeAdd } from "../../Helper/Hash";
 import { EmbeddedRelationMetaData } from "../../MetaData/EmbeddedColumnMetaData";
 import { IBaseRelationMetaData } from "../../MetaData/Interface/IBaseRelationMetaData";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";

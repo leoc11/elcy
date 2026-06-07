@@ -4,7 +4,8 @@ import type { IExpression } from "../../ExpressionBuilder/Expression/IExpression
 import type { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import type { IColumnExpression } from "./IColumnExpression";
 import type { IEntityExpression } from "./IEntityExpression";
-import { hashCode, resolveClone } from "../../Helper/Util";
+import { resolveClone } from "../../Helper/Expression";
+import { hashCode } from "../../Helper/Hash";
 
 export class ColumnExpression<TE extends object = any, T = ValueType> implements IColumnExpression<TE, T> {
     public get dataPropertyName() {

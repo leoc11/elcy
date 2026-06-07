@@ -5,7 +5,7 @@ import { ColumnMetaData } from "./ColumnMetaData";
 import { IEntityMetaData } from "./Interface/IEntityMetaData";
 import { GenericType, TimeValueType } from "src/Common/Type";
 
-export class TimeColumnMetaData<TE extends object, T extends TimeValueType> extends ColumnMetaData<TE, T> {
+export class TimeColumnMetaData<TE extends object = object, T extends TimeValueType = TimeValueType> extends ColumnMetaData<TE, T> {
     constructor(entity?: IEntityMetaData<TE>, type: GenericType<T> = TimeSpan as GenericType<TimeSpan> as GenericType<Extract<TimeSpan, T>>) {
         super(entity, type);
     }

@@ -1,5 +1,3 @@
-import { Temporal } from "@js-temporal/polyfill";
-import Decimal from "decimal.js";
 import { TimeSpan } from "../../../src/Data/TimeSpan";
 import { Uuid } from "../../../src/Data/Uuid";
 import { AfterDelete, AfterSave, BeforeDelete, BeforeSave, BigIntColumn, BinaryColumn, BooleanColumn, ComputedColumn, CreatedDateColumn, DateColumn, DateTimeColumn, DecimalColumn, DeletedColumn, Entity, IdentifierColumn, IntegerColumn, ModifiedDateColumn, NullableColumn, PrimaryKey, RealColumn, ReverseRelation, StringColumn, TimeColumn } from "../../../src/Decorator";
@@ -7,8 +5,10 @@ import { Table1Table2 } from "./Table1Table2";
 import { Table1One } from "./Table1One";
 import { Table1Table3 } from "./Table1Table3";
 import { Table1Many } from "./Table1Many";
-import { ISaveEventParam } from "packages/elcy-core/src/MetaData/Interface/ISaveEventParam";
-import { IDeleteEventParam } from "packages/elcy-core/src/MetaData/Interface/IDeleteEventParam";
+import { ISaveEventParam } from "../../../src/MetaData/Interface/ISaveEventParam";
+import { IDeleteEventParam } from "../../../src/MetaData/Interface/IDeleteEventParam";
+import { Temporal } from "../../../src/Data/Temporal";
+import { Decimal } from "../../../src/Data/Decimal";
 
 // TODO: Enum
 // missing one side relation (one, many, reverse_one, revers_many)

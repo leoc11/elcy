@@ -1,8 +1,8 @@
 import { IObjectType } from "../Common/Type";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
-import { hashCode, hashCodeAdd } from "../Helper/Util";
+import { hashCode, hashCodeAdd } from "../Helper/Hash";
 import { JoinQueryable } from "./JoinQueryable";
-import { Queryable } from "./Queryable";
+import { Queryable } from "./Queryable.internal";
 
 export class CrossJoinQueryable<T = unknown, T2 = unknown, R = unknown> extends JoinQueryable<T, T2, R> {
     constructor(parent: Queryable<T>, parent2: Queryable<T2>, resultSelector: FunctionExpression<R, [T, T2 | null]> | ((item1: T, item2: T2 | null) => R), type: IObjectType<R> | ObjectConstructor = Object) {

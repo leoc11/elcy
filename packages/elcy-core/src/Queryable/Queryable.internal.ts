@@ -2,7 +2,7 @@ import { Enumerable, IEnumerable } from "@elcy/enumerable";
 import { IQueryCache } from "../Cache/IQueryCache";
 import { QueryType } from "../Common/Enum";
 import { DeleteMode } from "../Common/StringType";
-import { FlatObjectLike, GenericType, IObjectType, MethodKey, PrimitiveType, SetterObj, StringKeyOf, ValueType } from "../Common/Type";
+import { FlatObjectLike, GenericType, IObjectType, MethodKey, NumberValueType, PrimitiveType, SetterObj, StringKeyOf, ValueType } from "../Common/Type";
 import { DbContext } from "../Data/DbContext";
 import { QueryBuilderError, QueryBuilderErrorCode } from "../Error/QueryBuilderError";
 import { AndExpression } from "../ExpressionBuilder/Expression/AndExpression";
@@ -16,7 +16,8 @@ import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterEx
 import { ValueExpression } from "../ExpressionBuilder/Expression/ValueExpression";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { ExpressionExecutor } from "../ExpressionBuilder/ExpressionExecutor";
-import { hashCode, hashCodeAdd, isNotNull, isNull, isValue } from "../Helper/Util";
+import { isNotNull, isNull, isValue } from "../Helper/Util";
+import { hashCode, hashCodeAdd } from "../Helper/Hash";
 import { Diagnostic } from "../Logger/Diagnostic";
 import { DeferredQuery } from "../Query/DeferredQuery";
 import { IQueryOption } from "../Query/IQueryOption";
@@ -31,7 +32,6 @@ import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { UpdateExpression } from "./QueryExpression/UpdateExpression";
 import { getEntityMetadata } from "src/MetaData/MetaDataMapper";
 import { Querify, Unquerify } from "./Interface/Querify";
-import { Decimal } from "src/Data/Decimal";
 import { AdditionExpression } from "src/ExpressionBuilder/Expression/AdditionExpression";
 import { StrictEqualExpression } from "src/ExpressionBuilder/Expression/StrictEqualExpression";
 import { IColumnExpression } from "./QueryExpression/IColumnExpression";
@@ -734,7 +734,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         this.dbContext.deferredQueries.push(query);
         return query;
     }
-    public deferredSum<TResult extends number | bigint | Decimal>(...args: T extends number | bigint | Decimal ? [selector?: (item: Querify<T>) => TResult] : [selector: (item: Querify<T>) => TResult]): DeferredQuery<TResult> {
+    public deferredSum<TResult extends NumberValueType>(...args: T extends NumberValueType ? [selector?: (item: Querify<T>) => TResult] : [selector: (item: Querify<T>) => TResult]): DeferredQuery<TResult> {
         if (!isNull(args[0])) {
             return (this.map(args[0]) as Queryable<ValueType>).deferredSum<TResult>();
         }
@@ -791,7 +791,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         this.dbContext.deferredQueries.push(query);
         return query;
     }
-    public deferredAvg<TResult extends number | bigint | Decimal>(...args: T extends number | bigint | Decimal ? [selector?: (item: Querify<T>) => TResult] : [selector: (item: Querify<T>) => TResult]): DeferredQuery<TResult | null> {
+    public deferredAvg<TResult extends NumberValueType>(...args: T extends NumberValueType ? [selector?: (item: Querify<T>) => TResult] : [selector: (item: Querify<T>) => TResult]): DeferredQuery<TResult | null> {
         if (!isNull(args[0])) {
             return (this.map(args[0]) as Queryable<ValueType>).deferredAvg<TResult>();
         }
@@ -1150,11 +1150,11 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         const query = this.deferredMin<TResult>(...args);
         return await query.execute();
     }
-    public async sum<TResult extends number | bigint | Decimal>(...args: T extends number | bigint | Decimal ? [selector?: (item: Querify<T>) => TResult] : [selector: (item: Querify<T>) => TResult]) {
+    public async sum<TResult extends NumberValueType>(...args: T extends NumberValueType ? [selector?: (item: Querify<T>) => TResult] : [selector: (item: Querify<T>) => TResult]) {
         const query = this.deferredSum<TResult>(...args);
         return await query.execute();
     }
-    public async avg<TResult extends number | bigint | Decimal>(...args: T extends number | bigint | Decimal ? [selector?: (item: Querify<T>) => TResult] : [selector: (item: Querify<T>) => TResult]) {
+    public async avg<TResult extends NumberValueType>(...args: T extends NumberValueType ? [selector?: (item: Querify<T>) => TResult] : [selector: (item: Querify<T>) => TResult]) {
         const query = this.deferredAvg<TResult>(...args);
         return await query.execute();
     }

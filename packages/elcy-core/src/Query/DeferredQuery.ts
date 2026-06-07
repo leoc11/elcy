@@ -1,6 +1,6 @@
 import { DbContext } from "../Data/DbContext";
 import { Enumerable } from "@elcy/enumerable";
-import { hashCode } from "../Helper/Util";
+import { hashCode } from "../Helper/Hash";
 import { Diagnostic } from "../Logger/Diagnostic";
 import { IQueryExpression } from "../Queryable/QueryExpression/IQueryExpression";
 import { IQuery } from "./IQuery";

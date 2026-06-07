@@ -1,11 +1,10 @@
 import { GenericType, PrimitiveType } from "../../Common/Type";
-import { resolveClone } from "../../Helper/Util";
+import { resolveClone } from "../../Helper/Expression";
 import { IExpression } from "./IExpression";
-import { ObjectValueExpression } from "./ObjectValueExpression";
 import { ParameterExpression } from "./ParameterExpression";
 
 type ParameterTupleExp<T extends readonly unknown[]> = {
-  [K in keyof T]: ParameterExpression<T[K]>;
+    [K in keyof T]: ParameterExpression<T[K]>;
 };
 const FunctionTypeConstructor: () => ((...param: any[]) => any) = () => (() => { });
 export class FunctionExpression<T = unknown, TArgs extends readonly unknown[] = []> implements IExpression<(...param: TArgs) => T> {
@@ -66,9 +65,10 @@ export class FunctionExpression<T = unknown, TArgs extends readonly unknown[] = 
             params.push((param as ParameterExpression<T[keyof T]>).toString());
         }
 
-        if (this.body instanceof ObjectValueExpression) {
-            return "(" + params.join(", ") + ") => (" + this.body.toString() + ")";
+        let body = this.body.toString();
+        if (body.startsWith("{")) {
+            body = `(${body})`;
         }
-        return "(" + params.join(", ") + ") => " + this.body.toString();
+        return `(${params.join(", ")}) => ${body}`;
     }
 }

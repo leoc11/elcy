@@ -3,10 +3,10 @@ import { GenericType, PrimitiveType } from "../Common/Type";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
-import { hashCode, hashCodeAdd } from "../Helper/Util";
+import { hashCode, hashCodeAdd } from "../Helper/Hash";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
 import { IQueryVisitContext } from "../Query/IQueryVisitContext";
-import { Queryable } from "./Queryable";
+import { Queryable } from "./Queryable.internal";
 import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 

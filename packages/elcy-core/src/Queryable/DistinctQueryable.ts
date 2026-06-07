@@ -1,9 +1,9 @@
 import { MethodKey } from "src/Common/Type";
 import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCallExpression";
-import { hashCode } from "../Helper/Util";
+import { hashCode } from "../Helper/Hash";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
 import { IQueryVisitContext } from "../Query/IQueryVisitContext";
-import { Queryable } from "./Queryable";
+import { Queryable } from "./Queryable.internal";
 import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 

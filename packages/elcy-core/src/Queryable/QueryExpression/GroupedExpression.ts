@@ -4,7 +4,10 @@ import type { IExpression } from "../../ExpressionBuilder/Expression/IExpression
 import type { IBaseRelationMetaData } from "../../MetaData/Interface/IBaseRelationMetaData";
 import type { IColumnExpression } from "./IColumnExpression";
 import { ObjectValueExpression } from "../../ExpressionBuilder/Expression/ObjectValueExpression";
-import { hashCode, isColumnExp, isEntityExp, mapReplaceExp, resolveClone } from "../../Helper/Util";
+import { isColumnExp, isEntityExp } from "../../Helper/Util";
+import { mapReplaceExp } from "src/Helper/Expression";
+import { resolveClone } from "src/Helper/Expression";
+import { hashCode } from "../../Helper/Hash";
 import { JoinRelation } from "../Interface/JoinRelation";
 import { GroupByExpression } from "./GroupByExpression";
 import { SelectExpression } from "./SelectExpression";

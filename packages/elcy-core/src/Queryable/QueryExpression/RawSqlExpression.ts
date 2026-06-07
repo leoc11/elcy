@@ -1,6 +1,6 @@
 import { GenericType, PrimitiveType } from "../../Common/Type";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { hashCode } from "../../Helper/Util";
+import { hashCode } from "../../Helper/Hash";
 
 export class RawSqlExpression<T = unknown> implements IExpression<T> {
     constructor(type: PrimitiveType<T>, sqlStatement: string);

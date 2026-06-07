@@ -1,5 +1,6 @@
 import { PrimitiveType } from "@elcy/enumerable";
-import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
+import { resolveClone } from "../../Helper/Expression";
+import { hashCode, hashCodeAdd } from "../../Helper/Hash";
 import { IExpression } from "./IExpression";
 import { IUnaryOperatorExpression } from "./IUnaryOperatorExpression";
 import { NotEqualExpression } from "./NotEqualExpression";

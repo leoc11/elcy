@@ -1,6 +1,6 @@
-import { hashCode } from "../Helper/Util";
+import { hashCode } from "../Helper/Hash";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
-import { Queryable } from "./Queryable";
+import { Queryable } from "./Queryable.internal";
 import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 import { RawEntityExpression } from "./QueryExpression/RawEntityExpression";

@@ -11,7 +11,8 @@ import { IExpression } from "../../../src/ExpressionBuilder/Expression/IExpressi
 import { StrictEqualExpression } from "../../../src/ExpressionBuilder/Expression/StrictEqualExpression";
 import { ValueExpression } from "../../../src/ExpressionBuilder/Expression/ValueExpression";
 import { ExpressionExecutor } from "../../../src/ExpressionBuilder/ExpressionExecutor";
-import { isColumnExp, visitExpression } from "../../../src/Helper/Util";
+import { isColumnExp } from "../../../src/Helper/Util";
+import { visitExpression } from "../../../src/Helper/Expression";
 import { IntegerColumnMetaData } from "../../../src/MetaData/IntegerColumnMetaData";
 import { StringColumnMetaData } from "../../../src/MetaData/StringColumnMetaData";
 import { BatchedQuery } from "../../../src/Query/BatchedQuery";

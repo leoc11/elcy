@@ -2,7 +2,7 @@ import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpr
 import { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAccessExpression";
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
-import { replaceExpression } from "../Helper/Util";
+import { replaceExpression } from "src/Helper/Expression";
 import { IQueryBuilder } from "../Query/IQueryBuilder";
 import { ColumnExpression } from "../Queryable/QueryExpression/ColumnExpression";
 import { ComputedColumnExpression } from "../Queryable/QueryExpression/ComputedColumnExpression";

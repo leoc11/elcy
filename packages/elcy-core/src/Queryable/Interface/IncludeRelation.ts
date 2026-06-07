@@ -3,7 +3,9 @@ import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression"
 import { EqualExpression } from "../../ExpressionBuilder/Expression/EqualExpression";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
-import { isColumnExp, resolveClone, visitExpression } from "../../Helper/Util";
+import { isColumnExp } from "../../Helper/Util";
+import { visitExpression } from "src/Helper/Expression";
+import { resolveClone } from "src/Helper/Expression";
 import { IColumnExpression } from "../QueryExpression/IColumnExpression";
 import { SelectExpression } from "../QueryExpression/SelectExpression";
 import { ISelectRelation } from "./ISelectRelation";

@@ -1,4 +1,4 @@
-import { Enumerable, isNull } from "@elcy/enumerable";
+import { Enumerable } from "@elcy/enumerable";
 import { QueryType } from "../../Common/Enum";
 import { StringKeyOf, ValueType } from "../../Common/Type";
 import { Version } from "../../Common/Version";
@@ -19,6 +19,7 @@ import { UpdateExpression } from "src/Queryable/QueryExpression/UpdateExpression
 import { AndExpression } from "src/ExpressionBuilder/Expression/AndExpression";
 import { StrictEqualExpression } from "src/ExpressionBuilder/Expression/StrictEqualExpression";
 import { ProjectionEntityExpression } from "src/Queryable/QueryExpression/ProjectionEntityExpression";
+import { isNull } from "src/Helper/Util";
 
 export class SqliteQueryBuilder extends RelationalQueryBuilder {
     public queryLimit: IQueryLimit = {

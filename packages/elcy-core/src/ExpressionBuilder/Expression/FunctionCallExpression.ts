@@ -1,5 +1,6 @@
 import { GenericType, IObjectType } from "../../Common/Type";
-import { hashCode, hashCodeAdd, resolveClone } from "../../Helper/Util";
+import { resolveClone } from "../../Helper/Expression";
+import { hashCode, hashCodeAdd } from "../../Helper/Hash";
 import { IExpression } from "./IExpression";
 import { ValueExpression } from "./ValueExpression";
 export class FunctionCallExpression<T = unknown> implements IExpression<T> {

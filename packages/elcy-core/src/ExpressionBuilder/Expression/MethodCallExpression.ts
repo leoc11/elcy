@@ -1,9 +1,12 @@
 import type { ElementType, GenericType, MethodKey, MethodReturnType, PrimitiveType } from "../../Common/Type";
 import { Enumerable } from "@elcy/enumerable";
-import { hashCode, hashCodeAdd, isNull, resolveClone, tryCreateInstance } from "../../Helper/Util";
-import { Queryable } from "../../Queryable/Queryable";
+import { isNull } from "../../Helper/Util";
+import { resolveClone } from "../../Helper/Expression";
+import { hashCode, hashCodeAdd } from "../../Helper/Hash";
+import { Queryable } from "../../Queryable/Queryable.internal"; // TODO: COLDSTART
 import { IExpression } from "./IExpression";
 import { IMemberOperatorExpression } from "./IMemberOperatorExpression";
+import { tryCreateInstance } from "src/Helper/Type";
 
 export class MethodCallExpression<TE = unknown, K extends MethodKey<TE> = MethodKey<TE>, T = MethodReturnType<TE, K>> implements IMemberOperatorExpression<TE, T> {
     public get itemType() {

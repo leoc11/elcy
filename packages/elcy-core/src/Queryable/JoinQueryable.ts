@@ -6,7 +6,7 @@ import { MethodCallExpression } from "../ExpressionBuilder/Expression/MethodCall
 import { ExpressionBuilder } from "../ExpressionBuilder/ExpressionBuilder";
 import { IQueryVisitor } from "../Query/IQueryVisitor";
 import { IQueryVisitContext } from "../Query/IQueryVisitContext";
-import { Queryable } from "./Queryable";
+import { Queryable } from "./Queryable.internal";
 import { IQueryExpression } from "./QueryExpression/IQueryExpression";
 import { SelectExpression } from "./QueryExpression/SelectExpression";
 

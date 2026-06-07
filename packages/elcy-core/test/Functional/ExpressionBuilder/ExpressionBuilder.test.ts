@@ -100,7 +100,7 @@ describe("EXPRESSION BUILDER", () => {
         const paramObj = { a: 10 };
         for (const [fn, fnString] of bitFns) {
             const exp = ExpressionBuilder.parse(fn, [], paramObj);
-            expect(fnString).toBe(exp.toString());
+            expect(exp.toString()).toBe(fnString);
 
             const executor = new ExpressionExecutor(paramObj);
             const paramName = exp.params[0].name as keyof typeof paramObj;

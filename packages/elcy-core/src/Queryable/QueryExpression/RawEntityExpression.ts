@@ -1,6 +1,7 @@
 import { EntityMetaData } from "src/MetaData/EntityMetaData";
 import type { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
-import { hashCode, resolveClone } from "../../Helper/Util";
+import { resolveClone } from "../../Helper/Expression";
+import { hashCode } from "../../Helper/Hash";
 import { EntityExpression } from "./EntityExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
 

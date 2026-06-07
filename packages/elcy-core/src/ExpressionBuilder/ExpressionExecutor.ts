@@ -72,7 +72,6 @@ export class ExpressionExecutor {
         return new ExpressionExecutor().execute(expression);
     }
     public scopeParameters = new TransformerParameter();
-    // TODO: SQLParameterExpression
     public execute<T = unknown>(expression: IExpression<T>): T {
         switch (true) {
             case expression instanceof AdditionAssignmentExpression:
@@ -245,7 +244,7 @@ export class ExpressionExecutor {
         this.scopeParameters.add(expression.leftOperand.name, value);
         return value;
     }
-    protected executeBitwiseAnd(expression: BitwiseAndExpression) {
+    protected executeBitwiseAnd<T extends number | bigint>(expression: BitwiseAndExpression<T>) {
         return this.execute(expression.leftOperand) & this.execute(expression.rightOperand);
     }
     protected executeBitwiseAndAssignment(expression: BitwiseAndAssignmentExpression) {
@@ -254,10 +253,10 @@ export class ExpressionExecutor {
         this.scopeParameters.add(expression.leftOperand.name, value);
         return value;
     }
-    protected executeBitwiseNot(expression: BitwiseNotExpression) {
+    protected executeBitwiseNot<T extends number | bigint>(expression: BitwiseNotExpression<T>) {
         return ~this.execute(expression.operand);
     }
-    protected executeBitwiseOr(expression: BitwiseAndExpression) {
+    protected executeBitwiseOr<T extends number | bigint>(expression: BitwiseAndExpression<T>) {
         return this.execute(expression.leftOperand) | this.execute(expression.rightOperand);
     }
     protected executeBitwiseOrAssignment(expression: BitwiseOrAssignmentExpression) {
@@ -266,7 +265,7 @@ export class ExpressionExecutor {
         this.scopeParameters.add(expression.leftOperand.name, value);
         return value;
     }
-    protected executeBitwiseSignedRightShift(expression: BitwiseSignedRightShiftExpression) {
+    protected executeBitwiseSignedRightShift<T extends number | bigint>(expression: BitwiseSignedRightShiftExpression<T>) {
         return this.execute(expression.leftOperand) >>> this.execute(expression.rightOperand);
     }
     protected executeBitwiseSignedRightShiftAssignment(expression: BitwiseSignedRightShiftAssignmentExpression) {
@@ -275,7 +274,7 @@ export class ExpressionExecutor {
         this.scopeParameters.add(expression.leftOperand.name, value);
         return value;
     }
-    protected executeBitwiseXor(expression: BitwiseXorExpression) {
+    protected executeBitwiseXor<T extends number | bigint>(expression: BitwiseXorExpression<T>) {
         return this.execute(expression.leftOperand) ^ this.execute(expression.rightOperand);
     }
     protected executeBitwiseXorAssignment(expression: BitwiseXorAssignmentExpression) {
@@ -284,7 +283,7 @@ export class ExpressionExecutor {
         this.scopeParameters.add(expression.leftOperand.name, value);
         return value;
     }
-    protected executeBitwiseZeroLeftShift(expression: BitwiseZeroLeftShiftExpression) {
+    protected executeBitwiseZeroLeftShift<T extends number | bigint>(expression: BitwiseZeroLeftShiftExpression<T>) {
         return this.execute(expression.leftOperand) << this.execute(expression.rightOperand);
     }
     protected executeBitwiseZeroLeftShiftAssignment(expression: BitwiseZeroLeftShiftAssignmentExpression) {
@@ -293,7 +292,7 @@ export class ExpressionExecutor {
         this.scopeParameters.add(expression.leftOperand.name, value);
         return value;
     }
-    protected executeBitwiseZeroRightShift(expression: BitwiseZeroRightShiftExpression) {
+    protected executeBitwiseZeroRightShift<T extends number | bigint>(expression: BitwiseZeroRightShiftExpression<T>) {
         return this.execute(expression.leftOperand) >> this.execute(expression.rightOperand);
     }
     protected executeBitwiseZeroRightShiftAssignment(expression: BitwiseZeroRightShiftAssignmentExpression) {
