@@ -1,4 +1,3 @@
-import { Decimal } from "src/Data/Decimal";
 import { Uuid } from "../../Data/Uuid";
 import { AdditionExpression } from "../../ExpressionBuilder/Expression/AdditionExpression";
 import { DbFunction } from "../../Query/DbFunction";
@@ -14,15 +13,14 @@ import { StrictNotEqualExpression } from "src/ExpressionBuilder/Expression/Stric
 import { IQueryBuilder } from "src/Query/IQueryBuilder";
 import { IQueryBuilderContext } from "src/Query/IQueryBuilderContext";
 import { isNonNullExp } from "src/Helper/Util";
-import { Temporal } from "src/Data/Temporal";
 import { ObjectValueExpression } from "src/ExpressionBuilder/Expression/ObjectValueExpression";
 
 export const mssqlQueryTranslator = new QueryTranslator(Symbol("mssql"));
 mssqlQueryTranslator.registerFallbacks(relationalQueryTranslator);
 
-mssqlQueryTranslator.registerValueType(Boolean, { columnType: "bit", group: "Boolean" }, undefined, undefined, value => value ? "1" : "0");
-mssqlQueryTranslator.registerValueType(Uuid, { columnType: "uniqueidentifier", group: "Identifier" });
-mssqlQueryTranslator.registerValueType(Date, { columnType: "datetime2", group: "Identifier" });
+mssqlQueryTranslator.registerValueType(Boolean, { columnType: { columnType: "bit", group: "Boolean" }, queryValue: value => value ? "1" : "0" });
+mssqlQueryTranslator.registerValueType(Uuid, { columnType: { columnType: "uniqueidentifier", group: "Identifier" } });
+mssqlQueryTranslator.registerValueType(Date, { columnType: { columnType: "datetime2", group: "Identifier" } });
 
 mssqlQueryTranslator.registerMethod(Uuid, "new", () => "newid()", () => true);
 
@@ -150,133 +148,3 @@ mssqlQueryTranslator.registerMethod(Date.prototype, "getDate", (qb, exp, param) 
  */
 mssqlQueryTranslator.registerMethod(DbFunction, "timestamp", (qb, exp, param) => "getdate()", () => true);
 mssqlQueryTranslator.registerMethod(DbFunction, "utcTimestamp", () => "getutcdate()", () => true);
-
-
-if (Decimal) {
-    mssqlQueryTranslator.registerMethod(Decimal.prototype, "decimalPlaces", (qb, exp, param) => {
-        const obQ = qb.toString(exp.objectOperand, param);
-        return `CASE WHEN ${obQ}=TRUNC(${obQ}) THEN 0 ELSE LEN(SUBSTRING(CAST(${obQ} as VARCHAR) FROM POSITION('.' IN CAST(${obQ} AS VARCHAR)) + 1)) END`;
-    });
-    mssqlQueryTranslator.registerMethod(Decimal.prototype, "dp", (qb, exp, param) => {
-        const obQ = qb.toString(exp.objectOperand, param);
-        return `CASE WHEN ${obQ}=TRUNC(${obQ}) THEN 0 ELSE LEN(SUBSTRING(CAST(${obQ} as VARCHAR) FROM POSITION('.' IN CAST(${obQ} AS VARCHAR)) + 1)) END`;
-    });
-}
-
-if (Temporal) {
-    mssqlQueryTranslator.registerValueType(Temporal.Instant, { columnType: "datetime2", group: "DateTime" });
-
-    mssqlQueryTranslator.registerMethod(Temporal.Instant.prototype, "add", (qb, exp, context) => {
-        let dateExp = qb.toString(exp.objectOperand, context);
-        const paramExp = exp.params[0] as ObjectValueExpression<Omit<Temporal.DurationLike, 'years' | 'months' | 'weeks' | 'days'>>;
-        if (paramExp.object.milliseconds) {
-            dateExp = `DATEADD(MILLISECOND, ${qb.toString(paramExp.object.milliseconds, context)}, ${dateExp})`;
-        }
-        if (paramExp.object.seconds) {
-            dateExp = `DATEADD(SECOND, ${qb.toString(paramExp.object.seconds, context)}, ${dateExp})`;
-        }
-        if (paramExp.object.minutes) {
-            dateExp = `DATEADD(MINUTE, ${qb.toString(paramExp.object.minutes, context)}, ${dateExp})`;
-        }
-        if (paramExp.object.hours) {
-            dateExp = `DATEADD(HOUR, ${qb.toString(paramExp.object.hours, context)}, ${dateExp})`;
-        }
-        return dateExp;
-    });
-
-    mssqlQueryTranslator.registerMember(Temporal.PlainDate.prototype, "year", (qb, exp, param) => `YEAR(${qb.toString(exp.objectOperand, param)})`);
-    mssqlQueryTranslator.registerMember(Temporal.PlainDate.prototype, "month", (qb, exp, param) => `MONTH(${qb.toString(exp.objectOperand, param)})`);
-    mssqlQueryTranslator.registerMember(Temporal.PlainDate.prototype, "day", (qb, exp, param) => `DAY(${qb.toString(exp.objectOperand, param)})`);
-
-    mssqlQueryTranslator.registerMethod(Temporal.PlainDate.prototype, "with", (qb, exp, param) => {
-        if (exp.params.length !== 1) {
-            throw Error("Temporal.PlainDate.with: only support info");
-        }
-        const paramInfoExp = exp.params[0] as ObjectValueExpression<Temporal.PlainDateLike>;
-        if (paramInfoExp.object.calendar) {
-            throw Error("Temporal.PlainDate.with: calendar not supported");
-        }
-        if (paramInfoExp.object.era) {
-            throw Error("Temporal.PlainDate.with: era not supported");
-        }
-        if (paramInfoExp.object.eraYear) {
-            throw Error("Temporal.PlainDate.with: eraYear not supported");
-        }
-        if (paramInfoExp.object.monthCode) {
-            throw Error("Temporal.PlainDate.with: monthCode not supported");
-        }
-        const objectQ = qb.toString(exp.objectOperand, param);
-        let yearQ = `YEAR(${objectQ})`;
-        if (paramInfoExp.object.year) {
-            yearQ = `COALESCE(${qb.toString(paramInfoExp.object.year, param)}, ${yearQ})`;
-        }
-        let monthQ = `MONTH(${objectQ})`;
-        if (paramInfoExp.object.month) {
-            monthQ = `COALESCE(${qb.toString(paramInfoExp.object.month, param)}, ${monthQ})`;
-        }
-        let dayQ = `DAY(${objectQ})`;
-        if (paramInfoExp.object.day) {
-            dayQ = `COALESCE(${qb.toString(paramInfoExp.object.day, param)}, ${dayQ})`;
-        }
-
-        return `DATEFROMPARTS(CAST(${yearQ} as int), CAST(${monthQ} as int), CAST(${dayQ} as int))`;
-    });
-    mssqlQueryTranslator.registerMethod(Temporal.PlainDate.prototype, "add", (qb, exp, context) => {
-        let dateExp = qb.toString(exp.objectOperand, context);
-        const paramExp = exp.params[0] as ObjectValueExpression<Temporal.DurationLike>;
-        if (paramExp.object.milliseconds) {
-            dateExp = `DATEADD(MILLISECOND, ${qb.toString(paramExp.object.milliseconds, context)}, ${dateExp})`;
-        }
-        if (paramExp.object.seconds) {
-            dateExp = `DATEADD(SECOND, ${qb.toString(paramExp.object.seconds, context)}, ${dateExp})`;
-        }
-        if (paramExp.object.minutes) {
-            dateExp = `DATEADD(MINUTE, ${qb.toString(paramExp.object.minutes, context)}, ${dateExp})`;
-        }
-        if (paramExp.object.hours) {
-            dateExp = `DATEADD(HOUR, ${qb.toString(paramExp.object.hours, context)}, ${dateExp})`;
-        }
-        if (paramExp.object.days) {
-            dateExp = `DATEADD(DAY, ${qb.toString(paramExp.object.days, context)}, ${dateExp})`;
-        }
-        if (paramExp.object.weeks) {
-            dateExp = `DATEADD(WEEK, ${qb.toString(paramExp.object.weeks, context)}, ${dateExp})`;
-        }
-        if (paramExp.object.months) {
-            dateExp = `DATEADD(MONTH, ${qb.toString(paramExp.object.months, context)}, ${dateExp})`;
-        }
-        if (paramExp.object.years) {
-            dateExp = `DATEADD(YYYY, ${qb.toString(paramExp.object.years, context)}, ${dateExp})`;
-        }
-        return dateExp;
-    });
-    mssqlQueryTranslator.registerMethod(Temporal.PlainTime.prototype, "add", (qb, exp, context) => {
-        let dateExp = qb.toString(exp.objectOperand, context);
-        const paramExp = exp.params[0] as ObjectValueExpression<Temporal.DurationLike>;
-        if (paramExp.object.milliseconds) {
-            dateExp = `DATEADD(MILLISECOND, ${qb.toString(paramExp.object.milliseconds, context)}, ${dateExp})`;
-        }
-        if (paramExp.object.seconds) {
-            dateExp = `DATEADD(SECOND, ${qb.toString(paramExp.object.seconds, context)}, ${dateExp})`;
-        }
-        if (paramExp.object.minutes) {
-            dateExp = `DATEADD(MINUTE, ${qb.toString(paramExp.object.minutes, context)}, ${dateExp})`;
-        }
-        if (paramExp.object.hours) {
-            dateExp = `DATEADD(HOUR, ${qb.toString(paramExp.object.hours, context)}, ${dateExp})`;
-        }
-        if (paramExp.object.days) {
-            dateExp = `DATEADD(DAY, ${qb.toString(paramExp.object.days, context)}, ${dateExp})`;
-        }
-        if (paramExp.object.weeks) {
-            dateExp = `DATEADD(WEEK, ${qb.toString(paramExp.object.weeks, context)}, ${dateExp})`;
-        }
-        if (paramExp.object.months) {
-            dateExp = `DATEADD(MONTH, ${qb.toString(paramExp.object.months, context)}, ${dateExp})`;
-        }
-        if (paramExp.object.years) {
-            dateExp = `DATEADD(YYYY, ${qb.toString(paramExp.object.years, context)}, ${dateExp})`;
-        }
-        return dateExp;
-    });
-}

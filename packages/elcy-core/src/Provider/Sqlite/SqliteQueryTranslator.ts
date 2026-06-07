@@ -13,18 +13,16 @@ import { IExpression } from "src/ExpressionBuilder/Expression/IExpression";
 import { isNonNullExp } from "src/Helper/Util";
 import { Null } from "src/Common/Constant";
 import { Uuid } from "src/Data/Uuid";
-import { Temporal } from "src/Data/Temporal";
-import { Decimal } from "src/Data/Decimal";
 
 export const sqliteQueryTranslator = new QueryTranslator(Symbol("sqlite"));
 sqliteQueryTranslator.registerFallbacks(relationalQueryTranslator);
 
-sqliteQueryTranslator.registerValueType(Null, { columnType: "text", group: "String" });
-sqliteQueryTranslator.registerValueType(String, { columnType: "text", group: "String" });
-sqliteQueryTranslator.registerValueType(Date, { columnType: "text", group: "String" });
-sqliteQueryTranslator.registerValueType(BigInt, { columnType: "integer", group: "BigInt" });
-sqliteQueryTranslator.registerValueType(Number, { columnType: "real", group: "String" });
-sqliteQueryTranslator.registerValueType(Uuid, { columnType: "text", group: "String" });
+sqliteQueryTranslator.registerValueType(Null, { columnType: { columnType: "text", group: "String" } });
+sqliteQueryTranslator.registerValueType(String, { columnType: { columnType: "text", group: "String" } });
+sqliteQueryTranslator.registerValueType(Date, { columnType: { columnType: "text", group: "String" } });
+sqliteQueryTranslator.registerValueType(BigInt, { columnType: { columnType: "integer", group: "BigInt" } });
+sqliteQueryTranslator.registerValueType(Number, { columnType: { columnType: "real", group: "String" } });
+sqliteQueryTranslator.registerValueType(Uuid, { columnType: { columnType: "text", group: "String" } });
 
 const equalTranslator = (qb: IQueryBuilder, exp: IBinaryOperatorExpression, context: IQueryBuilderContext) => {
     const leftExpString = qb.toOperandString(exp.leftOperand, context);
@@ -164,13 +162,13 @@ sqliteQueryTranslator.registerMethod(Date.prototype, "setMilliseconds", (qb, exp
 sqliteQueryTranslator.registerMethod(Date.prototype, "setMinutes", (qb, exp, param) => `STRFTIME('%Y-%m-%d %H:%M:%f', ${qb.toString(exp.objectOperand, param)}, '-' || STRFTIME('%M', ${qb.toString(exp.objectOperand, param)}) || ' MINUTES', '+' || ${qb.toString(exp.params[0], param)} || ' MINUTES')`);
 sqliteQueryTranslator.registerMethod(Date.prototype, "setMonth", (qb, exp, param) => `STRFTIME('%Y-%m-%d %H:%M:%f', ${qb.toString(exp.objectOperand, param)}, '-' || STRFTIME('%m', ${qb.toString(exp.objectOperand, param)}) || ' MONTHS', '+' || (${qb.toString(exp.params[0], param)} + 1) || ' MONTHS')`);
 sqliteQueryTranslator.registerMethod(Date.prototype, "setSeconds", (qb, exp, param) => `STRFTIME('%Y-%m-%d %H:%M:%f', ${qb.toString(exp.objectOperand, param)}, '-' || STRFTIME('%S', ${qb.toString(exp.objectOperand, param)}) || ' SECONDS', '+' || ${qb.toString(exp.params[0], param)} || ' SECONDS')`);
-sqliteQueryTranslator.registerMethod(Date.prototype, "addDays", (qb, exp, param) => `STRFTIME('%Y-%m-%d %H:%M:%f', ${qb.toString(exp.objectOperand, param)}, '+' || ${qb.toString(exp.params[0], param)} || ' DAYS')`);
-sqliteQueryTranslator.registerMethod(Date.prototype, "addMonths", (qb, exp, param) => `STRFTIME('%Y-%m-%d %H:%M:%f', ${qb.toString(exp.objectOperand, param)}, '+' || ${qb.toString(exp.params[0], param)} || ' MONTH')`);
-sqliteQueryTranslator.registerMethod(Date.prototype, "addYears", (qb, exp, param) => `STRFTIME('%Y-%m-%d %H:%M:%f', ${qb.toString(exp.objectOperand, param)}, '+' || ${qb.toString(exp.params[0], param)} || ' YEARS')`);
-sqliteQueryTranslator.registerMethod(Date.prototype, "addHours", (qb, exp, param) => `STRFTIME('%Y-%m-%d %H:%M:%f', ${qb.toString(exp.objectOperand, param)}, '+' || ${qb.toString(exp.params[0], param)} || ' HOURS')`);
-sqliteQueryTranslator.registerMethod(Date.prototype, "addMinutes", (qb, exp, param) => `STRFTIME('%Y-%m-%d %H:%M:%f', ${qb.toString(exp.objectOperand, param)}, '+' || ${qb.toString(exp.params[0], param)} || ' MINUTES')`);
-sqliteQueryTranslator.registerMethod(Date.prototype, "addSeconds", (qb, exp, param) => `STRFTIME('%Y-%m-%d %H:%M:%f', ${qb.toString(exp.objectOperand, param)}, '+' || ${qb.toString(exp.params[0], param)} || ' SECONDS')`);
-sqliteQueryTranslator.registerMethod(Date.prototype, "addMilliseconds", (qb, exp, param) => `STRFTIME('%Y-%m-%d %H:%M:%f', ${qb.toString(exp.objectOperand, param)}, '+' || (CAST(${qb.toString(exp.params[0], param)} AS FLOAT)/1000) || ' SECONDS')`);
+// sqliteQueryTranslator.registerMethod(Date.prototype, "addDays", (qb, exp, param) => `STRFTIME('%Y-%m-%d %H:%M:%f', ${qb.toString(exp.objectOperand, param)}, '+' || ${qb.toString(exp.params[0], param)} || ' DAYS')`);
+// sqliteQueryTranslator.registerMethod(Date.prototype, "addMonths", (qb, exp, param) => `STRFTIME('%Y-%m-%d %H:%M:%f', ${qb.toString(exp.objectOperand, param)}, '+' || ${qb.toString(exp.params[0], param)} || ' MONTH')`);
+// sqliteQueryTranslator.registerMethod(Date.prototype, "addYears", (qb, exp, param) => `STRFTIME('%Y-%m-%d %H:%M:%f', ${qb.toString(exp.objectOperand, param)}, '+' || ${qb.toString(exp.params[0], param)} || ' YEARS')`);
+// sqliteQueryTranslator.registerMethod(Date.prototype, "addHours", (qb, exp, param) => `STRFTIME('%Y-%m-%d %H:%M:%f', ${qb.toString(exp.objectOperand, param)}, '+' || ${qb.toString(exp.params[0], param)} || ' HOURS')`);
+// sqliteQueryTranslator.registerMethod(Date.prototype, "addMinutes", (qb, exp, param) => `STRFTIME('%Y-%m-%d %H:%M:%f', ${qb.toString(exp.objectOperand, param)}, '+' || ${qb.toString(exp.params[0], param)} || ' MINUTES')`);
+// sqliteQueryTranslator.registerMethod(Date.prototype, "addSeconds", (qb, exp, param) => `STRFTIME('%Y-%m-%d %H:%M:%f', ${qb.toString(exp.objectOperand, param)}, '+' || ${qb.toString(exp.params[0], param)} || ' SECONDS')`);
+// sqliteQueryTranslator.registerMethod(Date.prototype, "addMilliseconds", (qb, exp, param) => `STRFTIME('%Y-%m-%d %H:%M:%f', ${qb.toString(exp.objectOperand, param)}, '+' || (CAST(${qb.toString(exp.params[0], param)} AS FLOAT)/1000) || ' SECONDS')`);
 sqliteQueryTranslator.registerMethod(Date.prototype, "toDateString", null);
 
 /**
@@ -193,13 +191,3 @@ sqliteQueryTranslator.registerOperator(AdditionExpression, (qb, exp, param) => `
 sqliteQueryTranslator.registerMethod(DbFunction, "timestamp", () => "STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW', 'LOCALTIME')");
 sqliteQueryTranslator.registerMethod(DbFunction, "utcTimestamp", () => "STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW')");
 
-
-if (Temporal) {
-    sqliteQueryTranslator.registerValueType(Temporal.Instant, { columnType: "text", group: "String" });
-    sqliteQueryTranslator.registerValueType(Temporal.PlainDate, { columnType: "text", group: "String" });
-    sqliteQueryTranslator.registerValueType(Temporal.PlainTime, { columnType: "text", group: "String" });
-}
-
-if (Decimal) {
-    sqliteQueryTranslator.registerValueType(Decimal, { columnType: "real", group: "String" });
-}

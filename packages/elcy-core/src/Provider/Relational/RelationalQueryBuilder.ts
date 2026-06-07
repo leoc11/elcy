@@ -18,12 +18,11 @@ import { ParameterExpression } from "../../ExpressionBuilder/Expression/Paramete
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
 import { TernaryExpression } from "../../ExpressionBuilder/Expression/TernaryExpression";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
-import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
 import { ExpressionExecutor } from "../../ExpressionBuilder/ExpressionExecutor";
-import { isColumnExp, isEntityExp, isNotNull, isNull, mapReplaceExp } from "../../Helper/Util";
+import { isColumnExp, isEntityExp, isNotNull, isNull } from "../../Helper/Util";
+import { mapReplaceExp } from "src/Helper/Expression";
 import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { BatchedQuery } from "../../Query/BatchedQuery";
-import { DbFunction } from "../../Query/DbFunction";
 import { IQuery } from "../../Query/IQuery";
 import { IQueryBuilder } from "../../Query/IQueryBuilder";
 import { IQueryBuilderContext } from "../../Query/IQueryBuilderContext";
@@ -63,19 +62,12 @@ import { IMultiOperatorExpression } from "src/ExpressionBuilder/Expression/IMult
 import { Null } from "src/Common/Constant";
 
 export abstract class RelationalQueryBuilder implements IQueryBuilder {
-    public get lastInsertIdQuery() {
-        if (!this._lastInsertedIdQuery) {
-            this._lastInsertedIdQuery = this.toString(ExpressionBuilder.parse(() => DbFunction.lastInsertedId()).body);
-        }
-        return this._lastInsertedIdQuery;
-    }
     public namingStrategy: NamingStrategy;
     public abstract queryLimit: IQueryLimit;
     public translator = relationalQueryTranslator;
 
     //#region Formatting
     protected indent = 0;
-    private _lastInsertedIdQuery: string;
     private aliasObj: { [key: string]: number } = {};
     public columnTypeString(columnType: ICompleteColumnType): string {
         let type = columnType.columnType;
@@ -194,29 +186,29 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
 
     //#region Value Convert
 
-    public persistValue(value: any, column?: IColumnMetaData): DbValue {
+    public persistValue(value: any, columnMeta?: IColumnMetaData): DbValue {
         if (typeof value === "number" && !Number.isFinite(value)) {
             value = null;
         }
 
-        if (column?.nullable !== false && isNull(value)) {
+        if (columnMeta?.nullable !== false && isNull(value)) {
             return null;
         }
 
-        if (column?.customMapper) {
-            return column.customMapper.persist(value) as DbValue;
+        if (columnMeta?.customMapper) {
+            return columnMeta.customMapper.persist(value) as DbValue;
         }
 
-        const columnConfig = this.translator.resolveColumnType(column?.constructor as IObjectType<IColumnMetaData>);
+        const columnConfig = this.translator.resolveColumnType(columnMeta?.constructor as IObjectType<IColumnMetaData>);
         if (columnConfig) {
-            return columnConfig.persist(value, column, this.translator);
+            return columnConfig.persist(value, columnMeta, this.translator);
         }
 
-        const valueConfig = this.translator.resolveValueType(column?.type ?? value?.constructor ?? Null);
-        return valueConfig.persist(value);
+        const valueConfig = this.translator.resolveValueType(columnMeta?.type ?? value?.constructor ?? Null);
+        return valueConfig.persist(value, columnMeta);
     }
 
-    public hydrateValue<T>(value: DbValue, column: IColumnMetaData<any, T>): T {
+    public hydrateValue<T>(value: DbValue, column: IColumnMetaData<any, Extract<T, ValueType>>): T {
         if (typeof value === "number" && !Number.isFinite(value)) {
             value = null;
         }
@@ -232,12 +224,12 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             return columnConfig.hydrate(value, column, this.translator);
         }
 
-        const valueConfig = this.translator.resolveValueType(column.type as GenericType<Extract<T, ValueType>>);
+        const valueConfig = this.translator.resolveValueType(column.type);
         if (!valueConfig) {
             throw new Error(`${column.type.name} not supported`);
         }
 
-        return valueConfig.hydrate(value);
+        return valueConfig.hydrate(value, column);
     }
 
     //#region Query

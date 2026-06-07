@@ -15,9 +15,9 @@ import { DbFunction } from "src/Query/DbFunction";
 export const mysqlQueryTranslator = new QueryTranslator(Symbol("mysql"));
 mysqlQueryTranslator.registerFallbacks(relationalQueryTranslator);
 
-mysqlQueryTranslator.registerValueType(Null, { columnType: "varchar", option: { length: 255 } });
-mysqlQueryTranslator.registerValueType(String, { columnType: "varchar", option: { length: 255 } });
-mysqlQueryTranslator.registerValueType(Uuid, { columnType: "binary", option: { size: 16 } });
+mysqlQueryTranslator.registerValueType(Null, { columnType: { columnType: "varchar", option: { length: 255 } } });
+mysqlQueryTranslator.registerValueType(String, { columnType: { columnType: "varchar", option: { length: 255 } } });
+mysqlQueryTranslator.registerValueType(Uuid, { columnType: { columnType: "binary", option: { size: 16 } } });
 
 const equalTranslator = (qb: IQueryBuilder, exp: IBinaryOperatorExpression, context: IQueryBuilderContext) => {
     const leftExpString = qb.toOperandString(exp.leftOperand, context);

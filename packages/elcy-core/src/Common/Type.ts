@@ -31,10 +31,8 @@ export type PropertySelectorType<TE, T = ValueType> = ((source: TE) => T | undef
 export type RelationSelector<TSource, TTarget, T = ValueType> = T extends any ? [PropertySelectorType<TSource, T>, PropertySelectorType<TTarget, T>] : never;
 
 declare global {
-    interface ValueTypeRegistry extends DateValueTypeRegistry, TimeValueTypeRegistry, DateTimeValueTypeRegistry, DecimalValueTypeRegistry {
-        number: number;
+    interface ValueTypeRegistry extends DateValueTypeRegistry, TimeValueTypeRegistry, DateTimeValueTypeRegistry, DecimalValueTypeRegistry, IntValueTypeRegistry, BigIntValueTypeRegistry, RealValueTypeRegistry {
         ArrayBufferLike: ArrayBufferLike;
-        bigint: bigint;
         string: string;
         boolean: boolean;
         Uuid: Uuid;
@@ -56,9 +54,22 @@ declare global {
         string: string;
         number: number;
     }
+    interface IntValueTypeRegistry {
+        number: number;
+    }
+    interface BigIntValueTypeRegistry {
+        bigint: BigInt;
+    }
+    interface RealValueTypeRegistry {
+        number: number;
+    }
 }
 
+export type RealValueType = RealValueTypeRegistry[keyof RealValueTypeRegistry];
+export type IntValueType = IntValueTypeRegistry[keyof IntValueTypeRegistry];
+export type BigIntValueType = BigIntValueTypeRegistry[keyof BigIntValueTypeRegistry];
 export type DecimalValueType = DecimalValueTypeRegistry[keyof DecimalValueTypeRegistry];
+export type NumberValueType = IntValueType | BigIntValueType | RealValueType | DecimalValueType;
 export type DateValueType = DateValueTypeRegistry[keyof DateValueTypeRegistry];
 export type TimeValueType = TimeValueTypeRegistry[keyof TimeValueTypeRegistry];
 export type DateTimeValueType = DateTimeValueTypeRegistry[keyof DateTimeValueTypeRegistry];
