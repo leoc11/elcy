@@ -8,16 +8,16 @@ import { IQueryBuilderContext } from "src/Query/IQueryBuilderContext";
 import { QueryTranslator } from "../../Query/QueryTranslator";
 import { relationalQueryTranslator } from "../Relational/RelationalQueryTranslator";
 import { isNonNullExp } from "src/Helper/Util";
-import { Uuid } from "src/Data/Uuid";
 import { Null } from "src/Common/Constant";
 import { DbFunction } from "src/Query/DbFunction";
+import { registerTranslator } from "src/Registry/QueryTranslatorRegistry";
+import { ProviderDbType } from "./Type";
 
-export const mysqlQueryTranslator = new QueryTranslator(Symbol("mysql"));
+export const mysqlQueryTranslator = new QueryTranslator(Symbol(ProviderDbType));
 mysqlQueryTranslator.registerFallbacks(relationalQueryTranslator);
 
 mysqlQueryTranslator.registerValueType(Null, { columnType: { columnType: "varchar", option: { length: 255 } } });
 mysqlQueryTranslator.registerValueType(String, { columnType: { columnType: "varchar", option: { length: 255 } } });
-mysqlQueryTranslator.registerValueType(Uuid, { columnType: { columnType: "binary", option: { size: 16 } } });
 
 const equalTranslator = (qb: IQueryBuilder, exp: IBinaryOperatorExpression, context: IQueryBuilderContext) => {
     const leftExpString = qb.toOperandString(exp.leftOperand, context);
@@ -64,3 +64,5 @@ mysqlQueryTranslator.registerMethod(Math, "ceil", (qb, exp, param) => `CEILING($
 
 
 mysqlQueryTranslator.registerMethod(DbFunction, "utcTimestamp", () => "UTC_TIMESTAMP()", () => true);
+
+registerTranslator(ProviderDbType, mysqlQueryTranslator);

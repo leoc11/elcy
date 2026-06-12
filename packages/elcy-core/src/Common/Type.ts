@@ -1,6 +1,4 @@
 import type { Querify } from "src/Queryable/Interface/Querify";
-import type { TimeSpan } from "../Data/TimeSpan";
-import type { Uuid } from "../Data/Uuid";
 import type { IExpression } from "../ExpressionBuilder/Expression/IExpression";
 
 export type StringKeyOf<T> = Extract<keyof T, string>;
@@ -29,42 +27,6 @@ export type StringKeyOfValue<T, V> = {
 }[keyof T];
 export type PropertySelectorType<TE, T = ValueType> = ((source: TE) => T | undefined) | StringKeyOfValue<TE, T>;
 export type RelationSelector<TSource, TTarget, T = ValueType> = T extends any ? [PropertySelectorType<TSource, T>, PropertySelectorType<TTarget, T>] : never;
-
-declare global {
-    interface ValueTypeRegistry extends DateValueTypeRegistry, TimeValueTypeRegistry, DateTimeValueTypeRegistry, DecimalValueTypeRegistry, IntValueTypeRegistry, BigIntValueTypeRegistry, RealValueTypeRegistry {
-        ArrayBufferLike: ArrayBufferLike;
-        string: string;
-        boolean: boolean;
-        Uuid: Uuid;
-        ArrayBufferView: ArrayBufferView;
-        ArrayBuffer: ArrayBuffer;
-    }
-    interface DateValueTypeRegistry {
-        Date: Date;
-    }
-    interface TimeValueTypeRegistry {
-        string: string;
-        Date: Date;
-        TimeSpan: TimeSpan;
-    }
-    interface DateTimeValueTypeRegistry {
-        Date: Date;
-    }
-    interface DecimalValueTypeRegistry {
-        string: string;
-        number: number;
-    }
-    interface IntValueTypeRegistry {
-        number: number;
-    }
-    interface BigIntValueTypeRegistry {
-        bigint: BigInt;
-    }
-    interface RealValueTypeRegistry {
-        number: number;
-    }
-}
-
 export type RealValueType = RealValueTypeRegistry[keyof RealValueTypeRegistry];
 export type IntValueType = IntValueTypeRegistry[keyof IntValueTypeRegistry];
 export type BigIntValueType = BigIntValueTypeRegistry[keyof BigIntValueTypeRegistry];

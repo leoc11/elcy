@@ -1,7 +1,5 @@
-import { Uuid } from "src/Data/Uuid";
 import { Null } from "../Common/Constant";
 import { GenericType, IObjectType } from "../Common/Type";
-import { DbFunction } from "../Query/DbFunction";
 import { ArrayValueExpression } from "./Expression/ArrayValueExpression";
 import { FunctionCallExpression } from "./Expression/FunctionCallExpression";
 import { FunctionExpression } from "./Expression/FunctionExpression";
@@ -15,8 +13,7 @@ import { StringTemplateExpression } from "./Expression/StringTemplateExpression"
 import { ValueExpression } from "./Expression/ValueExpression";
 import { Associativity, IOperator, IOperatorPrecedence, IUnaryOperator, prefixOperators, postfixOperators, OperatorType, UnaryPosition } from "./IOperator";
 import { ILexicalToken, LexicalTokenType } from "./LexicalAnalyzer";
-import { Enumerable } from "@elcy/enumerable";
-import { TimeSpan } from "src/Data/TimeSpan";
+import { GlobalIdentifierMap } from "../Registry/GlobalIdentifierRegistry";
 
 interface SyntaticParameter {
     index: number;
@@ -24,68 +21,7 @@ interface SyntaticParameter {
     scopedParameters: Map<string, ParameterExpression[]>;
     userParameters: { [key: string]: unknown };
 }
-const globalObjectMaps = new Map<string, unknown>([
-    // Global Function
-    ["parseInt", parseInt],
-    ["parseFloat", parseFloat],
-    ["decodeURI", decodeURI],
-    ["decodeURIComponent", decodeURIComponent],
-    ["encodeURI", encodeURI],
-    ["encodeURIComponent", encodeURIComponent],
-    ["isNaN", isNaN],
-    ["isFinite", isFinite],
-    ["eval", eval],
-
-    // Fundamental Objects
-    ["Object", Object],
-    ["Function", Function],
-    ["Boolean", Boolean],
-    ["Symbol", Symbol],
-
-    // Constructor/ Type
-    ["Error", Error],
-    ["Number", Number],
-    ["BigInt", BigInt],
-    ["Math", Math],
-    ["Date", Date],
-    ["String", String],
-    ["RegExp", RegExp],
-    ["Array", Array],
-    ["Map", Map],
-    ["Set", Set],
-    ["WeakMap", WeakMap],
-    ["WeakSet", WeakSet],
-    ["ArrayBuffer", ArrayBuffer],
-    ["Uint8Array", Uint8Array],
-    ["Uint16Array", Uint16Array],
-    ["Uint32Array", Uint32Array],
-    ["Int8Array", Int8Array],
-    ["Int16Array", Int16Array],
-    ["Int32Array", Int32Array],
-    ["Uint8ClampedArray", Uint8ClampedArray],
-    ["Float32Array", Float32Array],
-    ["Float64Array", Float64Array],
-    ["DataView", DataView],
-
-    // Value
-    ["Infinity", Infinity],
-    ["NaN", NaN],
-    ["undefined", undefined],
-    ["null", null],
-    ["true", true],
-    ["false", false],
-
-    // Helper
-    ["DbFunction", DbFunction],
-
-    // data model
-    ["Enumerable", Enumerable],
-    ["Uuid", Uuid],
-    ["TimeSpan", TimeSpan]
-]);
-
 export class SyntacticAnalyzer {
-    public static readonly globalObjectMap = globalObjectMaps;
     public static parse(tokens: ILexicalToken[], paramTypes?: GenericType[], userParameters?: { [key: string]: unknown }) {
         if (!userParameters) {
             userParameters = {};
@@ -341,8 +277,8 @@ function createIdentifierExpression(param: SyntaticParameter, token: ILexicalTok
         const data = param.userParameters[token.data];
         return new ParameterExpression(token.data as string, getConstructor(data));
     }
-    else if (globalObjectMaps.has(token.data as string)) {
-        const data = globalObjectMaps.get(token.data as string);
+    else if (GlobalIdentifierMap.has(token.data as string)) {
+        const data = GlobalIdentifierMap.get(token.data as string);
         return new ValueExpression(data, token.data as string);
     }
 

@@ -98,8 +98,8 @@ export const toHexaString = function (binary: ArrayBufferLike | ArrayView): stri
     return `0x${hexaString}`;
 };
 
-export const fillZero = (value: number, factor = 2): string => {
-    return value?.toString().padStart(factor, "0");
+export const fillZero = (value: number, length = 2): string => {
+    return value?.toString().padStart(length, "0");
 };
 
 export const toDateTimeString = function (date: Date) {

@@ -3,7 +3,7 @@ import { resolveClone } from "../../Helper/Expression";
 import { hashCode, hashCodeAdd } from "../../Helper/Hash";
 import type { IExpression } from "./IExpression";
 import type { IMultiOperatorExpression } from "./IMultiOperatorExpression";
-import { PrimitiveType } from "src/Common/Type";
+import type { PrimitiveType } from "src/Common/Type";
 
 export class AndExpression implements IMultiOperatorExpression<boolean> {
     constructor(...operands: IExpression<boolean>[]) {

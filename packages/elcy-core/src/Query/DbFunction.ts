@@ -2,6 +2,7 @@ import { ObjectLike } from "src/Common/Type";
 import { CodedError } from "../Error/CodedError";
 import { TimeSpan } from "src/Data/TimeSpan";
 import { DateExtension } from "src/Extensions/DateExtension";
+import { register } from "src/Registry/GlobalIdentifierRegistry";
 
 function toRegExp(pattern: string, escape: string = "\\") {
     let regexStr = "^";
@@ -92,3 +93,4 @@ class DbFunctionConstruct {
     }
 }
 export const DbFunction = new DbFunctionConstruct();
+register("DbFunction", DbFunction);

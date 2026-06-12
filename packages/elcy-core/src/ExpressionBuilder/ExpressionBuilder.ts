@@ -17,6 +17,7 @@ export class ExpressionBuilder {
 export function $l<T, Targs extends readonly unknown[] = []>(fn: string, hashCode?: number): FunctionExpression<T, Targs> {
     return new LazyFunctionExpression<T, Targs>(fn, hashCode);
 }
-export function $c<T extends Function, TARG>(fn: T): T {
+
+export function $c<T extends Function>(fn: T): T {
     return fn;
 }

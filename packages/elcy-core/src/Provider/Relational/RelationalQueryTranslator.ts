@@ -51,11 +51,10 @@ import { ObjectValueExpression } from "src/ExpressionBuilder/Expression/ObjectVa
 import { fillZero, isEntityExp, isNonNullExp, isNull, isValue, toDateTimeString, toHexaString } from "src/Helper/Util";
 import { NullCoalesceExpression } from "src/ExpressionBuilder/Expression/NullCoalesceExpression";
 import { Null } from "src/Common/Constant";
-import { TimeSpan } from "src/Data/TimeSpan";
-import { Uuid } from "src/Data/Uuid";
 import { BigIntColumnMetaData, BinaryColumnMetaData, BooleanColumnMetaData, DateColumnMetaData, DateTimeColumnMetaData, DecimalColumnMetaData, EnumColumnMetaData, IdentifierColumnMetaData, IntegerColumnMetaData, RealColumnMetaData, RowVersionColumnMetaData, SerializeColumnMetaData, StringColumnMetaData, TimeColumnMetaData } from "src/MetaData";
 import { XMLParser } from "src/Extensions/FastXmlParser";
 import { XMLBuilder } from "src/Extensions/FastXmlBuilder";
+import { registerTranslator } from "src/Registry/QueryTranslatorRegistry";
 
 export const relationalQueryTranslator = new QueryTranslator(Symbol("relational"));
 
@@ -66,8 +65,6 @@ relationalQueryTranslator.registerValueType(Number, { columnType: { columnType: 
 relationalQueryTranslator.registerValueType(BigInt, { columnType: { columnType: "bigint", group: "BigInt" }, hydrate: (value: bigint | string | number) => BigInt(value), persist: value => value, queryValue: value => String(value), instance: 0n });
 relationalQueryTranslator.registerValueType(Boolean, { columnType: { columnType: "boolean", group: "Boolean" }, hydrate: (value: boolean | number) => Boolean(value), persist: value => value, queryValue: value => value ? "true" : "false", instance: false });
 relationalQueryTranslator.registerValueType<Date>(Date, { columnType: { columnType: "datetime", group: "DateTime" }, hydrate: (value: string | Date) => typeof value === "string" ? new Date(value) : value, persist: value => value, queryValue: value => `'${toDateTimeString(value)}'`, instance: new Date(0) });
-relationalQueryTranslator.registerValueType(TimeSpan, { columnType: { columnType: "time", group: "Time" }, hydrate: (value: string | Date) => value instanceof Date ? DbFunction.getTime(value) : TimeSpan.parse(value), instance: new TimeSpan(0) });
-relationalQueryTranslator.registerValueType(Uuid, { columnType: { columnType: "uuid", group: "Identifier" }, hydrate: (value: Uint8Array) => new Uuid(value), persist: value => value, instance: Uuid.empty });
 
 const toUint8Array = (value: DataView | ArrayBufferView) => new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
 relationalQueryTranslator.registerValueType<Uint8Array>(Uint8Array, { columnType: { columnType: "varbinary", group: "Binary" }, hydrate: (value: Uint8Array) => value, persist: value => value, queryValue: toHexaString, instance: new Uint8Array(0) });
@@ -95,42 +92,68 @@ relationalQueryTranslator.registerColumnType(BinaryColumnMetaData, { columnType:
 relationalQueryTranslator.registerColumnType(DateColumnMetaData, { columnType: "date", group: "Date" });
 relationalQueryTranslator.registerColumnType(TimeColumnMetaData, { columnType: "time", group: "Time" },
     (value: string | Date, meta, t) => {
-        const isNative = meta.type === Date || meta.type === TimeSpan || !meta.type;
+        const isNative = meta.type === Date || meta.type === String || !meta.type;
         if (!isNative) {
             return t.resolveValueType(meta.type).hydrate(value, meta);
         }
 
-        let time = value instanceof Date ? DbFunction.getTime(value) : TimeSpan.parse(value);
-        if (meta.timeZoneHandling === "utc") {
-            time = time.addMinutes(-new Date(0).getTimezoneOffset());
+        let timePart: Record<"hour" | "minute" | "second" | "millisecond", number>;
+        if (value instanceof Date) {
+            timePart = {
+                hour: meta.timeZoneHandling === "utc"? value.getUTCHours() : value.getHours(),
+                minute: meta.timeZoneHandling === "utc"? value.getUTCMinutes() : value.getMinutes(),
+                second: meta.timeZoneHandling === "utc"? value.getUTCSeconds() : value.getSeconds(),
+                millisecond: meta.timeZoneHandling === "utc"? value.getUTCMilliseconds() : value.getMilliseconds()
+            };
+        }
+        else {
+            const parts = value.split(/[:.]/);
+            timePart = {
+                hour: +parts[0],
+                minute: +parts[1],
+                second: +(parts[2] ?? null),
+                millisecond: +(parts[3] ?? null)
+            };
         }
 
         switch (meta.type) {
-            case TimeSpan: {
-                return time;
+            case Date: {
+                if (meta.timeZoneHandling === "utc") {
+                    return new Date(Date.UTC(1970, 0, 1, timePart.hour, timePart.minute, timePart.second, timePart.millisecond));
+                }
+
+                return new Date(1970, 0, 1, timePart.hour, timePart.minute, timePart.second, timePart.millisecond);
             }
-            case String:
             default: {
-                return time.toString();
+                return `${fillZero(timePart.hour)}:${fillZero(timePart.minute)}:${fillZero(timePart.second)}${timePart.millisecond ? `.${timePart.millisecond}` : ""}`;
             }
         }
     },
     (value, meta, t) => {
-        const isNative = meta.type === Date || meta.type === TimeSpan || !meta.type;
+        const isNative = meta.type === Date || meta.type === String || !meta.type;
         if (!isNative) {
             return t.resolveValueType(meta.type).persist(value, meta);
         }
 
-        let time = value instanceof Date ? DbFunction.getTime(value) : TimeSpan.parse(String(value));
-        if (meta.timeZoneHandling === "utc") {
-            time = time.addMinutes(new Date(0).getTimezoneOffset());
-        }
+        switch (true) {
+            case meta.type === Date && value instanceof Date: {
+                if (meta.timeZoneHandling === "utc") {
+                    return `${value.getUTCHours()}:${value.getUTCMinutes()}:${value.getUTCSeconds()}.${value.getUTCMilliseconds()}`;
+                }
 
-        return time.toString();
+                return `${value.getHours()}:${value.getMinutes()}:${value.getSeconds()}.${value.getMilliseconds()}`;
+            }
+            case meta.type === String && typeof value === "string": {
+                return value;
+            }
+            default: {
+                return String(value);
+            }
+        }
     });
 relationalQueryTranslator.registerColumnType(DateTimeColumnMetaData, { columnType: "timestamp", group: "DateTime" },
     (value: Date | string, meta, t) => {
-        const isNative = meta.type === Date || !meta.type;
+        const isNative = meta.type === Date || meta.type == null;
         if (!isNative) {
             return t.resolveValueType(meta.type).hydrate(value, meta);
         }
@@ -141,7 +164,7 @@ relationalQueryTranslator.registerColumnType(DateTimeColumnMetaData, { columnTyp
         return value instanceof Date ? value : new Date(value);
     },
     (value: Date, meta: DateTimeColumnMetaData, t) => {
-        const isNative = meta.type === Date || !meta.type;
+        const isNative = meta.type === Date || meta.type == null;
         if (!isNative) {
             return t.resolveValueType(meta.type).persist(value, meta);
         }
@@ -589,3 +612,5 @@ relationalQueryTranslator.registerMethod(DbFunction, "dateAdd", (qb, exp, contex
 });
 relationalQueryTranslator.registerMethod(DbFunction, "getDate", (qb, exp, context) => `CAST(${qb.toString(exp.objectOperand, context)} AS DATE)`);
 relationalQueryTranslator.registerMethod(DbFunction, "getTime", (qb, exp, context) => `CAST(${qb.toString(exp.objectOperand, context)} AS TIME)`);
+
+registerTranslator("default", relationalQueryTranslator);

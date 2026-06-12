@@ -1,4 +1,3 @@
-import { Uuid } from "../../Data/Uuid";
 import { AdditionExpression } from "../../ExpressionBuilder/Expression/AdditionExpression";
 import { DbFunction } from "../../Query/DbFunction";
 import { QueryTranslator } from "../../Query/QueryTranslator";
@@ -14,15 +13,14 @@ import { IQueryBuilder } from "src/Query/IQueryBuilder";
 import { IQueryBuilderContext } from "src/Query/IQueryBuilderContext";
 import { isNonNullExp } from "src/Helper/Util";
 import { ObjectValueExpression } from "src/ExpressionBuilder/Expression/ObjectValueExpression";
+import { registerTranslator } from "src/Registry/QueryTranslatorRegistry";
+import { ProviderDbType } from "./Type";
 
-export const mssqlQueryTranslator = new QueryTranslator(Symbol("mssql"));
+export const mssqlQueryTranslator = new QueryTranslator(Symbol(ProviderDbType));
 mssqlQueryTranslator.registerFallbacks(relationalQueryTranslator);
 
 mssqlQueryTranslator.registerValueType(Boolean, { columnType: { columnType: "bit", group: "Boolean" }, queryValue: value => value ? "1" : "0" });
-mssqlQueryTranslator.registerValueType(Uuid, { columnType: { columnType: "uniqueidentifier", group: "Identifier" } });
 mssqlQueryTranslator.registerValueType(Date, { columnType: { columnType: "datetime2", group: "Identifier" } });
-
-mssqlQueryTranslator.registerMethod(Uuid, "new", () => "newid()", () => true);
 
 mssqlQueryTranslator.registerMethod(Number.prototype, "toExponential", (qb, exp, param) => {
     let value = 12;
@@ -148,3 +146,5 @@ mssqlQueryTranslator.registerMethod(Date.prototype, "getDate", (qb, exp, param) 
  */
 mssqlQueryTranslator.registerMethod(DbFunction, "timestamp", (qb, exp, param) => "getdate()", () => true);
 mssqlQueryTranslator.registerMethod(DbFunction, "utcTimestamp", () => "getutcdate()", () => true);
+
+registerTranslator(ProviderDbType, mssqlQueryTranslator);

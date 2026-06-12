@@ -1,11 +1,12 @@
-import { Uuid } from "../../Data/Uuid";
 import { QueryTranslator } from "../../Query/QueryTranslator";
 import { relationalQueryTranslator } from "../Relational/RelationalQueryTranslator";
 import { IExpression } from "src/ExpressionBuilder/Expression/IExpression";
 import { Null } from "src/Common/Constant";
 import { BinaryColumnMetaData, DateTimeColumnMetaData, IdentifierColumnMetaData, RowVersionColumnMetaData, SerializeColumnMetaData, TimeColumnMetaData } from "src/MetaData";
+import { registerTranslator } from "src/Registry/QueryTranslatorRegistry";
+import { ProviderDbType } from "./Type";
 
-export const postgresqlQueryTranslator = new QueryTranslator(Symbol("postgresql"));
+export const postgresqlQueryTranslator = new QueryTranslator(Symbol(ProviderDbType));
 postgresqlQueryTranslator.registerFallbacks(relationalQueryTranslator);
 
 postgresqlQueryTranslator.registerValueType(Null, { columnType: { columnType: "text", group: "String" } });
@@ -22,8 +23,6 @@ postgresqlQueryTranslator.registerColumnType(TimeColumnMetaData, { columnType: "
 postgresqlQueryTranslator.registerFn(String, (qb, exp, param) => `CAST(${qb.toString(exp.params[0], param)} AS text)`);
 postgresqlQueryTranslator.registerMethod(BigInt.prototype, "toString", (qb, exp, param) => `CAST(${qb.toString(exp.objectOperand, param)} AS text)`);
 
-postgresqlQueryTranslator.registerMethod(Uuid, "new", () => "uuid_generate_v4()");
-
 postgresqlQueryTranslator.registerMember(Math, "LOG10E", () => "LOG(10, EXP(1))");
 postgresqlQueryTranslator.registerMember(Math, "LOG2E", () => "LOG(2, EXP(1))");
 
@@ -39,3 +38,5 @@ postgresqlQueryTranslator.registerMethod(Number.prototype, "toExponential", (qb,
     }
     return `to_char(${qb.toString(exp.objectOperand, param)}, '9${decimalFormat}EEEE')`;
 });
+
+registerTranslator(ProviderDbType, postgresqlQueryTranslator);

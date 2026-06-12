@@ -12,9 +12,10 @@ import { relationalQueryTranslator } from "../Relational/RelationalQueryTranslat
 import { IExpression } from "src/ExpressionBuilder/Expression/IExpression";
 import { isNonNullExp } from "src/Helper/Util";
 import { Null } from "src/Common/Constant";
-import { Uuid } from "src/Data/Uuid";
+import { registerTranslator } from "src/Registry/QueryTranslatorRegistry";
+import { ProviderDbType } from "./Type";
 
-export const sqliteQueryTranslator = new QueryTranslator(Symbol("sqlite"));
+export const sqliteQueryTranslator = new QueryTranslator(Symbol(ProviderDbType));
 sqliteQueryTranslator.registerFallbacks(relationalQueryTranslator);
 
 sqliteQueryTranslator.registerValueType(Null, { columnType: { columnType: "text", group: "String" } });
@@ -22,7 +23,6 @@ sqliteQueryTranslator.registerValueType(String, { columnType: { columnType: "tex
 sqliteQueryTranslator.registerValueType(Date, { columnType: { columnType: "text", group: "String" } });
 sqliteQueryTranslator.registerValueType(BigInt, { columnType: { columnType: "integer", group: "BigInt" } });
 sqliteQueryTranslator.registerValueType(Number, { columnType: { columnType: "real", group: "String" } });
-sqliteQueryTranslator.registerValueType(Uuid, { columnType: { columnType: "text", group: "String" } });
 
 const equalTranslator = (qb: IQueryBuilder, exp: IBinaryOperatorExpression, context: IQueryBuilderContext) => {
     const leftExpString = qb.toOperandString(exp.leftOperand, context);
@@ -191,3 +191,4 @@ sqliteQueryTranslator.registerOperator(AdditionExpression, (qb, exp, param) => `
 sqliteQueryTranslator.registerMethod(DbFunction, "timestamp", () => "STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW', 'LOCALTIME')");
 sqliteQueryTranslator.registerMethod(DbFunction, "utcTimestamp", () => "STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW')");
 
+registerTranslator(ProviderDbType, sqliteQueryTranslator);

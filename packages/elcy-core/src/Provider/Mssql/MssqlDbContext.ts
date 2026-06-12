@@ -5,8 +5,9 @@ import { MssqlQueryBuilder } from "./MssqlQueryBuilder";
 import { mssqlQueryTranslator } from "./MssqlQueryTranslator";
 import { MssqlSchemaBuilder } from "./MssqlSchemaBuilder";
 import { QueryResultParser } from "src/Query/QueryResultParser";
+import { ProviderDbType } from "./Type";
 
-export abstract class MssqlDbContext extends RelationalDbContext<"mssql"> {
+export abstract class MssqlDbContext extends RelationalDbContext<ProviderDbType> {
     protected namingStrategy = new NamingStrategy();
     protected queryBuilderType = MssqlQueryBuilder;
     protected queryResultParserType = QueryResultParser;

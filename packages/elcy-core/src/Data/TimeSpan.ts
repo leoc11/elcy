@@ -1,4 +1,6 @@
+import { register } from "src/Registry/GlobalIdentifierRegistry";
 import { fillZero } from "../Helper/Util";
+import { registerTranslationFunction } from "src/Registry/QueryTranslatorRegistry";
 
 export class TimeSpan {
     constructor();
@@ -20,7 +22,7 @@ export class TimeSpan {
             this.epochMilliSeconds = hours;
             return;
         }
-        else if(arguments.length === 0) {
+        else if (arguments.length === 0) {
             this.epochMilliSeconds = 0;
             return;
         }
@@ -114,3 +116,12 @@ export class TimeSpan {
         return this.epochMilliSeconds;
     }
 }
+
+declare global {
+    interface TimeValueTypeRegistry {
+        TimeSpan: TimeSpan;
+    }
+}
+
+register("TimeSpan", TimeSpan);
+registerTranslationFunction("default", o => o.registerValueType(TimeSpan, { columnType: { columnType: "time", group: "Time" }, hydrate: (value: string | Date) => value instanceof Date ? new TimeSpan(value) : TimeSpan.parse(value), instance: new TimeSpan(0) }));

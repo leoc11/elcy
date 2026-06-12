@@ -5,8 +5,9 @@ import { RelationalQueryVisitor } from "../Relational/RelationalQueryVisitor";
 import { MysqlQueryBuilder } from "./MysqlQueryBuilder";
 import { mysqlQueryTranslator } from "./MysqlQueryTranslator";
 import { MysqlSchemaBuilder } from "./MySqlSchemaBuilder";
+import { ProviderDbType } from "./Type";
 
-export abstract class MysqlDbContext extends RelationalDbContext<"mysql"> {
+export abstract class MysqlDbContext extends RelationalDbContext<ProviderDbType> {
     protected namingStrategy = new NamingStrategy();
     protected queryBuilderType = MysqlQueryBuilder;
     protected queryResultParserType = QueryResultParser;

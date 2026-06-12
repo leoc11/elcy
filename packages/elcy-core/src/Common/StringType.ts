@@ -1,4 +1,4 @@
-export type DbType = "sqlite" | "mssql" | "postgresql" | "mysql";
+export type DbType = DbTypeRegistry[keyof DbTypeRegistry];
 export type RelationshipType = "one" | "many";
 export type CompleteRelationshipType = "one-one" | "one-many" | "many-one" | "many-many";
 export type OrderDirection = "ASC" | "DESC";

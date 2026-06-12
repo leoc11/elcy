@@ -2,11 +2,10 @@ import type { Temporal as TemporalModule } from "@js-temporal/polyfill";
 import { IExpression } from "src/ExpressionBuilder/Expression/IExpression";
 import { ObjectValueExpression } from "src/ExpressionBuilder/Expression/ObjectValueExpression";
 import { ValueExpression } from "src/ExpressionBuilder/Expression/ValueExpression";
-import { fillZero } from "src/Helper/Util";
-import { DateTimeColumnMetaData, TimeColumnMetaData } from "src/MetaData";
-import { DbFunction } from "src/Query/DbFunction";
 import { SqlParameterExpression } from "src/Queryable/QueryExpression/SqlParameterExpression";
-import { TimeSpan } from "./TimeSpan";
+import { registerTranslationFunction } from "src/Registry/QueryTranslatorRegistry";
+import { register } from "src/Registry/GlobalIdentifierRegistry";
+import { DateTimeColumnMetaData, TimeColumnMetaData } from "src/MetaData";
 
 let module: typeof import("@js-temporal/polyfill").Temporal;
 try {
@@ -40,10 +39,9 @@ declare global {
 }
 
 if (Temporal) {
-    import("src/ExpressionBuilder/SyntacticAnalyzer").then(o => o.SyntacticAnalyzer).then(o => {
-        o.globalObjectMap.set("Temporal", Temporal);
-    });
-    import("src/Provider/Relational/RelationalQueryTranslator").then(o => o.relationalQueryTranslator).then(o => {
+    register("Temporal", Temporal);
+
+    registerTranslationFunction("default", o => {
         /**
          * Temporal.Instant
          * TODO: since, until
@@ -51,11 +49,12 @@ if (Temporal) {
         o.registerValueType(Temporal.Instant, {
             columnType: { columnType: "datetime", group: "DateTime" },
             hydrate: (value: string | Date, meta: DateTimeColumnMetaData) => {
-                if (value instanceof Date && meta.timeZoneHandling === "utc") {
-                    value = `${value.getFullYear()}-${fillZero(value.getMonth() + 1)}-${fillZero(value.getDate())}T${fillZero(value.getHours())}:${fillZero(value.getMinutes())}:${fillZero(value.getSeconds())}.${fillZero(value.getMilliseconds(), 3)}Z`;
+                if (value instanceof Date) {
+                    const epochMs = meta.timeZoneHandling === "utc" ? value.getTime() : Date.UTC(value.getFullYear(), value.getMonth(), value.getDate(), value.getHours(), value.getMinutes(), value.getSeconds(), value.getMilliseconds());
+                    return Temporal.Instant.fromEpochMilliseconds(epochMs);
                 }
 
-                return value instanceof Date ? Temporal.Instant.fromEpochMilliseconds(value.getTime()) : Temporal.Instant.from(value);
+                return Temporal.Instant.from(value);
             },
             instance: Temporal.Instant.fromEpochMilliseconds(0)
         });
@@ -75,17 +74,13 @@ if (Temporal) {
         o.registerValueType(Temporal.PlainTime, {
             columnType: { columnType: "time", group: "Date" },
             hydrate: (value: string | Date, meta: TimeColumnMetaData) => {
-                let time = value instanceof Date ? DbFunction.getTime(value) : TimeSpan.parse(value);
-                if (meta.timeZoneHandling === "utc") {
-                    time = time.addMinutes(-new Date(0).getTimezoneOffset());
-                }
-                
-                let option: string | Temporal.PlainTimeLike = typeof value === "string" ? value : {
-                    hour: time.getHours(),
-                    minute: time.getMinutes(),
-                    second: time.getSeconds(),
-                    millisecond: time.getMilliseconds()
-                };
+                let option: string | Temporal.PlainTimeLike = value instanceof Date ? {
+                    hour: meta.timeZoneHandling === "utc" ? value.getUTCHours() : value.getHours(),
+                    minute: meta.timeZoneHandling === "utc" ? value.getUTCMinutes() : value.getMinutes(),
+                    second: meta.timeZoneHandling === "utc" ? value.getUTCSeconds() : value.getSeconds(),
+                    millisecond: meta.timeZoneHandling === "utc" ? value.getUTCMilliseconds() : value.getMilliseconds()
+                } : value;
+
                 return Temporal.PlainTime.from(option);
             },
             instance: Temporal.PlainTime.from({ hour: 0 })
@@ -500,8 +495,7 @@ if (Temporal) {
             return `CURRENT_TIMESTAMP AT TIME ZONE ${qb.toString(exp.params[0], context)}`;
         });
     });
-
-    import("src/Provider/Mssql/MssqlQueryTranslator").then(o => o.mssqlQueryTranslator).then(o => {
+    registerTranslationFunction("mssql", o => {
         o.registerValueType(Temporal.Instant, { columnType: { columnType: "datetime2", group: "DateTime" } });
 
         o.registerMethod(Temporal.Instant.prototype, "add", (qb, exp, context) => {
@@ -618,8 +612,7 @@ if (Temporal) {
             return dateExp;
         });
     });
-
-    import("src/Provider/Postgresql/PostgresqlQueryTranslator").then(o => o.postgresqlQueryTranslator).then(o => {
+    registerTranslationFunction("postgresql", o => {
         /**
          * Temporal.Instant
          * TODO: since, until
@@ -1012,8 +1005,7 @@ if (Temporal) {
             return `CURRENT_TIMESTAMP AT TIME ZONE ${qb.toString(exp.params[0], param)}`;
         });
     });
-
-    import("src/Provider/Sqlite/SqliteQueryTranslator").then(o => o.sqliteQueryTranslator).then(o => {
+    registerTranslationFunction("sqlite", o => {
         o.registerValueType(Temporal.Instant, { columnType: { columnType: "text", group: "String" } });
         o.registerValueType(Temporal.PlainDate, { columnType: { columnType: "text", group: "String" } });
         o.registerValueType(Temporal.PlainTime, { columnType: { columnType: "text", group: "String" } });

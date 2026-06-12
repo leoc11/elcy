@@ -35,6 +35,7 @@ import { Querify, Unquerify } from "./Interface/Querify";
 import { AdditionExpression } from "src/ExpressionBuilder/Expression/AdditionExpression";
 import { StrictEqualExpression } from "src/ExpressionBuilder/Expression/StrictEqualExpression";
 import { IColumnExpression } from "./QueryExpression/IColumnExpression";
+
 export abstract class Queryable<T = any> implements AsyncIterable<T> {
     public get dbContext(): DbContext {
         return this.parent.dbContext;

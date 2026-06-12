@@ -6,8 +6,10 @@ import { RelationalDbContext } from "../Relational/RelationalDbContext";
 import { RelationalQueryVisitor } from "../Relational/RelationalQueryVisitor";
 import { SqliteQueryBuilder } from "./SqliteQueryBuilder";
 import { SqliteSchemaBuilder } from "./SqliteSchemaBuilder";
+import { ProviderDbType } from "./Type";
+
 const namingStrategy = new NamingStrategy();
-export abstract class SqliteDbContext extends RelationalDbContext<"sqlite"> {
+export abstract class SqliteDbContext extends RelationalDbContext<ProviderDbType> {
     public queryBuilderType = SqliteQueryBuilder;
     public queryParser = QueryResultParser;
     public schemaBuilderType = SqliteSchemaBuilder;
