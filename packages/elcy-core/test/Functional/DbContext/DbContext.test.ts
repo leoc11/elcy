@@ -7,7 +7,7 @@ import { mockContext } from "../../fixture/mock/MockContext";
 import { PostgresqlContext, Table1, Table1Many, Table1Table2 } from "../../fixture";
 import { IQuery } from "packages/elcy-core/src/Query/IQuery";
 import { beforeEach } from "node:test";
-import { EntityEntry } from "packages/elcy-core/src/Data/EntityEntry";
+import { Enumerable } from "@elcy/enumerable";
 
 const db = new PostgresqlContext();
 mockContext(db);
@@ -29,14 +29,16 @@ describe("DBCONTEXT", () => {
             const entry = db.attach(entity);
             entity.date = new Date();
 
-            const setData = entry.dbSet["dictionary"] as Map<string, EntityEntry>;
+            const setData = entry.dbSet["entryMap"];
             expect(db.entityEntries.hasChanges()).toBeTrue();
-            expect(setData.size).toBeGreaterThan(0);
+            let size = Enumerable.from(setData).count();
+            expect(size).toBeGreaterThan(0);
 
             db.clear();
 
             expect(db.entityEntries.hasChanges()).toBeFalse();
-            expect(setData.size).toBe(0);
+            size = Enumerable.from(setData).count();
+            expect(size).toBe(0);
         });
     });
     describe("ENTITY ENTRY", async () => {
