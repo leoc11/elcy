@@ -96,28 +96,30 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
                 parameters: this.getParameter(context)
             });
 
-            const selectExp = new SelectExpression(insertExp.entity);
-            selectExp.selects = insertExp.returnings.slice(0);
-            const entityMeta = (insertExp.entity as EntityExpression<TE>).metaData;
-            if (entityMeta?.hasGeneratedPrimary) {
-                const incrementColumn = insertExp.returnings
-                    .find(o => (o.columnMeta as IntegerColumnMetaData<TE>)?.autoIncrement);
-                selectExp.addWhere(new StrictEqualExpression(incrementColumn, new RawSqlExpression(incrementColumn.type, "LAST_INSERT_ID()")));
-            }
-            else {
-                let pkFilter = insertExp.entity.primaryColumns.reduce((r, o) => {
-                    const valueExp = itemExp[o.propertyName] as SqlParameterExpression;
-                    const paramExp = context.parameters.get(valueExp);
-                    if (paramExp) {
-                        selectExp.paramExps.push(valueExp);
-                    }
-                    const rel = new StrictEqualExpression(o, valueExp);
-                    return r ? new AndExpression(r, rel) : rel;
-                }, null as IExpression<boolean>);
-                selectExp.addWhere(pkFilter);
-            }
+            if (insertExp.returnings.length) {
+                const selectExp = new SelectExpression(insertExp.entity);
+                selectExp.selects = insertExp.returnings.slice(0);
+                const entityMeta = (insertExp.entity as EntityExpression<TE>).metaData;
+                if (entityMeta?.hasGeneratedPrimary) {
+                    const incrementColumn = insertExp.returnings
+                        .find(o => (o.columnMeta as IntegerColumnMetaData<TE>)?.autoIncrement);
+                    selectExp.addWhere(new StrictEqualExpression(incrementColumn, new RawSqlExpression(incrementColumn.type, "LAST_INSERT_ID()")));
+                }
+                else {
+                    let pkFilter = insertExp.entity.primaryColumns.reduce((r, o) => {
+                        const valueExp = itemExp[o.propertyName] as SqlParameterExpression;
+                        const paramExp = context.parameters.get(valueExp);
+                        if (paramExp) {
+                            selectExp.paramExps.push(valueExp);
+                        }
+                        const rel = new StrictEqualExpression(o, valueExp);
+                        return r ? new AndExpression(r, rel) : rel;
+                    }, null as IExpression<boolean>);
+                    selectExp.addWhere(pkFilter);
+                }
 
-            result.push(...this.getSelectQuery(selectExp, option, parameters));
+                result.push(...this.getSelectQuery(selectExp, option, parameters));
+            }
         }
         else {
             let paramValue: IQueryParameterValue<Partial<TE>[]>;

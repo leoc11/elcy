@@ -8479,15 +8479,6 @@ exports[`Mysql QUERYABLE ARRAY PARAMETER should work in select (Relation/Array) 
       {
         "parameters": Map {},
         "query": 
-"SELECT \`entity1\`.\`__index\`
-FROM \`ad_1\` AS \`entity1\`
-WHERE (\`entity1\`.\`__index\` IS NULL)"
-,
-        "type": 1,
-      },
-      {
-        "parameters": Map {},
-        "query": 
 "SELECT \`entity1\`.\`__index\`,
 	\`entity1\`.\`table1Id\`,
 	\`entity1\`.\`integer\`
@@ -8523,10 +8514,6 @@ CREATE TEMPORARY TABLE \`ad_1\`
 
 INSERT INTO \`ad_1\`(\`__index\`,\`table1Id\`,\`integer\`) VALUES
 (NULL,1234567890,11);
-
-SELECT \`entity1\`.\`__index\`
-FROM \`ad_1\` AS \`entity1\`
-WHERE (\`entity1\`.\`__index\` IS NULL);
 
 SELECT \`entity1\`.\`__index\`,
 	\`entity1\`.\`table1Id\`,

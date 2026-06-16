@@ -2,162 +2,57 @@
 
 exports[`Mysql DATA MANIPULATION INSERT should insert new entity 1 1`] = `
 [
-  BatchedQuery {
-    "_isProcessed": true,
-    "_parameters": 
+  {
+    "parameters": 
 Map {
       "?0" => 1n,
       "?1" => "TEST1",
       "?2" => 10,
-      "?3" => 1n,
     }
 ,
-    "_queries": [
-      {
-        "parameters": 
-Map {
-          "?0" => 1n,
-          "?1" => "TEST1",
-          "?2" => 10,
-        }
-,
-        "query": 
+    "query": 
 "INSERT INTO \`Table1One\`(\`table1Id\`,\`name\`,\`number\`) VALUES
 (?,?,?)"
 ,
-        "type": 2,
-      },
-      {
-        "parameters": 
-Map {
-          "?0" => 1n,
-        }
-,
-        "query": 
-"SELECT \`entity0\`.\`table1Id\`
-FROM \`Table1One\` AS \`entity0\`
-WHERE (\`entity0\`.\`table1Id\`=?)"
-,
-        "type": 1,
-      },
-    ],
-    "_query": 
-"INSERT INTO \`Table1One\`(\`table1Id\`,\`name\`,\`number\`) VALUES
-(?,?,?);
-
-SELECT \`entity0\`.\`table1Id\`
-FROM \`Table1One\` AS \`entity0\`
-WHERE (\`entity0\`.\`table1Id\`=?)"
-,
-    "_type": 3,
+    "type": 2,
   },
 ]
 `;
 
 exports[`Mysql DATA MANIPULATION INSERT should insert new entity 2 1`] = `
 [
-  BatchedQuery {
-    "_isProcessed": true,
-    "_parameters": 
+  {
+    "parameters": 
 Map {
       "?0" => 2n,
       "?1" => "TEST2",
       "?2" => 20,
-      "?3" => 2n,
     }
 ,
-    "_queries": [
-      {
-        "parameters": 
-Map {
-          "?0" => 2n,
-          "?1" => "TEST2",
-          "?2" => 20,
-        }
-,
-        "query": 
+    "query": 
 "INSERT INTO \`Table1One\`(\`table1Id\`,\`name\`,\`number\`) VALUES
 (?,?,?)"
 ,
-        "type": 2,
-      },
-      {
-        "parameters": 
-Map {
-          "?0" => 2n,
-        }
-,
-        "query": 
-"SELECT \`entity0\`.\`table1Id\`
-FROM \`Table1One\` AS \`entity0\`
-WHERE (\`entity0\`.\`table1Id\`=?)"
-,
-        "type": 1,
-      },
-    ],
-    "_query": 
-"INSERT INTO \`Table1One\`(\`table1Id\`,\`name\`,\`number\`) VALUES
-(?,?,?);
-
-SELECT \`entity0\`.\`table1Id\`
-FROM \`Table1One\` AS \`entity0\`
-WHERE (\`entity0\`.\`table1Id\`=?)"
-,
-    "_type": 3,
+    "type": 2,
   },
 ]
 `;
 
 exports[`Mysql DATA MANIPULATION INSERT should insert new entity 3 1`] = `
 [
-  BatchedQuery {
-    "_isProcessed": true,
-    "_parameters": 
+  {
+    "parameters": 
 Map {
       "?0" => 3n,
       "?1" => "TEST3",
       "?2" => 30,
-      "?3" => 3n,
     }
 ,
-    "_queries": [
-      {
-        "parameters": 
-Map {
-          "?0" => 3n,
-          "?1" => "TEST3",
-          "?2" => 30,
-        }
-,
-        "query": 
+    "query": 
 "INSERT INTO \`Table1One\`(\`table1Id\`,\`name\`,\`number\`) VALUES
 (?,?,?)"
 ,
-        "type": 2,
-      },
-      {
-        "parameters": 
-Map {
-          "?0" => 3n,
-        }
-,
-        "query": 
-"SELECT \`entity0\`.\`table1Id\`
-FROM \`Table1One\` AS \`entity0\`
-WHERE (\`entity0\`.\`table1Id\`=?)"
-,
-        "type": 1,
-      },
-    ],
-    "_query": 
-"INSERT INTO \`Table1One\`(\`table1Id\`,\`name\`,\`number\`) VALUES
-(?,?,?);
-
-SELECT \`entity0\`.\`table1Id\`
-FROM \`Table1One\` AS \`entity0\`
-WHERE (\`entity0\`.\`table1Id\`=?)"
-,
-    "_type": 3,
+    "type": 2,
   },
 ]
 `;
@@ -690,33 +585,24 @@ exports[`Mysql DATA MANIPULATION INSERT should insert entity with loop type refe
 Map {
       "?0" => 21n,
       "?1" => 0n,
-      "?2" => 21n,
-      "?3" => 22n,
-      "?4" => 21n,
-      "?5" => 22n,
-      "?6" => 51n,
-      "?7" => 51n,
-      "?8" => 54n,
-      "?9" => 54n,
-      "?10" => 31n,
-      "?11" => 0n,
-      "?12" => 31n,
-      "?13" => 33n,
-      "?14" => 31n,
-      "?15" => 54n,
-      "?16" => 33n,
-      "?17" => 52n,
-      "?18" => 33n,
-      "?19" => 52n,
-      "?20" => 55n,
-      "?21" => 51n,
-      "?22" => 55n,
-      "?23" => 1n,
-      "?24" => 0n,
-      "?25" => 2n,
-      "?26" => 32n,
-      "?27" => 33n,
-      "?28" => 32n,
+      "?2" => 22n,
+      "?3" => 21n,
+      "?4" => 51n,
+      "?5" => 54n,
+      "?6" => 31n,
+      "?7" => 0n,
+      "?8" => 33n,
+      "?9" => 31n,
+      "?10" => 54n,
+      "?11" => 52n,
+      "?12" => 33n,
+      "?13" => 55n,
+      "?14" => 51n,
+      "?15" => 1n,
+      "?16" => 0n,
+      "?17" => 2n,
+      "?18" => 32n,
+      "?19" => 33n,
     }
 ,
     "_queries": [
@@ -736,19 +622,6 @@ Map {
       {
         "parameters": 
 Map {
-          "?0" => 21n,
-        }
-,
-        "query": 
-"SELECT \`entity0\`.\`id\`
-FROM \`CycleDigon1\` AS \`entity0\`
-WHERE (\`entity0\`.\`id\`=?)"
-,
-        "type": 1,
-      },
-      {
-        "parameters": 
-Map {
           "?0" => 22n,
           "?1" => 21n,
         }
@@ -758,19 +631,6 @@ Map {
 (?,?)"
 ,
         "type": 2,
-      },
-      {
-        "parameters": 
-Map {
-          "?0" => 22n,
-        }
-,
-        "query": 
-"SELECT \`entity1\`.\`id\`
-FROM \`CycleDigon2\` AS \`entity1\`
-WHERE (\`entity1\`.\`id\`=?)"
-,
-        "type": 1,
       },
       {
         "parameters": 
@@ -787,19 +647,6 @@ Map {
       {
         "parameters": 
 Map {
-          "?0" => 51n,
-        }
-,
-        "query": 
-"SELECT \`entity2\`.\`id\`
-FROM \`CyclePolygon1\` AS \`entity2\`
-WHERE (\`entity2\`.\`id\`=?)"
-,
-        "type": 1,
-      },
-      {
-        "parameters": 
-Map {
           "?0" => 54n,
         }
 ,
@@ -808,19 +655,6 @@ Map {
 (?,DEFAULT)"
 ,
         "type": 2,
-      },
-      {
-        "parameters": 
-Map {
-          "?0" => 54n,
-        }
-,
-        "query": 
-"SELECT \`entity3\`.\`id\`
-FROM \`CyclePolygon4\` AS \`entity3\`
-WHERE (\`entity3\`.\`id\`=?)"
-,
-        "type": 1,
       },
       {
         "parameters": 
@@ -834,19 +668,6 @@ Map {
 (?,?,DEFAULT)"
 ,
         "type": 2,
-      },
-      {
-        "parameters": 
-Map {
-          "?0" => 31n,
-        }
-,
-        "query": 
-"SELECT \`entity4\`.\`id\`
-FROM \`CycleTriangle1\` AS \`entity4\`
-WHERE (\`entity4\`.\`id\`=?)"
-,
-        "type": 1,
       },
       {
         "parameters": 
@@ -865,19 +686,6 @@ Map {
       {
         "parameters": 
 Map {
-          "?0" => 33n,
-        }
-,
-        "query": 
-"SELECT \`entity5\`.\`id\`
-FROM \`CycleTriangle3\` AS \`entity5\`
-WHERE (\`entity5\`.\`id\`=?)"
-,
-        "type": 1,
-      },
-      {
-        "parameters": 
-Map {
           "?0" => 52n,
           "?1" => 33n,
         }
@@ -891,19 +699,6 @@ Map {
       {
         "parameters": 
 Map {
-          "?0" => 52n,
-        }
-,
-        "query": 
-"SELECT \`entity6\`.\`id\`
-FROM \`CyclePolygon2\` AS \`entity6\`
-WHERE (\`entity6\`.\`id\`=?)"
-,
-        "type": 1,
-      },
-      {
-        "parameters": 
-Map {
           "?0" => 55n,
           "?1" => 51n,
         }
@@ -913,19 +708,6 @@ Map {
 (?,?)"
 ,
         "type": 2,
-      },
-      {
-        "parameters": 
-Map {
-          "?0" => 55n,
-        }
-,
-        "query": 
-"SELECT \`entity7\`.\`id\`
-FROM \`CyclePolygon5\` AS \`entity7\`
-WHERE (\`entity7\`.\`id\`=?)"
-,
-        "type": 1,
       },
       {
         "parameters": 
@@ -955,89 +737,40 @@ Map {
 ,
         "type": 2,
       },
-      {
-        "parameters": 
-Map {
-          "?0" => 32n,
-        }
-,
-        "query": 
-"SELECT \`entity9\`.\`id\`
-FROM \`CycleTriangle2\` AS \`entity9\`
-WHERE (\`entity9\`.\`id\`=?)"
-,
-        "type": 1,
-      },
     ],
     "_query": 
 "INSERT INTO \`CycleDigon1\`(\`id\`,\`table1Id\`,\`cycleDigon2Id\`) VALUES
 (?,?,DEFAULT);
 
-SELECT \`entity0\`.\`id\`
-FROM \`CycleDigon1\` AS \`entity0\`
-WHERE (\`entity0\`.\`id\`=?);
-
 INSERT INTO \`CycleDigon2\`(\`id\`,\`cycleDigon1Id\`) VALUES
 (?,?);
-
-SELECT \`entity1\`.\`id\`
-FROM \`CycleDigon2\` AS \`entity1\`
-WHERE (\`entity1\`.\`id\`=?);
 
 INSERT INTO \`CyclePolygon1\`(\`id\`,\`cyclePolygon2Id\`) VALUES
 (?,DEFAULT);
 
-SELECT \`entity2\`.\`id\`
-FROM \`CyclePolygon1\` AS \`entity2\`
-WHERE (\`entity2\`.\`id\`=?);
-
 INSERT INTO \`CyclePolygon4\`(\`id\`,\`cyclePolygon5Id\`) VALUES
 (?,DEFAULT);
-
-SELECT \`entity3\`.\`id\`
-FROM \`CyclePolygon4\` AS \`entity3\`
-WHERE (\`entity3\`.\`id\`=?);
 
 INSERT INTO \`CycleTriangle1\`(\`id\`,\`table1Id\`,\`cycleTriangle2Id\`) VALUES
 (?,?,DEFAULT);
 
-SELECT \`entity4\`.\`id\`
-FROM \`CycleTriangle1\` AS \`entity4\`
-WHERE (\`entity4\`.\`id\`=?);
-
 INSERT INTO \`CycleTriangle3\`(\`id\`,\`cycleTriangle1Id\`,\`cyclePolygon4Id\`) VALUES
 (?,?,?);
-
-SELECT \`entity5\`.\`id\`
-FROM \`CycleTriangle3\` AS \`entity5\`
-WHERE (\`entity5\`.\`id\`=?);
 
 INSERT INTO \`CyclePolygon2\`(\`id\`,\`cycleTriangle3Id\`) VALUES
 (?,?);
 
-SELECT \`entity6\`.\`id\`
-FROM \`CyclePolygon2\` AS \`entity6\`
-WHERE (\`entity6\`.\`id\`=?);
-
 INSERT INTO \`CyclePolygon5\`(\`id\`,\`cyclePolygon1Id\`) VALUES
 (?,?);
-
-SELECT \`entity7\`.\`id\`
-FROM \`CyclePolygon5\` AS \`entity7\`
-WHERE (\`entity7\`.\`id\`=?);
 
 INSERT INTO \`CycleSelf\`(\`id\`,\`table1Id\`,\`parentId\`) VALUES
 	(?,?,DEFAULT)
 	,(?,DEFAULT,DEFAULT);
 
 INSERT INTO \`CycleTriangle2\`(\`id\`,\`cycleTriangle3Id\`) VALUES
-(?,?);
-
-SELECT \`entity9\`.\`id\`
-FROM \`CycleTriangle2\` AS \`entity9\`
-WHERE (\`entity9\`.\`id\`=?)"
+(?,?)"
 ,
-    "_type": 3,
+    "_type": 2,
   },
   BatchedQuery {
     "_isProcessed": true,
@@ -2771,15 +2504,6 @@ exports[`Mysql DATA MANIPULATION DELETE should cascade delete entity + relation 
       {
         "parameters": Map {},
         "query": 
-"SELECT \`delete\`.\`id\`
-FROM \`delete\` AS \`delete\`
-WHERE (\`delete\`.\`id\`=1)"
-,
-        "type": 1,
-      },
-      {
-        "parameters": Map {},
-        "query": 
 "UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
 INNER JOIN \`delete\` AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
 SET \`entity0\`.\`deleted\` = true,
@@ -2809,10 +2533,6 @@ CREATE TEMPORARY TABLE \`delete\`
 INSERT INTO \`delete\`(\`id\`) VALUES
 (1);
 
-SELECT \`delete\`.\`id\`
-FROM \`delete\` AS \`delete\`
-WHERE (\`delete\`.\`id\`=1);
-
 UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
 INNER JOIN \`delete\` AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
 SET \`entity0\`.\`deleted\` = true,
@@ -2823,7 +2543,7 @@ UPDATE \`Table1Manies\` AS \`entity1\`
 SET \`entity1\`.\`deleted\` = true
 WHERE (\`entity1\`.\`deleted\`=false)"
 ,
-    "_type": 7,
+    "_type": 6,
   },
 ]
 `;
@@ -2858,15 +2578,6 @@ exports[`Mysql DATA MANIPULATION DELETE should delete with SET NULL option (soft
       {
         "parameters": Map {},
         "query": 
-"SELECT \`delete\`.\`id\`
-FROM \`delete\` AS \`delete\`
-WHERE (\`delete\`.\`id\`=1)"
-,
-        "type": 1,
-      },
-      {
-        "parameters": Map {},
-        "query": 
 "UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
 INNER JOIN \`delete\` AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
 SET \`entity0\`.\`deleted\` = true,
@@ -2895,10 +2606,6 @@ CREATE TEMPORARY TABLE \`delete\`
 INSERT INTO \`delete\`(\`id\`) VALUES
 (1);
 
-SELECT \`delete\`.\`id\`
-FROM \`delete\` AS \`delete\`
-WHERE (\`delete\`.\`id\`=1);
-
 UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
 INNER JOIN \`delete\` AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
 SET \`entity0\`.\`deleted\` = true,
@@ -2908,7 +2615,7 @@ WHERE (\`entity0\`.\`deleted\`=false);
 UPDATE \`Table1Manies\` AS \`entity1\`
 SET \`entity1\`.\`table1Id\` = NULL"
 ,
-    "_type": 7,
+    "_type": 6,
   },
 ]
 `;
@@ -2943,15 +2650,6 @@ exports[`Mysql DATA MANIPULATION DELETE should delete with SET DEFAULT option (s
       {
         "parameters": Map {},
         "query": 
-"SELECT \`delete\`.\`id\`
-FROM \`delete\` AS \`delete\`
-WHERE (\`delete\`.\`id\`=1)"
-,
-        "type": 1,
-      },
-      {
-        "parameters": Map {},
-        "query": 
 "UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
 INNER JOIN \`delete\` AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
 SET \`entity0\`.\`deleted\` = true,
@@ -2980,10 +2678,6 @@ CREATE TEMPORARY TABLE \`delete\`
 INSERT INTO \`delete\`(\`id\`) VALUES
 (1);
 
-SELECT \`delete\`.\`id\`
-FROM \`delete\` AS \`delete\`
-WHERE (\`delete\`.\`id\`=1);
-
 UPDATE \`fixture\`.\`Table1s\` AS \`entity0\`
 INNER JOIN \`delete\` AS \`delete\` ON (\`entity0\`.\`id\`=\`delete\`.\`id\`)
 SET \`entity0\`.\`deleted\` = true,
@@ -2993,7 +2687,7 @@ WHERE (\`entity0\`.\`deleted\`=false);
 UPDATE \`Table1Manies\` AS \`entity1\`
 SET \`entity1\`.\`table1Id\` = 0"
 ,
-    "_type": 7,
+    "_type": 6,
   },
 ]
 `;
