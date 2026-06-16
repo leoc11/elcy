@@ -2,7 +2,7 @@ import { Enumerable, IEnumerable } from "@elcy/enumerable";
 import { IQueryCache } from "../Cache/IQueryCache";
 import { QueryType } from "../Common/Enum";
 import { DeleteMode } from "../Common/StringType";
-import { FlatObjectLike, GenericType, IObjectType, MethodKey, NumberValueType, PrimitiveType, SetterObj, StringKeyOf, ValueType } from "../Common/Type";
+import { GenericType, IObjectType, MethodKey, NumberValueType, ObjectLike, PrimitiveType, SetterObj, StringKeyOf, ValueType } from "../Common/Type";
 import { DbContext } from "../Data/DbContext";
 import { QueryBuilderError, QueryBuilderErrorCode } from "../Error/QueryBuilderError";
 import { AndExpression } from "../ExpressionBuilder/Expression/AndExpression";
@@ -475,7 +475,7 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         this.dbContext.deferredQueries.push(query);
         return query;
     }
-    public deferredFind(idOrPredicate?: ValueType | FlatObjectLike<T> | ((item: Querify<T>) => boolean)): DeferredQuery<T> {
+    public deferredFind(idOrPredicate?: ValueType | ObjectLike<T> | ((item: Querify<T>) => boolean)): DeferredQuery<T> {
         const predicate = idOrPredicate instanceof Function ? idOrPredicate : undefined;
         const id = isNotNull(idOrPredicate) && !(idOrPredicate instanceof Function) ? idOrPredicate : undefined;
         if (id !== undefined) {
@@ -1130,8 +1130,8 @@ export abstract class Queryable<T = any> implements AsyncIterable<T> {
         return await query.execute();
     }
     public async find(predicate?: (item: Querify<T>) => boolean): Promise<T>;
-    public async find(id: ValueType | FlatObjectLike<T>): Promise<T>;
-    public async find(idOrPredicate?: ValueType | FlatObjectLike<T> | ((item: Querify<T>) => boolean)) {
+    public async find(id: ValueType | ObjectLike<T>): Promise<T>;
+    public async find(idOrPredicate?: ValueType | ObjectLike<T> | ((item: Querify<T>) => boolean)) {
         const query: DeferredQuery<T> = this.deferredFind(idOrPredicate);
         return await query.execute();
     }

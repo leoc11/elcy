@@ -27,6 +27,7 @@ import { getEntityMetadata } from "src/MetaData/MetaDataMapper";
 import { RawQueryable } from "src/Queryable/RawQueryable";
 import { Querify } from "src/Queryable/Interface/Querify";
 import { hashCode } from "src/Helper/Hash";
+import { MultiKeyMap } from "src/Common/MultiKeyMap";
 
 export class DbSet<TE extends object = any> extends Queryable<TE> {
     public override get dbContext(): DbContext {
@@ -48,9 +49,16 @@ export class DbSet<TE extends object = any> extends Queryable<TE> {
     constructor(public override readonly type: IObjectType<TE>, dbContext: DbContext) {
         super(type);
         this._dbContext = dbContext;
+        this.entryMap = new MultiKeyMap(this.metaData.primaryKeys.map(o => o.propertyName));
+        this.local = Enumerable.from(this.entryMap).map((o) => o.entity);
+        if (this.metaData.hasGeneratedPrimary) {
+            this.generatedEntryMap = new Map();
+            this.local = this.local.concat(Enumerable.from(this.generatedEntryMap).map(o => o[1].entity));
+        }
     }
-    protected readonly dictionary: Map<string, EntityEntry<TE>> = new Map();
-    public readonly local: Enumerable<TE> = Enumerable.from(this.dictionary).map((o) => o[1].entity);
+    protected readonly entryMap: MultiKeyMap<TE, EntityEntry<TE>>;
+    protected readonly generatedEntryMap: Map<TE, EntityEntry<TE>>;
+    public readonly local: Enumerable<TE>;
     private readonly _dbContext: DbContext;
     private _metaData: EntityMetaData<TE>;
     public buildQuery(visitor: IQueryVisitor): IQueryExpression<TE> {
@@ -59,7 +67,7 @@ export class DbSet<TE extends object = any> extends Queryable<TE> {
         return result;
     }
     public clear() {
-        this.dictionary.clear();
+        this.entryMap.clear();
     }
     // simple delete.
     public override deferredDelete(mode: DeleteMode): DeferredQuery<number>;
@@ -203,30 +211,31 @@ export class DbSet<TE extends object = any> extends Queryable<TE> {
     public fromSql(strings: TemplateStringsArray, ...values: ValueType[]): Queryable<TE> {
         return new RawQueryable(strings, values, this);
     }
-    public entry(entity: TE | FlatObjectLike<TE>) {
+    public entry(entity: TE | ObjectLike<TE>) {
         const key = this.getKey(entity);
-        let entry = this.dictionary.get(key);
+        let entry = this.findEntry(key ?? entity as TE);
         if (entry) {
             if (entry.entity !== entity) {
-                entry.setOriginalValues(entity);
+                entry.setOriginalValues(entity as FlatObjectLike<TE>);
             }
         }
         else {
             if (!(entity instanceof this.type)) {
                 const entityType = new this.type();
                 entry = new EntityEntry<TE>(this, entityType, key);
-                entry.setOriginalValues(entity);
+                entry.setOriginalValues(entity as FlatObjectLike<TE>);
             }
             else {
                 entry = new EntityEntry<TE>(this, entity, key);
             }
-            this.dictionary.set(key, entry);
+
+            this.insertEntry(entry);
         }
         return entry;
     }
     public override async find(predicate?: (item: Querify<TE>) => boolean): Promise<TE>;
-    public override async find(id: ValueType | FlatObjectLike<TE>, forceReload?: boolean): Promise<TE>;
-    public override async find(idOrPredicate?: ValueType | FlatObjectLike<TE> | ((item: Querify<TE>) => boolean), forceReload?: boolean) {
+    public override async find(id: ValueType | ObjectLike<TE>, forceReload?: boolean): Promise<TE>;
+    public override async find(idOrPredicate?: ValueType | ObjectLike<TE> | ((item: Querify<TE>) => boolean), forceReload?: boolean) {
         let entity: TE;
         if (!idOrPredicate) {
             entity = await super.find();
@@ -243,42 +252,47 @@ export class DbSet<TE extends object = any> extends Queryable<TE> {
 
         return entity;
     }
-    public findLocal(id: ValueType | FlatObjectLike<TE>): TE {
+    public findLocal(id: ValueType | ObjectLike<TE>): TE {
         const key = this.getKey(id);
-        const entry = this.dictionary.get(key);
-        return entry ? entry.entity : undefined;
+        const entry = this.findEntry(key);
+        return entry?.entity;
     }
-    public getKey(id: ValueType | FlatObjectLike<TE>): string {
+    public getKey(id: ValueType | ObjectLike<TE>): ObjectLike<TE> {
         if (isNull(id)) {
             throw new Error("Parameter cannot be null");
         }
+
+        let keyObj: ObjectLike<TE> = {};
         if (isValue(id)) {
-            return (id as string).toString();
+            if (this.primaryKeys.length > 1) {
+                throw "unexpected";
+            }
+
+            const property = this.primaryKeys[0].propertyName;
+            keyObj[property] = id as ObjectLike<TE>[StringKeyOf<TE>];
+            return keyObj;
         }
 
-        let keyString = "";
-        let useReference = false;
         for (const o of this.primaryKeys) {
-            const val = id[o.propertyName as keyof FlatObjectLike<TE>];
-            if (isNull(val)) {
+            const val = id[o.propertyName];
+            if (val === undefined || (val === null && !o.nullable)) {
                 if (o.generation & ColumnGeneration.Insert) {
-                    useReference = true;
+                    return undefined;
                 }
-                else {
-                    throw new Error(`primary key "${o.propertyName}" required`);
-                }
-                break;
+
+                throw new Error(`primary key "${o.propertyName}" required`);
             }
-            else {
-                keyString += (val as string) + "|";
-            }
+            keyObj[o.propertyName] = val;
         }
 
-        if (useReference) {
-            // TODO: need to find other way for db value data
-            return id as unknown as string;
+        return keyObj;
+    }
+    protected findEntry(id: ObjectLike<TE>): EntityEntry<TE> {
+        if (this.generatedEntryMap?.has(id as TE)) {
+            return this.generatedEntryMap.get(id as TE);
         }
-        return keyString.slice(0, - 1);
+
+        return this.entryMap.get(id);
     }
     public hashCode() {
         return hashCode(this.type.name);
@@ -319,10 +333,31 @@ export class DbSet<TE extends object = any> extends Queryable<TE> {
         this.dbContext.add(entity);
         return entity;
     }
-    public updateEntryKey(entry: EntityEntry<TE>) {
-        this.dictionary.delete(entry.key);
-        entry.key = this.getKey(entry.entity);
-        this.dictionary.set(entry.key, entry);
+    public deleteEntry(entry: EntityEntry<TE>) {
+        if (entry.key === undefined) {
+            this.generatedEntryMap.delete(entry.entity);
+            return;
+        }
+
+        this.entryMap.delete(entry.key);
+    }
+    public insertEntry(entry: EntityEntry<TE>) {
+        if (entry.key === undefined) {
+            this.generatedEntryMap.set(entry.entity, entry);
+            return;
+        }
+
+        this.entryMap.set(entry.key, entry);
+    }
+    public updateEntryKey(entry: EntityEntry<TE>, oldKey: ObjectLike<TE>) {
+        if (oldKey === undefined) {
+            this.generatedEntryMap.delete(entry.entity);
+        }
+        else {
+            this.entryMap.delete(oldKey);
+        }
+
+        this.entryMap.set(entry.key, entry);
     }
 
     public async upsert(item: FlatObjectLike<TE>) {

@@ -1,5 +1,5 @@
 import { Enumerable } from "@elcy/enumerable";
-import { FlatObjectLike, FlatObjectValue, KeysExceptType, KeysType, StringKeyOf, ValueType } from "../Common/Type";
+import { FlatObjectLike, FlatObjectValue, KeysExceptType, KeysType, ObjectLike, StringKeyOf, ValueType } from "../Common/Type";
 import { FunctionExpression } from "../ExpressionBuilder/Expression/FunctionExpression";
 import { MemberAccessExpression } from "../ExpressionBuilder/Expression/MemberAccessExpression";
 import { ParameterExpression } from "../ExpressionBuilder/Expression/ParameterExpression";
@@ -33,6 +33,10 @@ export class EntityEntry<TE extends object = any> implements IEntityEntry<TE> {
         if (this._state !== value) {
             const dbContext = this.dbSet.dbContext;
             switch (this.state) {
+                case EntityState.Detached: {
+                    this.dbSet.insertEntry(this);
+                    break;
+                }
                 case EntityState.Added: {
                     const typedAddEntries = dbContext.entityEntries.add.get(this.metaData);
                     if (typedAddEntries) {
@@ -83,12 +87,20 @@ export class EntityEntry<TE extends object = any> implements IEntityEntry<TE> {
                     typedEntries.push(this);
                     break;
                 }
+                case EntityState.Detached: {
+                    this.dbSet.deleteEntry(this);
+                    break;
+                }
             }
             this._state = value;
         }
     }
-    constructor(public readonly dbSet: DbSet<TE>, public readonly entity: TE, public key: string) {
+    public get key(): Readonly<ObjectLike<TE>> {
+        return this._key;
+    }
+    constructor(public readonly dbSet: DbSet<TE>, public readonly entity: TE, key?: ObjectLike<TE>) {
         this._state = EntityState.Detached;
+        this._key = key;
         trackEntity(entity, this.onPropertyChanged);
     }
 
@@ -97,6 +109,7 @@ export class EntityEntry<TE extends object = any> implements IEntityEntry<TE> {
     public enableTrackChanges = true;
     private _originalValues: Map<StringKeyOf<TE>, TE[StringKeyOf<TE>]> = new Map();
     private _state: EntityState;
+    private _key: ObjectLike<TE>;
     public acceptChanges(...properties: Array<KeysType<TE, ValueType>>) {
         if (properties.length && this.state !== EntityState.Modified) {
             return;
@@ -258,14 +271,6 @@ export class EntityEntry<TE extends object = any> implements IEntityEntry<TE> {
         return this.entity[prop];
     }
 
-    public getPrimaryValues() {
-        const res: FlatObjectLike<TE> = {};
-        for (const o of this.dbSet.primaryKeys) {
-            res[o.propertyName as keyof FlatObjectLike<TE>] = this.entity[o.propertyName] as FlatObjectValue<TE>;
-        }
-        return res;
-    }
-
     //#region Relations
     public isPropertyModified(prop: StringKeyOf<TE>) {
         return this._originalValues.has(prop);
@@ -302,7 +307,11 @@ export class EntityEntry<TE extends object = any> implements IEntityEntry<TE> {
      * Note: To get clean entity from database, call resetChanges after reload.
      */
     public async reload() {
-        await this.dbSet.find(this.getPrimaryValues(), true);
+        if (this.state <= EntityState.Added) {
+            throw "unexpected";
+        }
+
+        await this.dbSet.find(this.key, true);
     }
 
     public buildRelation(...relations: Array<KeysExceptType<TE, ValueType> | IRelationMetaData<TE>>) {
@@ -344,13 +353,13 @@ export class EntityEntry<TE extends object = any> implements IEntityEntry<TE> {
             return enumerable.toArray();
         }
         else {
-            const key: FlatObjectLike<T2> = {};
+            const key: ObjectLike<T2> = {};
             for (const [col, tCol] of relation.relationMaps) {
                 const propVal = this.entity[col.propertyName] as FlatObjectValue<T2>;
                 if (propVal === undefined) {
                     return undefined;
                 }
-                key[tCol.propertyName as keyof FlatObjectLike<T2>] = propVal;
+                key[tCol.propertyName] = propVal;
             }
             return set.findLocal(key);
         }
@@ -396,7 +405,9 @@ export class EntityEntry<TE extends object = any> implements IEntityEntry<TE> {
         if (isColumnMetaData(this.metaData, metadata)) {
             if (this.dbSet.primaryKeys.includes(metadata)) {
                 // primary key changed, update dbset entry dictionary.
-                this.dbSet.updateEntryKey(this);
+                const oriKey = this._key;
+                this._key = this.dbSet.getKey(this.entity);
+                this.dbSet.updateEntryKey(this, oriKey);
             }
 
             if (oldValue !== newValue && metadata instanceof EmbeddedRelationMetaData) {

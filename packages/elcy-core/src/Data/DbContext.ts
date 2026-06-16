@@ -65,6 +65,7 @@ import { CommitPlanner } from "./UOW/CommitPlanner";
 import { IRelationMetaData } from "src/MetaData";
 import { planSelfReferenceCommit } from "./UOW/SelfReferenceCommitPlanner";
 import { finalizeRelation } from "src/Decorator/Relation/RelationFinalizer";
+import { MultiKeyMap } from "src/Common/MultiKeyMap";
 
 const connectionManagerMap = new WeakMap<Function, IConnectionManager<any>>();
 const queryCacheManagerMap = new WeakMap<Function, IQueryCacheManager>();
@@ -423,9 +424,6 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
 
     //#endregion
 
-    private getRowKey(entityMeta: IEntityMetaData, data: object): string {
-        return entityMeta.primaryKeys.map(o => String(data[o.columnName as keyof object])).join("|");
-    }
     //#region Update
     public async saveChanges(options?: ISaveChangesOption): Promise<number> {
         if (!this.entityEntries.hasChanges()) {
@@ -561,7 +559,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             deleteQueries.set(entityMeta, [deleteResult]);
         }
 
-        const entityAutoIdentityMap = new Map<IEntityMetaData, Map<EntityEntry, string>>();
+        const entityAutoIdentityMap = new Map<IEntityMetaData, Map<EntityEntry, object>>();
         const identityParameterMap = Enumerable.from<[IEntityMetaData, DeferredQuery[][]]>(insertQueries)
             .concat(updateQueries)
             .flatMap(o => o[1])
@@ -607,9 +605,10 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                     const autoEntries = autoEntriesMap.get(insertBatch);
                     const autoAddedEntries = this.entityEntries.add.get(entityMeta);
                     let i = 0;
+                    const entrySet = this.set(entityMeta.type);
                     for (const rowValue of rowValues) {
                         const entry = autoEntries[i++];
-                        identityRows.set(entry, this.getRowKey(entityMeta, rowValue));
+                        identityRows.set(entry, entrySet.getKey(rowValue));
                         idRowDataMap.set(autoAddedEntries.indexOf(entry), rowValue);
                     }
 
@@ -651,14 +650,21 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                 const eventEmitter = getEventEmitter(entityMeta, this);
                 const parentRelations = Enumerable.from(entityMeta.relations)
                     .filter((o) => !o.nullable && !o.isMaster && o.relationType === "one" && !!o.relationMaps);
-
-                const updateData = Enumerable.from(queries).flatMap(o => o).flatMap((o) => o.value.rows).toMap((o) => this.getRowKey(entityMeta, o));
+                const entrySet = this.set(entityMeta.type);
+                const updateData = Enumerable.from(queries)
+                    .flatMap(o => o)
+                    .flatMap((o) => o.value.rows)
+                    .reduce((r, o) => {
+                        const key = entrySet.getKey(o);
+                        r.set(key, o);
+                        return r;
+                    }, new MultiKeyMap(entityMeta.primaryKeys.map(o => o.propertyName)));
                 const entityEntries = orderedEntityAdd.get(entityMeta);
                 const identityKeys = entityAutoIdentityMap.get(entityMeta);
                 for (let i = 0, len = entityEntries.length; i < len; i++) {
                     const entityEntry = entityEntries[i];
                     let key = entityEntry.key;
-                    if (entityMeta.hasGeneratedPrimary) {
+                    if (isNull(key) && entityMeta.hasGeneratedPrimary) {
                         key = identityKeys.get(entityEntry);
                     }
                     const data = updateData.get(key) as Record<string, DbValue>;
@@ -694,7 +700,14 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                     .filter((o) => !o.nullable && !o.isMaster && o.relationType === "one" && !!o.relationMaps);
 
                 const dbSet = this.set(entityMeta.type);
-                const updateData = Enumerable.from(queries).flatMap(o => o).flatMap((o) => o.value.rows).toMap((o: object) => dbSet.getKey(o), (o: object) => o);
+                const updateData = Enumerable.from(queries)
+                    .flatMap(o => o)
+                    .flatMap((o) => o.value.rows)
+                    .reduce((r, o) => {
+                        const key = dbSet.getKey(o);
+                        r.set(key, o);
+                        return r;
+                    }, new MultiKeyMap(entityMeta.primaryKeys.map(o => o.propertyName)));
                 const entityEntries = orderedEntityUpdate.get(entityMeta);
                 for (const entityEntry of entityEntries) {
                     const data = updateData.get(entityEntry.key) as Record<string, DbValue>;
@@ -1239,7 +1252,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                 const parentEntity = entry.entity[rel.propertyName] as Record<string, unknown>;
                 if (parentEntity) {
                     const parentEntry = entry.dbSet.dbContext.entry(parentEntity);
-                    const isGeneratedPrimaryParent = parentEntry.state === EntityState.Added && typeof parentEntry.key !== "string";
+                    const isGeneratedPrimaryParent = parentEntry.state === EntityState.Added && parentEntry.key === undefined;
                     const index = isGeneratedPrimaryParent ? parentEntry.dbSet.dbContext.entityEntries.add.get(parentEntry.metaData).indexOf(parentEntry) : undefined;
                     if (isGeneratedPrimaryParent) {
                         paramValue.resolvers.push({
@@ -1364,7 +1377,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                     const parentEntity = entry.entity[rel.propertyName] as Record<string, unknown>;
                     if (parentEntity) {
                         const parentEntry = entry.dbSet.dbContext.entry(parentEntity);
-                        const isGeneratedPrimary = parentEntry.state === EntityState.Added && typeof parentEntry.key !== "string";
+                        const isGeneratedPrimary = parentEntry.state === EntityState.Added && parentEntry.key === undefined;
                         const index = isGeneratedPrimary ? parentEntry.dbSet.dbContext.entityEntries.add.get(parentEntry.metaData)?.indexOf(parentEntry) : undefined;
                         for (const [col, parentCol] of rel.relationMaps) {
                             const paramExp = new SqlParameterExpression(new ParameterExpression(visitor.newAlias("param"), parentCol.type), col);
@@ -1465,7 +1478,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                     const parentEntity = entry.entity[rel.propertyName] as Record<string, unknown>;
                     if (parentEntity) {
                         const parentEntry = entry.dbSet.dbContext.entry(parentEntity);
-                        const isGeneratedPrimary = parentEntry.state === EntityState.Added && typeof parentEntry.key !== "string";
+                        const isGeneratedPrimary = parentEntry.state === EntityState.Added && parentEntry.key === undefined;
                         const index = parentEntry.dbSet.dbContext.entityEntries.add.get(parentEntry.metaData).indexOf(parentEntry);
                         for (const [col, parentCol] of rel.relationMaps) {
                             const paramExp = new SqlParameterExpression(new ParameterExpression(visitor.newAlias("param"), parentCol.type), col);
@@ -1574,7 +1587,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                     const parentEntity = entry.entity[rel.propertyName] as Record<string, unknown>;
                     if (parentEntity) {
                         const parentEntry = entry.dbSet.dbContext.entry(parentEntity);
-                        const isGeneratedPrimary = parentEntry.state === EntityState.Added && typeof parentEntry.key !== "string";
+                        const isGeneratedPrimary = parentEntry.state === EntityState.Added && parentEntry.key === undefined;
                         for (const [col, parentCol] of rel.relationMaps) {
                             ArrayExtension.add(modifiedColumns, col);
                             const paramExp = new SqlParameterExpression(new ParameterExpression(visitor.newAlias("param"), parentCol.type), col);
@@ -1781,7 +1794,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                     const parentEntity = entry.entity[rel.propertyName] as Record<string, unknown>;
                     if (parentEntity) {
                         const parentEntry = entry.dbSet.dbContext.entry(parentEntity);
-                        const isGeneratedPrimary = parentEntry.state === EntityState.Added && typeof parentEntry.key !== "string";
+                        const isGeneratedPrimary = parentEntry.state === EntityState.Added && parentEntry.key === undefined;
                         const index = isGeneratedPrimary ? parentEntry.dbSet.dbContext.entityEntries.add.get(parentEntry.metaData).indexOf(parentEntry) : undefined;
                         if (isGeneratedPrimary) {
                             paramValue.resolvers.push({
@@ -1935,7 +1948,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                     const parentEntity = entry.entity[rel.propertyName] as Record<string, unknown>;
                     if (parentEntity) {
                         const parentEntry = entry.dbSet.dbContext.entry(parentEntity);
-                        const isGeneratedPrimary = parentEntry.state === EntityState.Added && typeof parentEntry.key !== "string";
+                        const isGeneratedPrimary = parentEntry.state === EntityState.Added && parentEntry.key === undefined;
                         const index = parentEntry.dbSet.dbContext.entityEntries.add.get(parentEntry.metaData).indexOf(parentEntry);
                         for (const [col, parentCol] of rel.relationMaps) {
                             const paramExp = new SqlParameterExpression(new ParameterExpression(visitor.newAlias("param"), parentCol.type), col);
@@ -2023,7 +2036,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                     const parentEntity = entry.entity[rel.propertyName] as Record<string, unknown>;
                     if (parentEntity) {
                         const parentEntry = entry.dbSet.dbContext.entry(parentEntity);
-                        const isGeneratedPrimary = parentEntry.state === EntityState.Added && typeof parentEntry.key !== "string";
+                        const isGeneratedPrimary = parentEntry.state === EntityState.Added && parentEntry.key === undefined;
                         const index = parentEntry.dbSet.dbContext.entityEntries.add.get(parentEntry.metaData).indexOf(parentEntry);
                         for (const [col, parentCol] of rel.relationMaps) {
                             const paramExp = new SqlParameterExpression(new ParameterExpression(visitor.newAlias("param"), parentCol.type), col);
