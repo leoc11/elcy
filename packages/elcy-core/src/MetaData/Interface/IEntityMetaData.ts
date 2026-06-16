@@ -22,7 +22,7 @@ export interface IEntityMetaData<TE extends object = any, TBase extends object =
     deletedColumn?: BooleanColumnMetaData<TE>;
     descriminatorMember?: string;
     embeds?: Array<EmbeddedRelationMetaData<TE>>;
-    hasIncrementPrimary?: boolean;
+    hasGeneratedPrimary?: boolean;
     indices?: Array<IIndexMetaData<TE>>;
     inheritance?: InheritanceMetaData<TBase>;
 

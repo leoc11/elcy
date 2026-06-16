@@ -20,8 +20,8 @@ export class EntityMetaData<TE extends TBase, TBase extends object = object> imp
     public get allowInheritance(): boolean {
         return !!this.descriminatorMember;
     }
-    public get hasIncrementPrimary(): boolean {
-        return this.primaryKeys.findIndex((o) => (o as any as IntegerColumnMetaData).autoIncrement) !== -1;
+    public get hasGeneratedPrimary(): boolean {
+        return this.primaryKeys.some((o) => o.defaultExp || (o as IntegerColumnMetaData<TE>).autoIncrement);
     }
 
     public get insertGeneratedColumns() {

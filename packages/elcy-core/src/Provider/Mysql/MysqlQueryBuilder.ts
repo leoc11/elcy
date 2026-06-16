@@ -99,7 +99,7 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
             const selectExp = new SelectExpression(insertExp.entity);
             selectExp.selects = insertExp.returnings.slice(0);
             const entityMeta = (insertExp.entity as EntityExpression<TE>).metaData;
-            if (entityMeta?.hasIncrementPrimary) {
+            if (entityMeta?.hasGeneratedPrimary) {
                 const incrementColumn = insertExp.returnings
                     .find(o => (o.columnMeta as IntegerColumnMetaData<TE>)?.autoIncrement);
                 selectExp.addWhere(new StrictEqualExpression(incrementColumn, new RawSqlExpression(incrementColumn.type, "LAST_INSERT_ID()")));

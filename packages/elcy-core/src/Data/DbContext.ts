@@ -501,7 +501,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             eventEmitter.emitBeforeSaveEvent({ type: "insert" }, ...addEntries);
             let useUpsert = Boolean(options?.upsertStrategy & UpsertStrategy.Insert);
             if (useUpsert) {
-                useUpsert = !entityMeta.hasIncrementPrimary;
+                useUpsert = !entityMeta.hasGeneratedPrimary;
             }
             const commitOption: ICommitPlanOption = { ...options, commitConfig: this.commitPlan.getConfig(entityMeta) };
 
@@ -519,7 +519,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
 
             const insertResult = useUpsert ? this.getUpsertQueries(entityMeta, addEntries, visitor, commitOption) : this.getInsertQueries(entityMeta, addEntries, visitor, commitOption);
             insertQueries.set(entityMeta, [insertResult]);
-            if (entityMeta.hasIncrementPrimary) {
+            if (entityMeta.hasGeneratedPrimary) {
                 autoEntriesMap.set(insertResult, addEntries);
             }
         }
@@ -581,7 +581,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             // execute all insert queries
             let insertBatches: DeferredQuery[] = [];
             for (const [entityMeta, queries] of insertQueries) {
-                if (!entityMeta.hasIncrementPrimary) {
+                if (!entityMeta.hasGeneratedPrimary) {
                     insertBatches.push(...queries.flatMap(o => o));
                     continue;
                 }
@@ -658,7 +658,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                 for (let i = 0, len = entityEntries.length; i < len; i++) {
                     const entityEntry = entityEntries[i];
                     let key = entityEntry.key;
-                    if (entityMeta.hasIncrementPrimary) {
+                    if (entityMeta.hasGeneratedPrimary) {
                         key = identityKeys.get(entityEntry);
                     }
                     const data = updateData.get(key) as Record<string, DbValue>;
@@ -1226,7 +1226,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
         valueSelectExp.isSubSelect = true;
         updateExp.addJoin(valueSelectExp, relation.asOperand(), "INNER");
 
-        const isGeneratedPrimary = entityMeta.hasIncrementPrimary;
+        const isGeneratedPrimary = entityMeta.hasGeneratedPrimary;
         const paramValue: IQueryParameterValue<Partial<TE>[]> = {
             value: [],
             resolvers: []
@@ -1351,12 +1351,9 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             }).toArray();
         }
 
-        // for self reference auto increment pk, need to split those.
-        // TODO: maybe should check for insert generated pk too?
-        if (entityMeta.hasIncrementPrimary) {
+        if (entityMeta.hasGeneratedPrimary) {
             // if primary key is auto increment, then need to split all query per entry.
-            // and there should only 1 incremental column in a table.
-
+            // coz returning did not ensure result order same as query
             for (const entry of entries) {
                 const insertExp = new InsertExpression<TE>(entityExp, []);
                 insertExp.returnings = returnings;
