@@ -20,9 +20,6 @@ import { StrictEqualExpression } from "src/ExpressionBuilder/Expression/StrictEq
 
 const EmbeddedEntityEntry = await import("./EmbeddedEntityEntry").then(o => o.EmbeddedEntityEntry);
 export class EntityEntry<TE extends object = any> implements IEntityEntry<TE> {
-    public get isCompletelyLoaded() {
-        return this.dbSet.metaData.columns.every((o) => this.entity[o.propertyName] !== undefined);
-    }
     public get metaData(): IEntityMetaData<TE> {
         return this.dbSet.metaData;
     }

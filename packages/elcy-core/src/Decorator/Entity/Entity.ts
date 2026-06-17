@@ -19,6 +19,7 @@ import { ClassDecorator } from "../Type";
 import { IColumnMetaData } from "src/MetaData/Interface/IColumnMetaData";
 import { proxyEntityType } from "src/Data/EntityChangeTracker";
 import { LazyFunctionExpression } from "src/ExpressionBuilder/Expression/LazyFunctionExpression";
+import { BooleanColumnMetaData, DateTimeColumnMetaData } from "src/MetaData";
 
 export function Entity<TC extends IObjectType<object>, TE extends TC extends IObjectType<infer U> ? U : never>(option: IEntityOption<TE>): ClassDecorator<TC>;
 export function Entity<TC extends IObjectType<object>, TE extends TC extends IObjectType<infer U> ? U : never>(name?: string, defaultOrders?: Array<IOrderDefinition<TE>>, allowInheritance?: boolean): ClassDecorator<TC>;
@@ -94,9 +95,11 @@ export function Entity<TC extends IObjectType<object>, TE extends TC extends IOb
                 entityMetadata.inheritance.inheritanceType = InheritanceType.TablePerClass;
                 isInheritance = true;
             }
+
             if (isInheritance) {
-                for (const parentColumnMeta of parentMetaData.columns) {
-                    let columnMeta = entityMetadata.columns.find((p) => p.propertyName === parentColumnMeta.propertyName);
+                for (const propertyKey in parentMetaData.properties) {
+                    const parentColumnMeta = parentMetaData.properties[propertyKey];
+                    let columnMeta = entityMetadata.properties[parentColumnMeta.propertyName as keyof TE];
                     if (parentColumnMeta instanceof ComputedColumnMetaData) {
                         if (columnMeta) {
                             if (entityMetadata.inheritance.inheritanceType === InheritanceType.TablePerConcreteClass) {
@@ -122,23 +125,24 @@ export function Entity<TC extends IObjectType<object>, TE extends TC extends IOb
                     }
 
                     if (columnMeta) {
-                        entityMetadata.columns.push(columnMeta);
+                        entityMetadata.properties[columnMeta.propertyName] = columnMeta;
+                        entityMetadata.columns[columnMeta.columnName] = columnMeta;
                         setColumnMetadata(proxyType, parentColumnMeta.propertyName as StringKeyOf<TE>, columnMeta as any);
                     }
                 }
 
                 if (parentMetaData.primaryKeys.length > 0) {
-                    entityMetadata.primaryKeys = parentMetaData.primaryKeys.map((o) => entityMetadata.columns.find((p) => p.propertyName === o.propertyName));
+                    entityMetadata.primaryKeys = parentMetaData.primaryKeys.map((o) => entityMetadata.properties[o.propertyName as keyof TE]);
                 }
 
                 if (parentMetaData.createDateColumn) {
-                    entityMetadata.createDateColumn = entityMetadata.columns.find((p) => p.propertyName === parentMetaData.createDateColumn.propertyName) as any;
+                    entityMetadata.createDateColumn = entityMetadata.properties[parentMetaData.createDateColumn.propertyName as keyof TE] as DateTimeColumnMetaData<TE>;
                 }
                 if (parentMetaData.modifiedDateColumn) {
-                    entityMetadata.modifiedDateColumn = entityMetadata.columns.find((p) => p.propertyName === parentMetaData.modifiedDateColumn.propertyName) as any;
+                    entityMetadata.modifiedDateColumn = entityMetadata.properties[parentMetaData.modifiedDateColumn.propertyName as keyof TE] as DateTimeColumnMetaData<TE>;
                 }
                 if (parentMetaData.deletedColumn) {
-                    entityMetadata.deletedColumn = entityMetadata.columns.find((p) => p.propertyName === parentMetaData.deletedColumn.propertyName) as any;
+                    entityMetadata.deletedColumn = entityMetadata.properties[parentMetaData.deletedColumn.propertyName as keyof TE] as BooleanColumnMetaData<TE>;
                 }
                 if (parentMetaData.defaultOrders && !entityMetadata.defaultOrders) {
                     entityMetadata.defaultOrders = parentMetaData.defaultOrders;

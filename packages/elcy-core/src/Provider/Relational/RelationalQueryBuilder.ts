@@ -369,7 +369,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
                 const commandExp = context.queryExpression;
 
                 if (column.entity.alias === commandExp.entity.alias) {
-                    if (column instanceof ComputedColumnExpression && (context.state !== "column-declared" || !commandExp.entity.columns.includes(column))) {
+                    if (column instanceof ComputedColumnExpression && (context.state !== "column-declared" || !commandExp.entity.properties[column.propertyName])) {
                         return this.toOperandString(column.expression, context);
                     }
                     return this.toString(column.entity) + "." + this.enclose(column.columnName);
@@ -485,7 +485,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             else {
                 let column = sqlExp.entity.primaryColumns[0];
                 if (!column) {
-                    column = sqlExp.entity.columns[0];
+                    column = Object.values<IColumnExpression<TE>>(sqlExp.entity.properties)[0];
                 }
                 result += `${this.newLine()}ORDER BY ${this.toString(column, context)}`;
             }
@@ -737,7 +737,8 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         const tvpExp = new SqlTableValueParameterExpression(new ParameterExpression(this.newAlias("param"), Array as IObjectType<TE[]>), {} as TSchema<TE>, undefined, alias);
         const tvpValues: TE[] = [];
         for (const col of columns) {
-            tvpExp.columns.push(new ColumnExpression(tvpExp, col.type, col.propertyName, col.columnName, col.isPrimary, true, col.columnMeta?.columnType));
+            const tvpCol = new ColumnExpression(tvpExp, col.type, col.propertyName, col.columnName, col.isPrimary, true, col.columnMeta?.columnType);
+            tvpExp.properties[tvpCol.propertyName] = tvpCol;
         }
 
         for (const itemExp of values) {
@@ -761,7 +762,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             query: `DROP TABLE IF EXISTS ${this.entityName(tvpExp)}`,
             type: QueryType.DDL
         });
-        const columnDefinition = tvpExp.columns.map((c) => {
+        const columnDefinition = Object.values<IColumnExpression<TE>>(tvpExp.properties).map((c) => {
             const colType = this.translator.resolveValueType(c.type) ?? this.translator.resolveValueType(Null);
             return `${this.enclose(c.columnName)} ${this.columnTypeString(colType.columnType)}`;
         }).join("," + this.newLine(1, false));
@@ -777,7 +778,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         });
 
         let i = 0;
-        const columns = tvpExp.columns;
+        const columns = Object.values<IColumnExpression<TE>>(tvpExp.properties);
         const insertQuery = new InsertExpression(tvpExp, [], columns);
         for (const item of values) {
             const itemExp: { [key: string]: IExpression } = {};
@@ -810,10 +811,10 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         return result;
     }
     protected toTableValueConstructorQuery<TE extends object>(entityExp: SqlTableValueParameterExpression<TE>, values: TE[], context?: IQueryBuilderContext): string {
-        const columns = entityExp.columns.map(o => this.enclose(o.columnName)).join(", ");
+        const columns = Object.values<IColumnExpression<TE>>(entityExp.properties).map(o => this.enclose(o.columnName)).join(", ");
         let i = 0;
         const valueLiterals = values.map(o => {
-            const valueQuery = entityExp.columns.map(p => {
+            const valueQuery = Object.values<IColumnExpression<TE>>(entityExp.properties).map(p => {
                 const value = p.propertyName === "__index" ? i++ : o[p.propertyName];
                 return this.valueString(value as ValueType);
             }).join(", ");
@@ -880,7 +881,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
         const results: IQuery[] = [];
         const context = this.createContext(upsertExp, parameters, option);
 
-        const tvpExp = this.createTVPExp("upsert", Enumerable.from(upsertExp.entity.primaryColumns).union(upsertExp.insertColumns, upsertExp.entity.columns.filter(o => o.propertyName in upsertExp.setter)), upsertExp.values, context);
+        const tvpExp = this.createTVPExp("upsert", Enumerable.from(upsertExp.entity.primaryColumns).union(upsertExp.insertColumns, Object.keys(upsertExp.setter).map((o: StringKeyOf<TE>) => upsertExp.entity.properties[o])), upsertExp.values, context);
         const targetAlias = upsertExp.entity.alias ?? "target";
         for (const o of upsertExp.entity.primaryColumns) {
             joinString.push(`${this.enclose(targetAlias)}.${this.enclose(o.columnName)} = ${this.enclose(tvpExp.alias)}.${this.enclose(o.columnName)}`);
@@ -890,7 +891,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             `WHEN MATCHED THEN` + this.newLine(1);
 
         const updateString = Enumerable.from(Object.keys(upsertExp.setter)).map((prop: StringKeyOf<TE>) => {
-            const column = upsertExp.entity.columns.find(o => o.propertyName === prop);
+            const column = upsertExp.entity.properties[prop];
             const valExp = upsertExp.setter[prop];
             const valStr = isNull(valExp) ? `${this.enclose(tvpExp.alias)}.${this.enclose(column.columnName)}` : this.toOperandString(valExp, context);
             return `${this.enclose(column.columnName)} = ${valStr}`;
@@ -916,14 +917,14 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
             const relation = new AndExpression();
             for (const column of selectExp.entity.primaryColumns) {
                 const newValueColumn = new ColumnExpression(tvpExp, column.type, column.propertyName, column.columnName, false, true, column.columnMeta.columnType);
-                tvpExp.columns.push(newValueColumn);
+                tvpExp.properties[newValueColumn.propertyName] = newValueColumn;
                 const rel = new StrictEqualExpression(column, newValueColumn);
                 relation.operands.push(rel);
             }
 
             selectExp.paramExps.push(tvpExp);
             const valueSelectExp = new SelectExpression(tvpExp);
-            valueSelectExp.selects = tvpExp.columns;
+            valueSelectExp.selects = Object.values<IColumnExpression<TE>>(tvpExp.properties);
             valueSelectExp.isSubSelect = true;
             selectExp.addJoin(valueSelectExp, relation.asOperand(), "INNER");
 
@@ -980,7 +981,7 @@ export abstract class RelationalQueryBuilder implements IQueryBuilder {
     }
     protected isSimpleSelect(exp: SelectExpression) {
         return !(exp instanceof GroupByExpression) && !exp.where && exp.joins.length === 0
-            && (!exp.parentRelation || exp.parentRelation instanceof JoinRelation && exp.parentRelation.childColumns.every((c) => exp.entity.columns.includes(c)))
+            && (!exp.parentRelation || exp.parentRelation instanceof JoinRelation && exp.parentRelation.childColumns.every((c) => exp.entity.properties[c.propertyName]))
             && !exp.paging.skip && !exp.paging.take
             && exp.selects.every((c) => !c.alias);
     }

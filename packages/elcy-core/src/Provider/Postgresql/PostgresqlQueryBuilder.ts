@@ -63,8 +63,8 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
                 continue;
             }
             if (k instanceof SqlTableValueParameterExpression) {
-                for (const column of k.columns) {
-                    paramObj.set(`$${++i}`, (p.value as Record<string, unknown>[]).map(o => o[column.propertyName]));
+                for (const propertyKey in k.properties) {
+                    paramObj.set(`$${++i}`, (p.value as Record<string, unknown>[]).map(o => o[propertyKey]));
                 }
             }
             else {
@@ -88,14 +88,14 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
             .filter(o => qparams.includes(o[0]))
             .flatMap(o => {
                 if (o[0] instanceof SqlTableValueParameterExpression) {
-                    return o[0].columns.map(_ => o[1].name);
+                    return Object.keys(o[0].properties).map(_ => o[1].name);
                 }
                 return [o[1].name];
             })
             .toArray();
         const index = indexMap.indexOf(paramValue.name) + 1;
         if (index && expression instanceof SqlTableValueParameterExpression) {
-            return `UNNEST(${expression.columns.map((col, i) => {
+            return `UNNEST(${Object.values(expression.properties).map((col, i) => {
                 const itemType = expression.itemSchema?.[col.propertyName];
                 let columnType: string;
                 let valueType: GenericType<ValueType>;
@@ -111,7 +111,7 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
                     columnType = this.columnTypeString(colTypeConfig.columnType);
                 }
                 return `$${index + i}::${columnType}[]`
-            }).join(",")}) AS ${this.enclose(expression.alias)}(${expression.columns.map(o => o.columnName).join(", ")})`;
+            }).join(",")}) AS ${this.enclose(expression.alias)}(${Object.values(expression.properties).map(o => o.columnName).join(", ")})`;
         }
         return `$${index}`;
     }
@@ -138,10 +138,10 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
             selectExp.selects = [];
             selectExp.parentRelation = updateExp.parentRelation as any;
 
-            const setQuery = Object.keys(updateExp.setter).map((o) => {
-                const value = updateExp.setter[o as keyof TE];
+            const setQuery = Object.keys(updateExp.setter).map((o: StringKeyOf<TE>) => {
+                const value = updateExp.setter[o];
                 const valueStr = this.toOperandString(value, context);
-                const column = updateExp.entity.columns.find((c) => c.propertyName === o);
+                const column = updateExp.entity.properties[o];
                 return `${this.enclose(column.columnName)} = ${valueStr}`;
             }).join(`,${this.newLine(1, false)}`);
 
@@ -152,7 +152,7 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
 
             const relation = new AndExpression();
             for (const column of updateExp.entity.primaryColumns) {
-                const selectColumn = projectedEntity.columns.find(o => o.propertyName == column.propertyName);
+                const selectColumn = projectedEntity.properties[column.propertyName];
                 const equalExp = new StrictEqualExpression(column, selectColumn);
                 relation.operands.push(equalExp);
             }
@@ -176,10 +176,10 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
             });
         }
         else {
-            const setQuery = Object.keys(updateExp.setter).map((o) => {
-                const value = updateExp.setter[o as keyof TE];
+            const setQuery = Object.keys(updateExp.setter).map((o: StringKeyOf<TE>) => {
+                const value = updateExp.setter[o];
                 const valueStr = this.toOperandString(value, context);
-                const column = updateExp.entity.columns.find((c) => c.propertyName === o);
+                const column = updateExp.entity.properties[o];
                 return `${this.enclose(column.columnName)} = ${valueStr}`;
             }).join(`,${this.newLine(1, false)}`);
 
@@ -262,7 +262,7 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
 
             const relation = new AndExpression();
             for (const column of deleteExp.entity.primaryColumns) {
-                const selectColumn = projectedEntity.columns.find(o => o.propertyName == column.propertyName);
+                const selectColumn = projectedEntity.properties[column.propertyName];
                 const equalExp = new StrictEqualExpression(column, selectColumn);
                 relation.operands.push(equalExp);
             }
@@ -356,7 +356,7 @@ export class PostgresqlQueryBuilder extends RelationalQueryBuilder {
 
         const pkString = upsertExp.entity.primaryColumns.map(o => o.columnName).join(", ");
         const setQuery = Object.keys(upsertExp.setter).map((prop: StringKeyOf<TE>) => {
-            const column = upsertExp.entity.columns.find((c) => c.propertyName === prop);
+            const column = upsertExp.entity.properties[prop];
             const valExp = upsertExp.setter[prop];
             const valQuery = isNull(valExp) ? `EXCLUDED.${this.enclose(column.columnName)}` : this.toOperandString(valExp, context);
             return `${this.enclose(column.columnName)} = ${valQuery}`;

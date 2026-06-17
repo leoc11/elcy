@@ -6,9 +6,9 @@ import { ClassAccessor, ClassPropertyDecorator } from "../Type";
 import { setColumnMetadata } from "src/MetaData/MetaDataMapper";
 import { IColumnMetaData } from "src/MetaData/Interface/IColumnMetaData";
 
-export function Column<TE extends object = object, T = (ValueType | undefined)>(type: PrimitiveType<T>, columnMetaType: IObjectType<ColumnMetaData<TE, T>>, columnOption: IColumnOption<T>): ClassPropertyDecorator<TE, T>;
-export function Column<TE extends object = object, T = (ValueType | undefined)>(type: GenericType<T>, columnMetaType: IObjectType<ColumnMetaData<TE, T>>, columnOption: IColumnOption<T>): ClassPropertyDecorator<TE, T>;
-export function Column<TE extends object = object, T = (ValueType | undefined)>(type: GenericType<T>, columnMetaType: IObjectType<ColumnMetaData<TE, T>>, columnOption: IColumnOption<T>): ClassPropertyDecorator<TE, T> {
+export function Column<TE extends object = object, T extends ValueType | undefined = (ValueType | undefined)>(type: PrimitiveType<T>, columnMetaType: IObjectType<ColumnMetaData<TE, T>>, columnOption: IColumnOption<T>): ClassPropertyDecorator<TE, T>;
+export function Column<TE extends object = object, T extends ValueType | undefined = (ValueType | undefined)>(type: GenericType<T>, columnMetaType: IObjectType<ColumnMetaData<TE, T>>, columnOption: IColumnOption<T>): ClassPropertyDecorator<TE, T>;
+export function Column<TE extends object = object, T extends ValueType | undefined = (ValueType | undefined)>(type: GenericType<T>, columnMetaType: IObjectType<ColumnMetaData<TE, T>>, columnOption: IColumnOption<T>): ClassPropertyDecorator<TE, T> {
     return (_: undefined | ClassAccessor<T>, context: ClassFieldDecoratorContext<TE, T> | ClassAccessorDecoratorContext<TE, T>) => {
         let columnHandlers = context.metadata.columns as Array<(entityMeta: IEntityMetaData<TE>) => void>;
         if (!Array.isArray(columnHandlers)) {
@@ -24,10 +24,11 @@ export function Column<TE extends object = object, T = (ValueType | undefined)>(
             metadata.applyOption(columnOption);
             metadata.propertyName = context.name as StringKeyOf<TE>;
 
-            if (entityMeta.columns.some(o => o.propertyName === metadata.propertyName)) {
+            if (entityMeta.properties[metadata.propertyName]) {
                 throw new Error(`Cannot re-declare column: ${metadata.propertyName}`);
             }
-            entityMeta.columns.push(metadata as IColumnMetaData<TE>);
+            entityMeta.properties[metadata.propertyName] = metadata;
+            entityMeta.columns[metadata.columnName] = metadata;
             setColumnMetadata(entityMeta.type, metadata.propertyName, metadata as IColumnMetaData<TE>);
         });
     }

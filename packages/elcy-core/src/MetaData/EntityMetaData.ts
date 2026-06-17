@@ -25,13 +25,13 @@ export class EntityMetaData<TE extends TBase, TBase extends object = object> imp
     }
 
     public get insertGeneratedColumns() {
-        return this.columns.filter((o) => {
-            return (o.generation & ColumnGeneration.Insert) as any;
+        return Object.values<IColumnMetaData<TE>>(this.properties).filter((o) => {
+            return o.generation & ColumnGeneration.Insert;
         });
     }
     public get updateGeneratedColumns() {
-        return this.columns.filter((o) => {
-            return (o.generation & ColumnGeneration.Update) as any;
+        return Object.values<IColumnMetaData<TE>>(this.properties).filter((o) => {
+            return o.generation & ColumnGeneration.Update;
         });
     }
     constructor(public type: IObjectType<TE>, name?: string) {
@@ -48,7 +48,8 @@ export class EntityMetaData<TE extends TBase, TBase extends object = object> imp
     public afterSave?: (entity: TE, param: ISaveEventParam) => void;
     public beforeDelete?: (entity: TE, param: IDeleteEventParam) => boolean;
     public beforeSave?: (entity: TE, param: ISaveEventParam) => boolean;
-    public columns: Array<IColumnMetaData<TE, any>> = [];
+    public properties: { [K in keyof TE]?: IColumnMetaData<TE> } = {};
+    public columns: { [K in string]?: IColumnMetaData<TE> } = {};
     public concurrencyMode: ConcurrencyModel;
     public constraints: Array<IConstraintMetaData<TE>> = [];
     public createDateColumn: DateTimeColumnMetaData<TE>;
@@ -67,9 +68,12 @@ export class EntityMetaData<TE extends TBase, TBase extends object = object> imp
     public versionColumn?: RowVersionColumnMetaData<TE>;
 
     public applyOption(entityMeta: IEntityMetaData<TE>) {
-        if (typeof entityMeta.columns !== "undefined") {
-            this.columns = entityMeta.columns;
-            this.columns.forEach((o) => o.entity = this);
+        if (typeof entityMeta.properties !== "undefined") {
+            for (const propKey in entityMeta.properties) {
+                const columnMeta = entityMeta.properties[propKey];
+                columnMeta.entity = this;
+                this.properties[propKey] = columnMeta;
+            }
         }
         if (typeof entityMeta.createDateColumn !== "undefined") {
             this.createDateColumn = entityMeta.createDateColumn;

@@ -670,7 +670,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                     const data = updateData.get(key) as Record<string, DbValue>;
                     if (data) {
                         for (const prop in data) {
-                            const column = entityMeta.columns.find((o) => o.columnName === prop);
+                            const column = entityMeta.columns[prop];
                             if (column) {
                                 entityEntry.entity[column.propertyName] = this.queryBuilder.hydrateValue(data[prop], column);
                             }
@@ -713,7 +713,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                     const data = updateData.get(entityEntry.key) as Record<string, DbValue>;
                     if (data) {
                         for (const prop in data) {
-                            const column = entityMeta.columns.find((o) => o.columnName === prop);
+                            const column = entityMeta.columns[prop];
                             if (column) {
                                 entityEntry.entity[column.propertyName] = this.queryBuilder.hydrateValue(data[prop], column);
                             }
@@ -880,7 +880,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
         const relation = new AndExpression();
         for (const column of entityExp.primaryColumns) {
             const newValueColumn = new ColumnExpression(tvpExp, column.type, column.propertyName, column.columnName, true, true, column.columnMeta.columnType);
-            tvpExp.columns.push(newValueColumn);
+            tvpExp.properties[newValueColumn.propertyName] = newValueColumn;
             relation.operands.push(new StrictEqualExpression(column, newValueColumn));
         }
 
@@ -892,8 +892,8 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             const row: Partial<TE> = {};
             const entity = entry.entity;
 
-            for (const col of tvpExp.columns) {
-                row[col.propertyName] = entity[col.propertyName];
+            for (const propertyKey in tvpExp.properties) {
+                row[propertyKey] = entity[propertyKey];
             }
             paramValue.value.push(row);
         }
@@ -903,7 +903,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             deleteExp.paramExps.push(tvpExp);
 
             const valueSelectExp = new SelectExpression(tvpExp);
-            valueSelectExp.selects = tvpExp.columns.filter((o) => !o.isPrimary);
+            valueSelectExp.selects = Object.values<IColumnExpression<TE>>(tvpExp.properties).filter((o) => !o.isPrimary);
             valueSelectExp.isSubSelect = true;
             deleteExp.addJoin(valueSelectExp, relation.asOperand(), "INNER");
 
@@ -944,7 +944,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             updateExp.paramExps.push(tvpExp);
 
             const valueSelectExp = new SelectExpression(tvpExp);
-            valueSelectExp.selects = tvpExp.columns.filter((o) => !o.isPrimary);
+            valueSelectExp.selects = Object.values<IColumnExpression<TE>>(tvpExp.properties).filter((o) => !o.isPrimary);
             valueSelectExp.isSubSelect = true;
             updateExp.addJoin(valueSelectExp, relation.asOperand(), "INNER");
 
@@ -1095,31 +1095,33 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
         const relation = new AndExpression();
         const setter: SetterObj<TE> = {};
         const updateableColumns: IColumnExpression<TE>[] = [];
-        for (const column of Enumerable.from(entityExp.columns)
+        for (const column of Enumerable.from(Object.values<IColumnExpression<TE>>(entityExp.properties))
             .filter(o => o.isPrimary || uniqueColumns.has(o.propertyName))
             .orderBy([o => o.isPrimary, "DESC"])
         ) {
             const newValueColumn = new ColumnExpression(tvpExp, column.type, column.propertyName, column.columnName, false, true, column.columnMeta.columnType);
-            tvpExp.columns.push(newValueColumn);
             if (column.isPrimary) {
                 newValueColumn.propertyName = `_ori_${column.propertyName}` as StringKeyOf<TE>;
                 newValueColumn.columnName = `_ori_${column.columnName}`;
+                tvpExp.properties[newValueColumn.propertyName] = newValueColumn;
+
                 relation.operands.push(new StrictEqualExpression(column, newValueColumn));
                 continue;
             }
 
+            tvpExp.properties[newValueColumn.propertyName] = newValueColumn;
             updateableColumns.push(newValueColumn);
             // NOTE: updated.flag&1 == 0 ? current.column : updated.column
             const index = updateableColumns.length - 1;
             setter[column.propertyName] = new TernaryExpression<TE[keyof TE]>(new StrictEqualExpression(new BitwiseAndExpression(flagColumn, new ValueExpression(Math.pow(2, index))), new ValueExpression(0)), column as IColumnExpression<TE, TE[keyof TE]>, newValueColumn as IColumnExpression<TE, TE[keyof TE]>);
         }
 
-        tvpExp.columns.push(flagColumn);
+        tvpExp.properties[flagColumn.propertyName] = flagColumn;
         const updateExp = new UpdateExpression(entityExp, setter);
         updateExp.paramExps.push(tvpExp);
 
         const valueSelectExp = new SelectExpression(tvpExp);
-        valueSelectExp.selects = tvpExp.columns.filter((o) => !o.isPrimary);
+        valueSelectExp.selects = Object.values<IColumnExpression<TE>>(tvpExp.properties).filter((o) => !o.isPrimary);
         valueSelectExp.isSubSelect = true;
         updateExp.addJoin(valueSelectExp, relation.asOperand(), "INNER");
 
@@ -1133,8 +1135,8 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             let modifieds = new Set(entry.getModifiedProperties());
             const isHardDelete = entry.state === EntityState.Deleted && (!entityMeta.deletedColumn || option.forceHardDelete);
             let flag = 0;
-            for (let i = 0, len = tvpExp.columns.length; i < len; i++) {
-                const col = tvpExp.columns[i];
+            for (const propertyKey in tvpExp.properties) {
+                const col = tvpExp.properties[propertyKey];
                 if (col.isPrimary) {
                     row[col.propertyName] = entity[col.propertyName];
                     continue;
@@ -1150,7 +1152,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                     continue;
                 }
 
-                const colMeta = entityMeta.columns.find(o => o.propertyName == col.propertyName);
+                const colMeta = entityMeta.properties[col.propertyName];
                 if (isHardDelete && colMeta.nullable) {
                     row[col.propertyName] = null;
                 }
@@ -1215,19 +1217,20 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
         const tvpExp = new SqlTableValueParameterExpression(new ParameterExpression<TE[]>("update", Array), {} as any);
         const relation = new AndExpression();
         const setter: SetterObj<TE> = {};
-        for (const column of Enumerable.from(entityExp.columns)
+        for (const column of Enumerable.from(Object.values<IColumnExpression<TE>>(entityExp.properties))
             .filter(o => o.isPrimary || relationPropertySet.has(o.propertyName))
             .orderBy([o => o.isPrimary, "DESC"])
         ) {
             const newValueColumn = new ColumnExpression(tvpExp, column.type, column.propertyName, column.columnName, false, true, column.columnMeta.columnType);
-            tvpExp.columns.push(newValueColumn);
             if (column.isPrimary) {
                 newValueColumn.propertyName = `_ori_${column.propertyName}` as StringKeyOf<TE>;
                 newValueColumn.columnName = `_ori_${column.columnName}`;
+                tvpExp.properties[newValueColumn.propertyName] = newValueColumn;
                 relation.operands.push(new StrictEqualExpression(column, newValueColumn));
                 continue;
             }
 
+            tvpExp.properties[newValueColumn.propertyName] = newValueColumn;
             setter[column.propertyName] = newValueColumn as IColumnExpression<TE, TE[keyof TE]>;
         }
 
@@ -1235,7 +1238,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
         updateExp.paramExps.push(tvpExp);
 
         const valueSelectExp = new SelectExpression(tvpExp);
-        valueSelectExp.selects = tvpExp.columns.filter((o) => !o.isPrimary);
+        valueSelectExp.selects = Object.values<IColumnExpression<TE>>(tvpExp.properties).filter((o) => !o.isPrimary);
         valueSelectExp.isSubSelect = true;
         updateExp.addJoin(valueSelectExp, relation.asOperand(), "INNER");
 
@@ -1273,8 +1276,8 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                 }
             }
 
-            for (let i = 0, len = tvpExp.columns.length; i < len; i++) {
-                const col = tvpExp.columns[i];
+            for (const propertyKey in tvpExp.properties) {
+                const col = tvpExp.properties[propertyKey];
                 if (col.isPrimary) {
                     row[col.propertyName] = entity[col.propertyName];
                     continue;
@@ -1346,13 +1349,13 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
         const relations = Enumerable.from(entityMeta.relations)
             .filter((o) => !o.isMaster && o.relationType === "one" && !!o.relationMaps)
             .filter(o => option?.commitConfig?.relationBreaks?.has(o) != true);
-        const columns = Enumerable.from(entityExp.metaData.columns)
+        const columns = Enumerable.from(Object.values<IColumnMetaData<TE>>(entityExp.metaData.properties))
             .except(entityExp.metaData.insertGeneratedColumns)
             .except(Enumerable.from(option?.commitConfig?.relationBreaks).flatMap(o => o.relationColumns))
             .toArray();
 
         let generatedColumns = Enumerable.from(entityMeta.insertGeneratedColumns)
-            .union(Enumerable.from(entityMeta.columns).filter((o) => !!o.defaultExp));
+            .union(Enumerable.from(Object.values<IColumnMetaData<TE>>(entityMeta.properties)).filter((o) => !!o.defaultExp));
         let returnings: IColumnExpression[] = [];
         if (generatedColumns.some()) {
             returnings = Enumerable.from(entityMeta.primaryKeys).union(generatedColumns).map(o => {
@@ -1628,7 +1631,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                     setter[entityMeta.modifiedDateColumn.propertyName] = entityMeta.modifiedDateColumn.defaultExp.body as IExpression<TE[keyof TE]>;
                 }
                 if (entityMeta.versionColumn && entityMeta.versionColumn.type === BigInt as GenericType) {
-                    setter[entityMeta.versionColumn.propertyName] = new AdditionExpression(entityExp.columns.find(o => o.columnName == entityMeta.versionColumn.columnName) as IColumnExpression<TE, bigint>, new ValueExpression(1n));
+                    setter[entityMeta.versionColumn.propertyName] = new AdditionExpression(entityExp.properties[entityMeta.versionColumn.propertyName] as IColumnExpression<TE, bigint>, new ValueExpression(1n));
                 }
 
                 const updateExp = new UpdateExpression(entityExp, setter);
@@ -1651,7 +1654,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                         queryParameterMap.set(parameter, { value: entity[versionCol.propertyName] });
                         updateExp.paramExps.push(parameter);
 
-                        const colExp = updateExp.entity.columns.find((c) => c.propertyName === versionCol.propertyName);
+                        const colExp = updateExp.entity.properties[versionCol.propertyName];
                         const compExp = new StrictEqualExpression(colExp, parameter);
                         updateExp.addWhere(compExp);
                         break;
@@ -1661,7 +1664,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                             const parameter = new SqlParameterExpression(new ParameterExpression(visitor.newAlias("param"), col.type), col);
                             queryParameterMap.set(parameter, { value: entry.getOriginalValue(col.propertyName) });
                             updateExp.paramExps.push(parameter);
-                            const colExp = updateExp.entity.columns.find((c) => c.propertyName === col.propertyName);
+                            const colExp = updateExp.entity.properties[col.propertyName];
                             const compExp = new StrictEqualExpression(colExp, parameter);
                             updateExp.addWhere(compExp);
                         }
@@ -1702,13 +1705,15 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             const relation = new AndExpression();
             const setter: SetterObj<TE> = {};
             const updateableColumns: IColumnExpression<TE>[] = [];
-            for (const column of Enumerable.from(entityExp.columns).orderBy([o => o.isPrimary, "DESC"])) {
+            for (const column of Enumerable.from(Object.values<IColumnExpression<TE>>(entityExp.properties))
+                .orderBy([o => o.isPrimary, "DESC"])
+            ) {
                 if (column.columnMeta?.generation & ColumnGeneration.Update) {
                     if (column.columnMeta === entityMeta.modifiedDateColumn) {
                         setter[column.propertyName] = column.columnMeta.defaultExp.body as IExpression<TE[keyof TE]>;
                         if (entityMeta.concurrencyMode === "OPTIMISTIC VERSION" && !entityMeta.versionColumn) {
                             const oriValueColumn = new ColumnExpression(tvpExp, column.type, `_ori_${column.propertyName}` as StringKeyOf<TE>, `_ori_${column.columnName}`, false, true, column.columnMeta.columnType);
-                            tvpExp.columns.push(oriValueColumn);
+                            tvpExp.properties[oriValueColumn.propertyName] = oriValueColumn;
                         }
                     }
                     if (column.columnMeta === entityMeta.versionColumn) {
@@ -1718,25 +1723,26 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
 
                         if (entityMeta.concurrencyMode === "OPTIMISTIC VERSION") {
                             const oriValueColumn = new ColumnExpression(tvpExp, column.type, `_ori_${column.propertyName}` as StringKeyOf<TE>, `_ori_${column.columnName}`, false, true, column.columnMeta.columnType);
-                            tvpExp.columns.push(oriValueColumn);
+                            tvpExp.properties[oriValueColumn.propertyName] = oriValueColumn;
                         }
                     }
                     continue;
                 }
 
                 const newValueColumn = new ColumnExpression(tvpExp, column.type, column.propertyName, column.columnName, false, true, column.columnMeta.columnType);
-                tvpExp.columns.push(newValueColumn);
                 if (column.isPrimary) {
                     newValueColumn.propertyName = `_ori_${column.propertyName}` as StringKeyOf<TE>;
                     newValueColumn.columnName = `_ori_${column.columnName}`;
+                    tvpExp.properties[newValueColumn.propertyName] = newValueColumn;
                     relation.operands.push(new StrictEqualExpression(column, newValueColumn));
                     continue;
                 }
 
+                tvpExp.properties[newValueColumn.propertyName] = newValueColumn;
                 updateableColumns.push(newValueColumn);
                 if (entityMeta.concurrencyMode === "OPTIMISTIC DIRTY") {
                     const oriValueColumn = new ColumnExpression(tvpExp, column.type, `_ori_${column.propertyName}` as StringKeyOf<TE>, `_ori_${column.columnName}`, false, true, column.columnMeta.columnType);
-                    tvpExp.columns.push(oriValueColumn);
+                    tvpExp.properties[oriValueColumn.propertyName] = oriValueColumn;
                 }
 
                 // NOTE: updated.flag&1 == 0 ? current.column : updated.column
@@ -1744,7 +1750,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                 setter[column.propertyName] = new TernaryExpression<TE[keyof TE]>(new StrictEqualExpression(new BitwiseAndExpression(flagColumn, new ValueExpression(Math.pow(2, index))), new ValueExpression(0)), column as IColumnExpression<TE, TE[keyof TE]>, newValueColumn as IColumnExpression<TE, TE[keyof TE]>);
             }
 
-            tvpExp.columns.push(flagColumn);
+            tvpExp.properties[flagColumn.propertyName] = flagColumn;
             const updateExp = new UpdateExpression(entityExp, setter);
             updateExp.returnings = returnings;
             updateExp.paramExps.push(tvpExp);
@@ -1756,15 +1762,15 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                         throw new Error(`${entityMeta.name} did not have version column`);
                     }
 
-                    const curVersionCol = entityExp.columns.find(o => o.propertyName == versionCol.propertyName);
-                    const oriValueVersionCol = tvpExp.columns.find(o => o.propertyName == `_ori_${versionCol.propertyName}`);
+                    const curVersionCol = entityExp.properties[versionCol.propertyName];
+                    const oriValueVersionCol = tvpExp.properties[`_ori_${versionCol.propertyName}` as keyof TE];
                     updateExp.addWhere(new StrictEqualExpression(curVersionCol, oriValueVersionCol));
                     break;
                 }
                 case "OPTIMISTIC DIRTY": {
                     for (let i = 0, len = updateableColumns.length; i < len; i++) {
                         const col = updateableColumns[i];
-                        const oriValueCol = tvpExp.columns.find(o => o.propertyName == `_ori_${col.propertyName}`);
+                        const oriValueCol = tvpExp.properties[`_ori_${col.propertyName}` as keyof TE];
                         // NOTE: updated.flag&1 == 0 or current.column=updated._ori_column
                         const flagExp = new StrictEqualExpression(new BitwiseAndExpression(flagColumn, new ValueExpression(Math.pow(2, i))), new ValueExpression(0));
                         const columnCheckExp = new StrictEqualExpression(col, oriValueCol);
@@ -1775,7 +1781,7 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
             }
 
             const valueSelectExp = new SelectExpression(tvpExp);
-            valueSelectExp.selects = tvpExp.columns.filter((o) => !o.isPrimary);
+            valueSelectExp.selects = Object.values<IColumnExpression<TE>>(tvpExp.properties).filter((o) => !o.isPrimary);
             valueSelectExp.isSubSelect = true;
             updateExp.addJoin(valueSelectExp, relation.asOperand(), "INNER");
 
@@ -1819,8 +1825,8 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
                     }
                 }
 
-                for (let i = 0, len = tvpExp.columns.length; i < len; i++) {
-                    const col = tvpExp.columns[i];
+                for (const propertyKey in tvpExp.properties) {
+                    const col = tvpExp.properties[propertyKey];
                     if (col.isPrimary) {
                         row[col.propertyName] = entity[col.propertyName];
                         continue;
@@ -1893,12 +1899,12 @@ export abstract class DbContext<TDB extends DbType = DbType> implements IDBEvent
         const entityExp = new EntityExpression<TE>(entityMeta.type, visitor.newAlias("entity"));
         const relations = Enumerable.from(entityMeta.relations)
             .filter((o) => !o.nullable && !o.isMaster && o.relationType === "one" && !!o.relationMaps);
-        const columns = Enumerable.from(entityExp.metaData.columns)
-            .except(entityExp.metaData.insertGeneratedColumns)
+        const columns = Enumerable.from(Object.values<IColumnMetaData<TE>>(entityMeta.properties))
+            .except(entityMeta.insertGeneratedColumns)
             .toArray();
 
         let generatedColumns = Enumerable.from(entityMeta.insertGeneratedColumns)
-            .union(Enumerable.from(entityMeta.columns).filter((o) => !!o.defaultExp))
+            .union(Enumerable.from(Object.values<IColumnMetaData<TE>>(entityMeta.properties)).filter((o) => !!o.defaultExp))
             .union(entityMeta.updateGeneratedColumns);
         let returnings: IColumnExpression[] = [];
         if (generatedColumns.some()) {

@@ -16,6 +16,7 @@ import { IColumnExpression } from "./IColumnExpression";
 import { SelectExpression } from "./SelectExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { IGroupArray } from "src/Common/IGroupArray";
+import { StringKeyOf } from "src/Common/Type";
 
 export class GroupByExpression<TE extends object = object, K = unknown, T = unknown> extends SelectExpression<TE, IGroupArray<K, T>> {
     public override get allColumns() {
@@ -163,7 +164,7 @@ export class GroupByExpression<TE extends object = object, K = unknown, T = unkn
                 mapReplaceExp(cloneMap, include.child.entity, this.entity);
                 // add column which include in emdedded relation
                 const childSelects = include.child.resolvedSelects.map((o: IColumnExpression) => {
-                    let curCol = this.entity.columns.find((c) => c.propertyName === o.propertyName);
+                    let curCol = this.entity.properties[o.propertyName as StringKeyOf<TE>];
                     if (!curCol) {
                         curCol = o.clone(cloneMap);
                     }

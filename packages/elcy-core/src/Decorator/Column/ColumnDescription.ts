@@ -10,7 +10,7 @@ export function ColumnDescription<TE extends object = object>(description: strin
         }
 
         columnHandlers.push((entityMeta) => {
-            const column = entityMeta.columns.find(o => o.propertyName === context.name);
+            const column = entityMeta.properties[context.name as keyof TE];
             if (!column) {
                 throw new Error("Please egister column first");
             }

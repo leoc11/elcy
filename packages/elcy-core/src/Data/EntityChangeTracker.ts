@@ -33,7 +33,7 @@ export function untrackEntity<TE extends object>(entity: TE, handler: (this: TE,
 }
 
 export function proxyEntityType<TE extends object>(type: IObjectType<TE>): IObjectType<TE> {
-    let columnMetaMap: Map<string | symbol, IColumnMetaData<TE, any>>;
+    let columnMetaMap: { [K in keyof TE]?: IColumnMetaData<TE> };
     let relationMetaMap: Map<string | symbol, IRelationMetaData<TE, any>>;
 
     function getColumnMetaMap() {
@@ -42,7 +42,7 @@ export function proxyEntityType<TE extends object>(type: IObjectType<TE>): IObje
             if (!entityMeta) {
                 return undefined;
             }
-            columnMetaMap = Enumerable.from(entityMeta.columns).toMap(o => o.propertyName as (string | symbol));
+            columnMetaMap = entityMeta.properties;
         }
         return columnMetaMap;
     }
@@ -164,7 +164,7 @@ export function proxyEntityType<TE extends object>(type: IObjectType<TE>): IObje
                         return Reflect.set(target, prop, val, target);
                     }
 
-                    const column = getColumnMetaMap()?.get(prop);
+                    const column = getColumnMetaMap()?.[prop as keyof TE];
                     if (column) {
                         const oldValue = Reflect.get(target, prop, target);
                         const result = Reflect.set(target, prop, val, target);

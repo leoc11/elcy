@@ -58,7 +58,7 @@ export const isValue = (data: any): data is ValueType => {
     return isNotNull(data) && isValueType(data.constructor);
 };
 export const isColumnMetaData = <TE extends object>(entityMeta: IEntityMetaData<TE>, data: unknown): data is IColumnMetaData<TE> => {
-    return entityMeta.columns.includes(data);
+    return (data as IColumnMetaData<TE>).entity === entityMeta;
 };
 export const isRelationMetaData = <TE extends object>(entityMeta: IEntityMetaData<TE>, data: unknown): data is IRelationMetaData<TE> => {
     return entityMeta.relations.includes(data as IRelationMetaData<TE>);

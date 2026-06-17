@@ -14,7 +14,9 @@ import { IRelationMetaData } from "./IRelationMetaData";
 
 export interface IEntityMetaData<TE extends object = any, TBase extends object = object> extends IDBEventListener<TE> {
     allowInheritance?: boolean;
-    columns: Array<IColumnMetaData<TE>>;
+    properties: { [K in keyof TE]?: IColumnMetaData<TE> };
+    columns: { [K in string]?: IColumnMetaData<TE> }; // TODO: REMOVE LATER
+    
     concurrencyMode?: ConcurrencyModel;
     constraints?: Array<IConstraintMetaData<TE>>;
     createDateColumn?: DateTimeColumnMetaData<TE>;

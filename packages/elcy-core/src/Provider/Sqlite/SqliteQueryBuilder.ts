@@ -20,6 +20,7 @@ import { AndExpression } from "src/ExpressionBuilder/Expression/AndExpression";
 import { StrictEqualExpression } from "src/ExpressionBuilder/Expression/StrictEqualExpression";
 import { ProjectionEntityExpression } from "src/Queryable/QueryExpression/ProjectionEntityExpression";
 import { isNull } from "src/Helper/Util";
+import { IColumnExpression } from "src/Queryable/QueryExpression/IColumnExpression";
 
 export class SqliteQueryBuilder extends RelationalQueryBuilder {
     public queryLimit: IQueryLimit = {
@@ -46,10 +47,10 @@ export class SqliteQueryBuilder extends RelationalQueryBuilder {
         return super.entityName(entityExp);
     }
     protected override toTableValueConstructorQuery<TE extends object>(entityExp: SqlTableValueParameterExpression<TE>, values: TE[], context?: IQueryBuilderContext): string {
-        const columns = entityExp.columns.map((o, i) => `column${i + 1} AS ${this.enclose(o.columnName)}`).join(", ");
+        const columns = Object.values<IColumnExpression<TE>>(entityExp.properties).map((o, i) => `column${i + 1} AS ${this.enclose(o.columnName)}`).join(", ");
         let i = 0;
         const valueLiterals = values.map(o => {
-            const valueQuery = entityExp.columns.map(p => {
+            const valueQuery = Object.values<IColumnExpression<TE>>(entityExp.properties).map(p => {
                 const value = p.propertyName === "__index" ? i++ : o[p.propertyName];
                 return this.valueString(value as ValueType);
             }).join(", ");
@@ -64,7 +65,7 @@ export class SqliteQueryBuilder extends RelationalQueryBuilder {
         }
         if (context?.option?.supportTVP == true && expression instanceof SqlTableValueParameterExpression) {
             this.indent++;
-            const column = expression.columns
+            const column = Object.values(expression.properties)
                 .map((col) => `JSON_EXTRACT(value, '$.${col.propertyName}') AS ${this.enclose(col.columnName)}`)
                 .join(`,${this.newLine(1, false)}`);
             const result = `(${this.newLine()}SELECT ${column}${this.newLine()}FROM JSON_EACH(:${paramValue.name})${this.newLine()}) AS ${this.enclose(expression.alias)}`;
@@ -97,10 +98,10 @@ export class SqliteQueryBuilder extends RelationalQueryBuilder {
             selectExp.selects = [];
             selectExp.parentRelation = updateExp.parentRelation as any;
 
-            const setQuery = Object.keys(updateExp.setter).map((o) => {
-                const value = updateExp.setter[o as keyof TE];
+            const setQuery = Object.keys(updateExp.setter).map((o: StringKeyOf<TE>) => {
+                const value = updateExp.setter[o];
                 const valueStr = this.toOperandString(value, context);
-                const column = updateExp.entity.columns.find((c) => c.propertyName === o);
+                const column = updateExp.entity.properties[o];
                 return `${this.enclose(column.columnName)} = ${valueStr}`;
             }).join(`,${this.newLine(1, false)}`);
 
@@ -111,7 +112,7 @@ export class SqliteQueryBuilder extends RelationalQueryBuilder {
 
             const relation = new AndExpression();
             for (const column of updateExp.entity.primaryColumns) {
-                const selectColumn = projectedEntity.columns.find(o => o.propertyName == column.propertyName);
+                const selectColumn = projectedEntity.properties[column.propertyName];
                 const equalExp = new StrictEqualExpression(column, selectColumn);
                 relation.operands.push(equalExp);
             }
@@ -135,10 +136,10 @@ export class SqliteQueryBuilder extends RelationalQueryBuilder {
             });
         }
         else {
-            const setQuery = Object.keys(updateExp.setter).map((o) => {
-                const value = updateExp.setter[o as keyof TE];
+            const setQuery = Object.keys(updateExp.setter).map((o: StringKeyOf<TE>) => {
+                const value = updateExp.setter[o];
                 const valueStr = this.toOperandString(value, context);
-                const column = updateExp.entity.columns.find((c) => c.propertyName === o);
+                const column = updateExp.entity.properties[o];
                 return `${this.enclose(column.columnName)} = ${valueStr}`;
             }).join(`,${this.newLine(1, false)}`);
 
@@ -240,7 +241,7 @@ export class SqliteQueryBuilder extends RelationalQueryBuilder {
 
         const pkString = upsertExp.entity.primaryColumns.map(o => o.columnName).join(", ");
         const setQuery = Object.keys(upsertExp.setter).map((prop: StringKeyOf<TE>) => {
-            const column = upsertExp.entity.columns.find((c) => c.propertyName === prop);
+            const column = upsertExp.entity.properties[prop];
             const valExp = upsertExp.setter[prop];
             const valQuery = isNull(valExp) ? `EXCLUDED.${this.enclose(column.columnName)}` : this.toOperandString(valExp, context);
             return `${this.enclose(column.columnName)} = ${valQuery}`;
@@ -300,7 +301,7 @@ export class SqliteQueryBuilder extends RelationalQueryBuilder {
             });
 
             const setQuery = Object.keys(upsertExp.setter).map((prop: StringKeyOf<TE>) => {
-                const column = upsertExp.entity.columns.find((c) => c.propertyName === prop);
+                const column = upsertExp.entity.properties[prop];
                 const valExp = upsertExp.setter[prop] ?? itemExp[prop];
                 if (!valExp) {
                     return null;

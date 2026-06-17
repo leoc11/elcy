@@ -4,6 +4,7 @@ import { resolveClone } from "../../Helper/Expression";
 import { hashCode } from "../../Helper/Hash";
 import { EntityExpression } from "./EntityExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
+import { IColumnExpression } from "./IColumnExpression";
 
 export class RawEntityExpression<T extends object = object> extends EntityExpression<T> {
     public readonly parameters: SqlParameterExpression<unknown>[] = [];
@@ -25,14 +26,17 @@ export class RawEntityExpression<T extends object = object> extends EntityExpres
         }
         const clone = new RawEntityExpression(this.metaData, this.alias, this.sqlTemplateStrings);
         replaceMap.set(this, clone);
-        clone.columns = this.columns.map((o) => {
-            let cloneCol = clone.columns.find((c) => c.propertyName === o.propertyName);
-            if (!cloneCol) {
-                cloneCol = resolveClone(o, replaceMap);
-            }
-            replaceMap.set(o, cloneCol);
-            return cloneCol;
-        });
+        clone.properties = Object.values<IColumnExpression<T>>(this.properties)
+            .map((o) => {
+                let cloneCol = clone.properties[o.propertyName];
+                if (!cloneCol) {
+                    cloneCol = resolveClone(o, replaceMap);
+                }
+                replaceMap.set(o, cloneCol);
+                return cloneCol;
+            })
+            .reduce((r, o) => (r[o.propertyName] = o, r), {} as { [K in keyof T]: IColumnExpression<T> });
+
         for (const paramExp of this.parameters) {
             clone.addParameter(resolveClone(paramExp, replaceMap));
         }

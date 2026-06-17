@@ -35,9 +35,10 @@ export const mapReplaceExp = function (replaceMap: Map<IExpression, IExpression>
     else if ((sourceExp as IEntityExpression).primaryColumns && (targetExp as IEntityExpression).primaryColumns) {
         const entityExp1 = sourceExp as IEntityExpression;
         const entityExp2 = targetExp as IEntityExpression;
-        for (const col of entityExp1.columns) {
-            const tCol = entityExp2.columns.find((o) => o.propertyName === col.propertyName);
+        for (const propertyKey in entityExp1.properties) {
+            const tCol = entityExp2.properties[propertyKey];
             if (tCol) {
+                const col = entityExp1.properties[propertyKey];
                 replaceMap.set(col, tCol);
             }
         }
@@ -57,8 +58,8 @@ export const mapReplaceExp = function (replaceMap: Map<IExpression, IExpression>
     }
     else if ((exp as IEntityExpression).primaryColumns) {
         const entityExp = exp as IEntityExpression;
-        for (const o of entityExp.columns) {
-            mapKeepExp(replaceMap, o);
+        for (const propertyKey in entityExp.properties) {
+            mapKeepExp(replaceMap, entityExp.properties[propertyKey]);
         }
     }
 };
@@ -77,8 +78,8 @@ export const removeExpFromMap = function (replaceMap: Map<IExpression, IExpressi
     }
     else if ((exp as IEntityExpression).primaryColumns) {
         const entityExp = exp as IEntityExpression;
-        for (const o of entityExp.columns) {
-            removeExpFromMap(replaceMap, o);
+        for (const propertyKey in entityExp.properties) {
+            removeExpFromMap(replaceMap, entityExp.properties[propertyKey]);
         }
     }
 };

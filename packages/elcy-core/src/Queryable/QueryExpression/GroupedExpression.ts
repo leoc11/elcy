@@ -13,6 +13,7 @@ import { GroupByExpression } from "./GroupByExpression";
 import { SelectExpression } from "./SelectExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
 import { IOrderExpression } from "./IOrderExpression";
+import { StringKeyOf } from "src/Common/Type";
 
 export class GroupedExpression<TE extends object, K = unknown, T = TE> extends SelectExpression<TE, T> {
     public override get allColumns() {
@@ -36,8 +37,8 @@ export class GroupedExpression<TE extends object, K = unknown, T = TE> extends S
                         const cloneMap = new Map();
                         mapReplaceExp(cloneMap, entityExp, this.entity);
                         const childSelects = Enumerable.from(childSelectExp.resolvedSelects).map((o) => {
-                            let curCol = this.entity.columns.find((c) => c.propertyName === o.propertyName as string && c.constructor === o.constructor);
-                            if (!curCol) {
+                            let curCol = this.entity.properties[o.propertyName as StringKeyOf<TE>];
+                            if (curCol?.constructor !== o.constructor) {
                                 curCol = o.clone(cloneMap);
                             }
                             return curCol;

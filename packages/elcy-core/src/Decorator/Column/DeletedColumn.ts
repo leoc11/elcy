@@ -30,7 +30,7 @@ export function DeletedColumn<TE extends object = object>(optionOrName?: IBoolea
         columnDecorator(value as any, context as any);
         context.metadata.deletedColumn = context.name;
         columnHandlers.push((entityMeta) => {
-            const column = entityMeta.columns.find(o => o.propertyName === context.name) as BooleanColumnMetaData<TE>;
+            const column = entityMeta.properties[context.name as keyof TE] as BooleanColumnMetaData<TE>;
             if (column === null) {
                 throw new Error(`column not found`);
             }

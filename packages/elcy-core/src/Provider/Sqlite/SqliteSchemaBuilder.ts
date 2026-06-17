@@ -74,7 +74,8 @@ export class SqliteSchemaBuilder extends RelationalSchemaBuilder {
             const entity: IEntityMetaData<any> = {
                 name: tableSchema.tbl_name,
                 primaryKeys: [],
-                columns: [],
+                properties: {},
+                columns: {},
                 indices: [],
                 constraints: [],
                 relations: [],
@@ -106,7 +107,8 @@ export class SqliteSchemaBuilder extends RelationalSchemaBuilder {
                     column.defaultExp = defaultExp;
                 }
                 column.entity = entity;
-                entity.columns.push(column);
+                entity.properties[column.propertyName] = column;
+                entity.columns[column.columnName] = column;
 
                 if (column.isPrimaryColumn) {
                     entity.primaryKeys.push(column);
@@ -134,7 +136,7 @@ export class SqliteSchemaBuilder extends RelationalSchemaBuilder {
                 });
 
                 index.keys = Enumerable.from(indexInfos[0].rows).orderBy([(o) => o.seqno])
-                    .map((o) => entity.columns.find((c) => c.columnName === o.name))
+                    .map((o) => entity.columns[o.name])
                     .filter((o) => !!o)
                     .toArray();
             }
@@ -154,7 +156,7 @@ export class SqliteSchemaBuilder extends RelationalSchemaBuilder {
                 });
 
                 constraintMeta.columns = Enumerable.from(indexInfos[0].rows).orderBy([(o) => o.seqno])
-                    .map((o) => entity.columns.find((c) => c.columnName === o.name))
+                    .map((o) => entity.columns[o.name])
                     .filter((o) => !!o)
                     .toArray();
             }
@@ -197,7 +199,7 @@ export class SqliteSchemaBuilder extends RelationalSchemaBuilder {
             }).find((o) => o.sql.search(/AUTOINCREMENT/i) >= 0);
 
             if (autoIncrementCol) {
-                const column = entity.columns.find((o) => o.columnName === autoIncrementCol.columnName);
+                const column = entity.columns[autoIncrementCol.columnName];
                 (column as IntegerColumnMetaData).autoIncrement = true;
             }
         }
@@ -213,8 +215,8 @@ export class SqliteSchemaBuilder extends RelationalSchemaBuilder {
                 const target = result[relationSchema.key]; // order
                 const relationName = `${entityName}_${relationSchema.key}`;
 
-                const sourceCols = relationSchema.map((o) => source.columns.find((c) => c.columnName === o.from)).filter((o) => !!o).toArray();
-                const targetCols = relationSchema.map((o) => target.columns.find((c) => c.columnName === o.to)).filter((o) => !!o).toArray();
+                const sourceCols = relationSchema.map((o) => source.columns[o.from]).filter((o) => !!o).toArray();
+                const targetCols = relationSchema.map((o) => target.columns[o.to]).filter((o) => !!o).toArray();
                 const relationType = targetCols.every((o) => target.primaryKeys.includes(o)) ? "one" : "many";
 
                 const updateOption: ReferenceOption = relationSchema.find().on_update.toUpperCase();
@@ -299,7 +301,7 @@ export class SqliteSchemaBuilder extends RelationalSchemaBuilder {
         requireRebuildTable = requireRebuildTable || oldSchema.constraints.some((o) => !constraints.some((c) => isConstraintEquals(c, o)));
 
         // check column
-        requireRebuildTable = requireRebuildTable || oldSchema.columns.length > schema.columns.length || oldSchema.columns.some((o) => !schema.columns.some((c) => isColumnEquals(c, o)));
+        requireRebuildTable = requireRebuildTable || Object.keys(oldSchema.columns).length > Object.keys(schema.columns).length || Object.keys(oldSchema.columns).some((o) => isColumnEquals(schema.columns[o], oldSchema.columns[o]));
 
         if (requireRebuildTable) {
             result.push({
@@ -309,7 +311,7 @@ export class SqliteSchemaBuilder extends RelationalSchemaBuilder {
             const tempName = `temp_${schema.name}`;
             result = result.concat(this.createTable(schema, tempName));
 
-            const columns = Enumerable.from(schema.columns).filter((o) => oldSchema.columns.some((c) => c.columnName === o.columnName)).map((o) => this.queryBuilder.enclose(o.columnName)).toArray().join(",");
+            const columns = Enumerable.from(Object.keys(schema.columns)).filter((o) => o in oldSchema.columns).map((o) => this.queryBuilder.enclose(o)).toArray().join(",");
             result.push({
                 query: `INSERT INTO ${this.queryBuilder.enclose(tempName)} (${columns}) SELECT ${columns} FROM ${this.entityName(oldSchema)}`,
                 type: QueryType.DML
@@ -326,7 +328,7 @@ export class SqliteSchemaBuilder extends RelationalSchemaBuilder {
         }
         else {
             // check all new columns to be added
-            const newColumns = schema.columns.filter((o) => !oldSchema.columns.some((c) => o.columnName === c.columnName));
+            const newColumns = Object.values(schema.columns).filter((o) => !oldSchema.columns[o.columnName]);
             result = result.concat(newColumns.flatMap((o) => this.addColumn(o)));
         }
 

@@ -41,7 +41,7 @@ export function CreatedDateColumn<TE extends object, T extends DateTimeValueType
         columnDecorator(target as any, context as any);
 
         columnHandlers.push((entityMeta) => {
-            const dateColumn = entityMeta.columns.find(o => o.propertyName === context.name) as DateTimeColumnMetaData<TE>;
+            const dateColumn = entityMeta.properties[context.name as keyof TE] as DateTimeColumnMetaData<TE>;
             if (dateColumn === null) {
                 throw new Error(`column not found`);
             }

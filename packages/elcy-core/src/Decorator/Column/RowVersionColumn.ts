@@ -31,7 +31,7 @@ export function RowVersionColumn<TE extends object, T extends bigint | Uint8Arra
         }
         columnDecorator(target as any, context as any);
         columnHandlers.push((entityMeta) => {
-            const column = entityMeta.columns.find(o => o.propertyName === context.name) as RowVersionColumnMetaData<TE>;
+            const column = entityMeta.properties[context.name as keyof TE] as RowVersionColumnMetaData<TE>;
             if (column === null) {
                 throw new Error(`column not found`);
             }

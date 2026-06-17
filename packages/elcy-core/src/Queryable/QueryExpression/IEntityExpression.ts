@@ -7,7 +7,7 @@ import { SelectExpression } from "./SelectExpression";
 
 export interface IEntityExpression<TE extends object = any> extends IExpression<TE> {
     alias: string;
-    columns: Array<IColumnExpression<TE>>;
+    properties: { [K in keyof TE]?: IColumnExpression<TE> };
     defaultOrders: Array<ArrayValueExpression<((...param: TE[]) => ValueType) | OrderDirection>>;
     deleteColumn?: IColumnExpression<TE, boolean>;
     entityTypes: IObjectType[];

@@ -323,7 +323,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
         }
 
         if (isEntityExp(objectOperand)) {
-            let column = objectOperand.columns.find((c) => c.propertyName === exp.memberName) as IColumnExpression<TE, T>;
+            let column = objectOperand.properties[exp.memberName] as IColumnExpression<TE, T>;
             if (!column) {
                 const computedColumnMeta = getColumnMetadata(objectOperand.type as IObjectType<TE>, exp.memberName);
                 if (computedColumnMeta instanceof ComputedColumnMetaData) {
@@ -378,7 +378,8 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                 const entityExp = new EntityExpression(targetType, this.newAlias());
 
                 if (relationMeta instanceof EmbeddedRelationMetaData) {
-                    for (const col of entityExp.columns) {
+                    for (const propKey in entityExp.properties) {
+                        const col = entityExp.properties[propKey];
                         col.columnName = relationMeta.prefix + col.columnName;
                     }
                     entityExp.name = objectOperand.name;
@@ -576,7 +577,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                                     parentRel.child = childExp;
                                     const replaceMap = new Map<IExpression, IExpression>([[selectOperand, childExp]]);
                                     for (const col of selectOperand.relationColumns) {
-                                        const projectCol = childExp.entity.columns.find((o) => o.columnName === col.columnName);
+                                        const projectCol = childExp.entity.properties[col.propertyName as keyof TE & object];
                                         replaceMap.set(col, projectCol);
                                     }
                                     mapKeepExp(replaceMap, parentRel.parent);
@@ -686,7 +687,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                         const selectExp = new SelectExpression(entityExp);
                         const relation = new AndExpression();
                         for (const parentCol of selectOperand.entity.primaryColumns) {
-                            const childCol = entityExp.columns.find((o) => o.columnName === parentCol.columnName);
+                            const childCol = entityExp.properties[parentCol.propertyName];
                             const logicalExp = new StrictEqualExpression(parentCol, childCol);
                             relation.operands.push(logicalExp);
                         }
@@ -1327,8 +1328,8 @@ export class RelationalQueryVisitor implements IQueryVisitor {
 
                         const joinExp = new AndExpression();
                         for (const relCol of relationColumns) {
-                            const sortCol = sorter.entity.columns.find((col) => col.propertyName === relCol.propertyName);
-                            const filterCol = filterer.entity.columns.find((col) => col.propertyName === relCol.propertyName);
+                            const sortCol = sorter.entity.properties[relCol.propertyName];
+                            const filterCol = filterer.entity.properties[relCol.propertyName];
                             const logicalExp = new StrictEqualExpression(sortCol, filterCol);
                             joinExp.operands.push(logicalExp);
                         }
@@ -1440,8 +1441,8 @@ export class RelationalQueryVisitor implements IQueryVisitor {
 
                             const joinExp = new AndExpression();
                             for (const relCol of relationColumns) {
-                                const sortCol = sorter.entity.columns.find((col) => col.propertyName === relCol.propertyName);
-                                const filterCol = filterer.entity.columns.find((col) => col.propertyName === relCol.propertyName);
+                                const sortCol = sorter.entity.properties[relCol.propertyName];
+                                const filterCol = filterer.entity.properties[relCol.propertyName];
                                 const logicalExp = new StrictEqualExpression(sortCol, filterCol);
                                 joinExp.operands.push(logicalExp);
                             }
@@ -1581,7 +1582,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
                             replaceMap.set(col, col);
                         }
                         for (const oriCol of parentRelation.childColumns) {
-                            const col = selectOperand.selects.find(o => o.columnName === oriCol.columnName);
+                            const col = entityExp.properties[oriCol.propertyName as keyof object];
                             replaceMap.set(oriCol, col);
                         }
                         parentRelation.relation = resolveClone(parentRelation.relation, replaceMap);
@@ -1967,7 +1968,7 @@ export class RelationalQueryVisitor implements IQueryVisitor {
 
                 const entityExp = context.selectExpression.addSqlParameter(arrayParamExp, this.parameterIndex, this.newAlias(), schema);
                 const selectExp = new SelectExpression(entityExp);
-                selectExp.selects = entityExp.columns.filter((o) => !o.isPrimary);
+                selectExp.selects = Object.values<IColumnExpression>(entityExp.properties).filter((o) => !o.isPrimary);
                 selectExp.isSubSelect = true;
                 context.selectExpression.addJoin(selectExp, null, "LEFT");
                 return selectExp as unknown as IExpression<T>;
@@ -1994,10 +1995,10 @@ export class RelationalQueryVisitor implements IQueryVisitor {
             clone.entity.alias = this.newAlias();
             const replaceMap = new Map<IColumnExpression, IColumnExpression>();
             for (const oriCol of rel.childColumns) {
-                replaceMap.set(oriCol, clone.entity.columns.find((o) => o.columnName === oriCol.columnName));
+                replaceMap.set(oriCol, clone.entity.properties[oriCol.propertyName]);
             }
             for (const oriCol of rel.parentColumns) {
-                replaceMap.set(oriCol, context.selectExpression.entity.columns.find((o) => o.columnName === oriCol.columnName));
+                replaceMap.set(oriCol, context.selectExpression.entity.properties[oriCol.propertyName]);
             }
             const relations = rel.relation.clone(replaceMap);
             context.selectExpression.addJoin(clone, relations, rel.type);
@@ -2179,7 +2180,7 @@ const createProjectionSelect = <TE extends object, T>(selectExp: SelectExpressio
             replaceMap.set(col, col);
         }
         for (const oriCol of parentRelation.childColumns) {
-            const col = projectedSelectExp.selects.find(o => o.columnName === oriCol.columnName);
+            const col = projectEntityExp.properties[oriCol.propertyName as keyof TE];
             replaceMap.set(oriCol, col);
         }
         parentRelation.relation = resolveClone(parentRelation.relation, replaceMap);

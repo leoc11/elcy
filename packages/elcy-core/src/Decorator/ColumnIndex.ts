@@ -46,34 +46,31 @@ export function ColumnIndex<TE extends object = object>(optionOrNameOrColumns: I
             option.keys = [propertyKey];
         }
 
-        const keyStrings = option.keys.map((o) => typeof o === "string" ? o : FunctionHelper.propertyName(o));
-        const includeStrings = !option.includes ? null : option.includes.map((o) => typeof o === "string" ? o : FunctionHelper.propertyName(o));
-        const entConstructor = propertyKey ? target.constructor as IObjectType<TE> : target as IObjectType<TE>;
-        if (!option.name) {
-            option.name = `IX_${(unique ? "UQ_" : "")}${keyStrings.join("_")}${(includeStrings ? "_" + includeStrings.join("_") : "")}`;
-        }
-
         if (option.keys.length <= 0) {
             throw new Error(`"${option.name}" must have at least 1 properties to index`);
         }
 
-        let entityMetaData = getEntityMetadata(entConstructor);
-        if (entityMetaData == null) {
-            entityMetaData = new AbstractEntityMetaData(entConstructor);
+        const entConstructor = propertyKey ? target.constructor as IObjectType<TE> : target as IObjectType<TE>;
+        let entityMeta = getEntityMetadata(entConstructor);
+        if (entityMeta == null) {
+            entityMeta = new AbstractEntityMetaData(entConstructor);
         }
-        let indexMetaData = entityMetaData.indices.find((o) => o.name === option.name);
-        if (indexMetaData) {
-            ArrayExtension.delete(entityMetaData.indices, indexMetaData);
+        const keyMetas = option.keys.map(o => FunctionHelper.columnMeta(entityMeta, o));
+        const includeMetas = option.includes?.map((o) => FunctionHelper.columnMeta(entityMeta, o));
+        if (!option.name) {
+            option.name = `IX_${(unique ? "UQ_" : "")}${keyMetas.map(o => o.propertyName).join("_")}${(includeMetas ? "_" + includeMetas.map(o => o.propertyName).join("_") : "")}`;
         }
-        const map = Enumerable.from(entityMetaData.columns).toMap(o => o.propertyName);
-        const keys = keyStrings.map(o => map.get(o));
-        const includes = !option.includes ? null : includeStrings.map(o => map.get(o));
-        indexMetaData = new IndexMetaData(entityMetaData, option.name, keys, includes, option.unique);
-        entityMetaData.indices.push(indexMetaData);
 
-        let allColumns = Enumerable.from(keys);
-        if (includes) {
-            allColumns = allColumns.union(includes);
+        let indexMetaData = entityMeta.indices.find((o) => o.name === option.name);
+        if (indexMetaData) {
+            ArrayExtension.delete(entityMeta.indices, indexMetaData);
+        }
+        indexMetaData = new IndexMetaData(entityMeta, option.name, keyMetas, includeMetas, option.unique);
+        entityMeta.indices.push(indexMetaData);
+
+        let allColumns = Enumerable.from(keyMetas);
+        if (includeMetas) {
+            allColumns = allColumns.concat(includeMetas);
         }
 
         const computedColumn = allColumns
@@ -83,6 +80,6 @@ export function ColumnIndex<TE extends object = object>(optionOrNameOrColumns: I
             throw new Error(`"${computedColumn.propertyName}" cannot be indexed because it's a computed properties`);
         }
 
-        setEntityMetadata(entConstructor, entityMetaData);
+        setEntityMetadata(entConstructor, entityMeta);
     };
 }

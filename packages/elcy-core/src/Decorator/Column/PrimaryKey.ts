@@ -8,7 +8,7 @@ export function PrimaryKey<TE extends object, T = any>(): ClassFieldDecorator<TE
             context.metadata.columns = columnHandlers = [];
         }
         columnHandlers.push((entityMeta) => {
-            const pkColumn = entityMeta.columns.find(o => o.propertyName === context.name);
+            const pkColumn = entityMeta.properties[context.name as keyof TE];
             if (!pkColumn) {
                 throw new Error("Please register column first");
             }

@@ -129,8 +129,8 @@ export class UpdateExpression<TE extends object = object> implements IQueryExpre
             relations = null;
             const andExp = new AndExpression();
             for (const [parentColMeta, childColMeta] of relationMeta.relationMaps) {
-                const parentCol = this.entity.columns.find((o) => o.propertyName === parentColMeta.propertyName);
-                const childCol = child.entity.columns.find((o) => o.propertyName === childColMeta.propertyName);
+                const parentCol = this.entity.properties[parentColMeta.propertyName];
+                const childCol = child.entity.properties[childColMeta.propertyName];
                 const logicalExp = new StrictEqualExpression(parentCol, childCol);
                 andExp.operands.push(logicalExp);
             }

@@ -11,7 +11,7 @@ export class RelationMetaData<TSource extends object = object, TTarget extends o
         return this.relationType + "-" + this.reverseRelation.relationType as any;
     }
     public get mappedRelationColumns(): Enumerable {
-        return Enumerable.from(this.relationColumns).intersect(this.source.columns);
+        return Enumerable.from(this.relationColumns).intersect(Object.values(this.source.properties));
     }
     constructor(option: IRelationData<TSource, TTarget>) {
         this.name = option.name;

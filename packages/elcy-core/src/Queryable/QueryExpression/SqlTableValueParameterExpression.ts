@@ -20,7 +20,8 @@ export type TSchemaType<TE> = TE extends TSchema<infer U> ? U : never;
 
 export class SqlTableValueParameterExpression<TE extends object = object> implements ISqlParameterExpression<TE[]>, IEntityExpression<TE> {
     constructor(public readonly valueExp: ParameterExpression<TE[]>, public itemSchema: TSchema<TE>, public readonly parameterIndex?: number, alias?: string) {
-        const columns: IColumnExpression<TE>[] = [];
+        let properties: { [K in keyof TE]?: IColumnExpression<TE> } = {};
+        let hasPrimary = false;
         if (itemSchema instanceof Object) {
             for (const prop in itemSchema) {
                 if (prop === "constructor") {
@@ -29,34 +30,40 @@ export class SqlTableValueParameterExpression<TE extends object = object> implem
                 }
                 const propValue = itemSchema[prop];
                 if (propValue instanceof Function) {
-                    columns.push(new ColumnExpression(this, propValue as GenericType<ValueType>, prop, prop, false));
+                    properties[prop] = new ColumnExpression(this, propValue as GenericType<ValueType>, prop, prop, false);
                 }
                 else {
-                    columns.push(new ColumnExpression(this, propValue.type as GenericType<ValueType>, prop, prop, propValue.isPrimaryKey, true, propValue.columnType));
+                    properties[prop] = new ColumnExpression(this, propValue.type as GenericType<ValueType>, prop, prop, propValue.isPrimaryKey, true, propValue.columnType);
+                    if (!hasPrimary) {
+                        hasPrimary = propValue.isPrimaryKey;
+                    }
                 }
             }
         }
         else {
             this.type = itemSchema as GenericType<TE & TE[]>;
-            this.columns.push(new ColumnExpression(this, itemSchema as unknown as GenericType<ValueType>, "__value" as StringKeyOf<TE>, "__value", false));
+            const col = new ColumnExpression(this, itemSchema as unknown as GenericType<ValueType>, "__value" as StringKeyOf<TE>, "__value", false);
+            properties[col.propertyName] = col;
         }
 
-        if (this.parameterIndex > 0 && !columns.some(o => o.isPrimary)) {
-            columns.unshift(new ColumnExpression(this, Number, "__index" as StringKeyOf<TE>, "__index", true));
+        if (this.parameterIndex > 0 && !hasPrimary) {
+            const col = new ColumnExpression(this, Number, "__index" as StringKeyOf<TE>, "__index", true);
+            properties = Object.assign({ [col.propertyName]: col }, properties);
         }
 
-        this.columns = columns;
+        this.properties = properties;
         this.alias = alias ?? this.name;
     }
 
     public get primaryColumns(): IColumnExpression<TE>[] {
         if (!this._primaryColumns) {
-            this._primaryColumns = this.columns.filter((o) => o.isPrimary);
+            this._primaryColumns = Object.values<IColumnExpression<TE>>(this.properties).filter((o) => o.isPrimary);
         }
         return this._primaryColumns;
     }
 
     public readonly columns: IColumnExpression<TE>[];
+    public readonly properties: { [K in keyof TE]?: IColumnExpression<TE> };
     public entityTypes: IObjectType[] = [];
     public readonly defaultOrders: Array<ArrayValueExpression<((...param: TE[]) => ValueType) | OrderDirection>> = [];
     public get name(): string {
@@ -72,7 +79,7 @@ export class SqlTableValueParameterExpression<TE extends object = object> implem
     public asTempTable: boolean;
 
     public hashCode() {
-        return hashCode(this.name, this.columns.reduce((r, o) => r + o.hashCode(), 0));
+        return hashCode(this.name, Object.values<IColumnExpression>(this.properties).reduce((r, o) => r + o.hashCode(), 0));
     }
     public clone(replaceMap?: Map<IExpression, IExpression>): SqlTableValueParameterExpression<TE> {
         if (!replaceMap) {

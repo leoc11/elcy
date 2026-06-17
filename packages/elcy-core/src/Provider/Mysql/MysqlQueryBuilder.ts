@@ -30,6 +30,7 @@ import { DeleteExpression } from "src/Queryable/QueryExpression/DeleteExpression
 import { UpsertExpression } from "src/Queryable/QueryExpression/UpsertExpression";
 import { Null } from "src/Common/Constant";
 import { mysqlQueryTranslator } from "./MysqlQueryTranslator";
+import { IColumnExpression } from "src/Queryable/QueryExpression/IColumnExpression";
 
 export class MysqlQueryBuilder extends RelationalQueryBuilder {
     //#region column type map
@@ -51,7 +52,7 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
             else {
                 let column = sqlExp.entity.primaryColumns[0];
                 if (!column) {
-                    column = sqlExp.entity.columns[0];
+                    column = Object.values(sqlExp.entity.properties)[0];
                 }
                 result += `ORDER BY ${this.toString(column, context)}${this.newLine()}`;
             }
@@ -166,14 +167,14 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
                 const relation = new AndExpression();
                 for (const column of selectExp.entity.primaryColumns) {
                     const newValueColumn = new ColumnExpression(tvpExp, column.type, column.propertyName, column.columnName, false, true, column.columnMeta.columnType);
-                    tvpExp.columns.push(newValueColumn);
+                    tvpExp.properties[newValueColumn.propertyName] = newValueColumn;
                     const rel = new StrictEqualExpression(column, newValueColumn);
                     relation.operands.push(rel);
                 }
 
                 selectExp.paramExps.push(tvpExp);
                 const valueSelectExp = new SelectExpression(tvpExp);
-                valueSelectExp.selects = tvpExp.columns;
+                valueSelectExp.selects = Object.values<IColumnExpression<TE>>(tvpExp.properties);
                 valueSelectExp.isSubSelect = true;
                 selectExp.addJoin(valueSelectExp, relation.asOperand(), "INNER");
 
@@ -207,15 +208,15 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
 
             const relation = new AndExpression();
             for (const column of updateExp.entity.primaryColumns) {
-                const selectColumn = projectedEntity.columns.find(o => o.propertyName == column.propertyName);
+                const selectColumn = projectedEntity.properties[column.propertyName];
                 const equalExp = new StrictEqualExpression(column, selectColumn);
                 relation.operands.push(equalExp);
             }
 
-            const setQuery = Object.keys(updateExp.setter).map((o) => {
-                const value = updateExp.setter[o as keyof TE];
+            const setQuery = Object.keys(updateExp.setter).map((o: StringKeyOf<TE>) => {
+                const value = updateExp.setter[o];
                 const valueStr = this.toOperandString(value, context);
-                const column = updateExp.entity.columns.find((c) => c.propertyName === o);
+                const column = updateExp.entity.properties[o];
                 return `${this.enclose(updateExp.entity.alias)}.${this.enclose(column.columnName)} = ${valueStr}`;
             }).join(`,${this.newLine(1, false)}`);
 
@@ -229,10 +230,10 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
             });
         }
         else {
-            const setQuery = Object.keys(updateExp.setter).map((o) => {
-                const value = updateExp.setter[o as keyof TE];
+            const setQuery = Object.keys(updateExp.setter).map((o: StringKeyOf<TE>) => {
+                const value = updateExp.setter[o];
                 const valueStr = this.toOperandString(value, context);
-                const column = updateExp.entity.columns.find((c) => c.propertyName === o);
+                const column = updateExp.entity.properties[o];
                 return `${this.enclose(updateExp.entity.alias)}.${this.enclose(column.columnName)} = ${valueStr}`;
             }).join(`,${this.newLine(1, false)}`);
 
@@ -360,7 +361,7 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
 
         const valueAlias = upsertExp.entity.alias ?? "EXCLUDED";
         const setQuery = Object.keys(upsertExp.setter).map((prop: StringKeyOf<TE>) => {
-            const column = upsertExp.entity.columns.find((c) => c.propertyName === prop);
+            const column = upsertExp.entity.properties[prop];
             const valExp = upsertExp.setter[prop];
             const valQuery = isNull(valExp) ? `${this.enclose(valueAlias)}.${this.enclose(column.columnName)}` : this.toOperandString(valExp, context);
             return `${this.enclose(column.columnName)} = ${valQuery}`;
@@ -380,14 +381,14 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
             const relation = new AndExpression();
             for (const column of selectExp.entity.primaryColumns) {
                 const newValueColumn = new ColumnExpression(tvpExp, column.type, column.propertyName, column.columnName, false, true, column.columnMeta.columnType);
-                tvpExp.columns.push(newValueColumn);
+                tvpExp.properties[newValueColumn.propertyName] = newValueColumn;
                 const rel = new StrictEqualExpression(column, newValueColumn);
                 relation.operands.push(rel);
             }
 
             selectExp.paramExps.push(tvpExp);
             const valueSelectExp = new SelectExpression(tvpExp);
-            valueSelectExp.selects = tvpExp.columns;
+            valueSelectExp.selects = Object.values<IColumnExpression<TE>>(tvpExp.properties);
             valueSelectExp.isSubSelect = true;
             selectExp.addJoin(valueSelectExp, relation.asOperand(), "INNER");
 
@@ -399,7 +400,7 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
     }
     protected override toTableValueConstructorQuery<TE extends object>(entityExp: SqlTableValueParameterExpression<TE>, values: TE[], context?: IQueryBuilderContext): string {
         const valueLiterals = values.map(o => {
-            const valueQueries = entityExp.columns.map(p => {
+            const valueQueries = Object.values<IColumnExpression<TE>>(entityExp.properties).map(p => {
                 return `${this.valueString(o[p.propertyName] as ValueType)} AS ${this.enclose(p.columnName)}`;
             }).join(", ");
             return `SELECT ${valueQueries}`;
@@ -412,7 +413,7 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
             query: `DROP TEMPORARY TABLE IF EXISTS ${this.entityName(tvpExp)}`,
             type: QueryType.DDL
         });
-        const columnDefinition = tvpExp.columns.map((c) => {
+        const columnDefinition = Object.values<IColumnExpression<TE>>(tvpExp.properties).map((c) => {
             const colTypeConfig = this.translator.resolveValueType(c.type) ?? this.translator.resolveValueType(Null);
             return `${this.enclose(c.columnName)} ${this.columnTypeString(colTypeConfig.columnType)}`;
         }).join("," + this.newLine(1, false));
@@ -427,7 +428,7 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
             type: QueryType.DDL
         });
 
-        const columns = tvpExp.columns;
+        const columns = Object.values<IColumnExpression<TE>>(tvpExp.properties);
         const insertQuery = new InsertExpression(tvpExp, [], columns);
         for (const item of values) {
             const itemExp: { [key: string]: IExpression } = {};
@@ -476,7 +477,7 @@ export class MysqlQueryBuilder extends RelationalQueryBuilder {
         if (context?.option?.supportTVP == true && expression instanceof SqlTableValueParameterExpression) {
             context.placeholders.push(JSON.stringify(paramValue.value));
 
-            const column = expression.columns.map((col) => {
+            const column = Object.values<IColumnExpression>(expression.properties).map((col) => {
                 const itemType = expression.itemSchema?.[col.propertyName];
                 let columnType: string;
                 let valueType: GenericType<ValueType>;

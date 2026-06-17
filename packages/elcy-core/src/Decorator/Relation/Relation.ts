@@ -47,11 +47,8 @@ export function Relation<TE extends object, T extends object>(type: () => IObjec
 
                 const targetMetaData = getEntityMetadata(targetType);
                 const relationMap = Enumerable.from(option.relationMap).map(([chilProp, parentProp]) => {
-                    const childPropName = typeof chilProp === "string" ? chilProp : FunctionHelper.propertyName(chilProp);
-                    const childColumn = entityMeta.columns.find(o => o.propertyName === childPropName);
-                    const parentPropName = typeof parentProp === "string" ? parentProp : FunctionHelper.propertyName(parentProp);
-                    const parentColumn = targetMetaData.columns.find(o => o.propertyName === parentPropName);
-
+                    const childColumn = FunctionHelper.columnMeta(entityMeta, chilProp);
+                    const parentColumn = FunctionHelper.columnMeta(targetMetaData, parentProp);
                     return [childColumn, parentColumn];
                 }).toMap(o => o[0], o => o[1]);
                 const childData: IRelationData<TE, T> = {

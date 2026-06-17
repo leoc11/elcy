@@ -14,16 +14,16 @@ import { SqlParameterExpression } from "./SqlParameterExpression";
 export class ProjectionEntityExpression<TE extends object = object> implements IEntityExpression<TE> {
     public get primaryColumns(): IColumnExpression<TE>[] {
         if (!this._primaryColumns) {
-            this._primaryColumns = this.columns.filter((o) => o.isPrimary);
+            this._primaryColumns = Object.values<IColumnExpression<TE>>(this.properties).filter((o) => o.isPrimary);
         }
         return this._primaryColumns;
     }
     public get relationColumns() {
-        return this.subSelect.relationColumns.map((o) => this.columns.find((c) => c.columnName === o.columnName));
+        return this.subSelect.relationColumns.map((o) => this.properties[o.propertyName as keyof TE]);
     }
     public get selectedColumns() {
         if (!this._selectedColumns) {
-            this._selectedColumns = this.subSelect.selects.map((o) => this.columns.find((c) => c.columnName === o.columnName));
+            this._selectedColumns = this.subSelect.selects.map((o) => this.properties[o.propertyName as keyof TE]);
         }
         return this._selectedColumns;
     }
@@ -31,11 +31,14 @@ export class ProjectionEntityExpression<TE extends object = object> implements I
         subSelect.isSubSelect = true;
         this.alias = subSelect.entity.alias;
         this.name = subSelect.entity.name;
-        this.columns = Enumerable.from(subSelect.projectedColumns).map((o) => {
-            const col = new ColumnExpression(this, o.type, o.propertyName as StringKeyOf<TE>, o.columnName, o.isPrimary, o.isNullable);
-            col.columnMeta = o.columnMeta;
-            return col;
-        }).toArray();
+        this.properties = Enumerable.from(subSelect.projectedColumns)
+            .map((o) => {
+                const col = new ColumnExpression(this, o.type, o.propertyName as StringKeyOf<TE>, o.columnName, o.isPrimary, o.isNullable);
+                col.columnMeta = o.columnMeta;
+                return col;
+            })
+            .reduce((r, o) => (r[o.propertyName] = o, r), {} as { [K in keyof TE]?: IColumnExpression<TE> });
+
         // TODO
         // this.defaultOrders = subSelect.orders.slice(0) as any;
         this.entityTypes = this.subSelect.entity.entityTypes.slice();
@@ -43,7 +46,7 @@ export class ProjectionEntityExpression<TE extends object = object> implements I
         this.paramExps = subSelect.paramExps;
     }
     public alias: string;
-    public columns: IColumnExpression<TE>[];
+    public properties: { [K in keyof TE]?: IColumnExpression<TE> };
     public defaultOrders: Array<ArrayValueExpression<((...param: TE[]) => ValueType) | OrderDirection>> = [];
     public readonly entityTypes: IObjectType[];
     public name: string = "";
@@ -64,7 +67,7 @@ export class ProjectionEntityExpression<TE extends object = object> implements I
         return clone;
     }
     public hashCode() {
-        return hashCodeAdd(hashCode("PROJECTION", this.subSelect.hashCode()), this.columns.reduce((r, o) => r + o.hashCode(), 0));
+        return hashCodeAdd(hashCode("PROJECTION", this.subSelect.hashCode()), Object.values<IColumnExpression<TE>>(this.properties).reduce((r, o) => r + o.hashCode(), 0));
     }
     public toString(): string {
         return `ProjectionEntity(${this.subSelect.toString()})`;

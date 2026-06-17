@@ -13,15 +13,16 @@ export function ComputedColumn<TE extends object = object, T extends ValueType =
             context.metadata.columns = columnHandlers = [];
         }
         columnHandlers.push((entityMeta) => {
-            if (entityMeta.columns.some(o => o.propertyName === context.name)) {
+            if (entityMeta.properties[context.name as keyof TE]) {
                 throw new Error(`Cannot re-declare column: ${String(context.name)}`);
             }
 
             const fnExp = new LazyFunctionExpression(fn, [entityMeta.type]);
             const propertyKey = context.name as StringKeyOf<TE>;
-            const column = new ComputedColumnMetaData(entityMeta, fnExp, propertyKey);
-            entityMeta.columns.push(column);
-            setColumnMetadata(entityMeta.type, propertyKey, column as any);
+            const columnMeta = new ComputedColumnMetaData(entityMeta, fnExp, propertyKey);
+            entityMeta.properties[columnMeta.propertyName] = columnMeta;
+            entityMeta.columns[columnMeta.columnName] = columnMeta;
+            setColumnMetadata(entityMeta.type, propertyKey, columnMeta);
         });
 
         return {

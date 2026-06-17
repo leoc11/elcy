@@ -43,7 +43,8 @@ export class RawQueryable<TE extends object> extends Queryable<TE> {
                 columnMeta.columnName = String(prop);
                 columnMeta.nullable = true;
                 columnMeta.isProjected = true;
-                objectMetaData.columns.push(columnMeta);
+                objectMetaData.properties[columnMeta.propertyName] = columnMeta;
+                objectMetaData.columns[columnMeta.columnName] = columnMeta;
             }
             this._metaData = objectMetaData;
         }

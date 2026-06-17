@@ -9,7 +9,7 @@ export function NullableColumn<TE extends object = object>(): ClassPropertyDecor
             context.metadata.columns = columnHandlers = [];
         }
         columnHandlers.push((entityMeta) => {
-            const column = entityMeta.columns.find(o => o.propertyName === context.name);
+            const column = entityMeta.properties[context.name as keyof TE];
             if (!column) {
                 throw new Error("Please register column first");
             }

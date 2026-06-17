@@ -15,9 +15,10 @@ import { SqlTableValueParameterExpression, TSchema } from "./SqlTableValueParame
 export class InsertExpression<TE extends object = object> implements IQueryExpression<void> {
     public get columns(): Array<IColumnExpression<TE>> {
         if (!this._columns && this.entity instanceof EntityExpression) {
-            this._columns = Enumerable.from(this.entity.metaData.columns)
+            this._columns = Enumerable.from(Object.values<IColumnMetaData<TE>>(this.entity.metaData.properties))
                 .except(this.entity.metaData.insertGeneratedColumns)
-                .map((o) => this.entity.columns.find((c) => c.propertyName === o.propertyName)).toArray();
+                .map((o) => this.entity.properties[o.propertyName])
+                .toArray();
         }
         return this._columns;
     }

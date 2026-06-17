@@ -113,7 +113,7 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
         }];
     }
     public createTable<TE extends object>(entityMetaData: IEntityMetaData<TE>, name?: string): IQuery[] {
-        const columnDefinitions = Enumerable.from(entityMetaData.columns)
+        const columnDefinitions = Enumerable.from(Object.values<IColumnMetaData<TE>>(entityMetaData.properties))
             .filter((o) => !!o.columnName)
             .map((o) => this.columnDeclaration(o, "create"))
             .toArray()
@@ -334,7 +334,8 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
                 schema: tableSchema.TABLE_SCHEMA,
                 name: tableSchema.TABLE_NAME,
                 primaryKeys: [],
-                columns: [],
+                properties: {},
+                columns: {},
                 indices: [],
                 constraints: [],
                 relations: [],
@@ -390,7 +391,8 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
 
             const entity = result[columnSchema.TABLE_SCHEMA + "." + columnSchema.TABLE_NAME];
             column.entity = entity;
-            entity.columns.push(column);
+            entity.properties[column.propertyName] = column;
+            entity.columns[column.columnName] = column;
         }
         for (const constraint of constriantSchemas.rows) {
             const entity = result[constraint.TABLE_SCHEMA + "." + constraint.TABLE_NAME];
@@ -421,7 +423,7 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
             const column = constraint.COLUMN_NAME;
 
             const constraintData = constraints[name];
-            const columnMeta = entity.columns.find((o) => o.columnName === column);
+            const columnMeta = entity.columns[column];
             constraintData.meta.columns.push(columnMeta);
             switch (constraintData.type) {
                 case "PRIMARY KEY":
@@ -491,7 +493,7 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
                 };
                 entity.indices.push(index);
             }
-            const column = entity.columns.find((o) => o.columnName === indexSchema.COLUMN_NAME);
+            const column = entity.columns[indexSchema.COLUMN_NAME];
             if (column) {
                 index.keys.push(column);
             }
@@ -808,8 +810,8 @@ export abstract class RelationalSchemaBuilder implements ISchemaBuilder {
         return `CONSTRAINT ${this.queryBuilder.enclose(pkName)} PRIMARY KEY (${columnQuery})`;
     }
     protected updateEntitySchema<TE extends object>(schema: IEntityMetaData<TE>, oldSchema: IEntityMetaData<TE>) {
-        const oldColumns = oldSchema.columns.filter((o) => !!o.columnName);
-        let columnMetas = schema.columns.filter((o) => !!o.columnName).map((o) => {
+        const oldColumns = Object.values(oldSchema.columns).filter((o) => !!o.columnName);
+        let columnMetas = Object.values(schema.columns).filter((o) => !!o.columnName).map((o) => {
             const oldCol = oldColumns.find((c) => c.columnName.toLowerCase() === o.columnName.toLowerCase());
             ArrayExtension.delete(oldColumns, oldCol);
             return {

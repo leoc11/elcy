@@ -37,6 +37,7 @@ import { UpsertExpression } from "src/Queryable/QueryExpression/UpsertExpression
 import { RawSqlExpression } from "src/Queryable/QueryExpression/RawSqlExpression";
 import { ArrayExtension } from "src/Extensions/ArrayExtension";
 import { Null } from "src/Common/Constant";
+import { IColumnExpression } from "src/Queryable/QueryExpression/IColumnExpression";
 
 export class MssqlQueryBuilder extends RelationalQueryBuilder {
     public queryLimit: IQueryLimit = {
@@ -139,15 +140,15 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
 
             const relation = new AndExpression();
             for (const column of updateExp.entity.primaryColumns) {
-                const selectColumn = projectedEntity.columns.find(o => o.propertyName == column.propertyName);
+                const selectColumn = projectedEntity.properties[column.propertyName];
                 const equalExp = new StrictEqualExpression(column, selectColumn);
                 relation.operands.push(equalExp);
             }
 
-            const setQuery = Object.keys(updateExp.setter).map((o) => {
-                const value = updateExp.setter[o as keyof TE];
+            const setQuery = Object.keys(updateExp.setter).map((o: StringKeyOf<TE>) => {
+                const value = updateExp.setter[o];
                 const valueStr = this.toOperandString(value, context);
-                const column = updateExp.entity.columns.find((c) => c.propertyName === o);
+                const column = updateExp.entity.properties[o];
                 return `${this.enclose(updateExp.entity.alias)}.${this.enclose(column.columnName)} = ${valueStr}`;
             }).join(`,${this.newLine(1, false)}`);
             
@@ -163,10 +164,10 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
             });
         }
         else {
-            const setQuery = Object.keys(updateExp.setter).map((o) => {
-                const value = updateExp.setter[o as keyof TE];
+            const setQuery = Object.keys(updateExp.setter).map((o: StringKeyOf<TE>) => {
+                const value = updateExp.setter[o];
                 const valueStr = this.toOperandString(value, context);
-                const column = updateExp.entity.columns.find((c) => c.propertyName === o);
+                const column = updateExp.entity.properties[o];
                 return `${this.enclose(updateExp.entity.alias)}.${this.enclose(column.columnName)} = ${valueStr}`;
             }).join(`,${this.newLine(1, false)}`);
 
@@ -237,7 +238,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
         const results: IQuery[] = [];
         const context = this.createContext(upsertExp, parameters, option);
 
-        const tvpExp = this.createTVPExp("upsert", Enumerable.from(upsertExp.entity.primaryColumns).union(upsertExp.insertColumns, upsertExp.entity.columns.filter(o => o.propertyName in upsertExp.setter)), upsertExp.values, context);
+        const tvpExp = this.createTVPExp("upsert", Enumerable.from(upsertExp.entity.primaryColumns).union(upsertExp.insertColumns, Object.keys(upsertExp.setter).map((o: StringKeyOf<TE>) => upsertExp.entity.properties[o])), upsertExp.values, context);
 
         const useTempTable = !option?.supportTVP;
         if (useTempTable) {
@@ -261,12 +262,12 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
             }).join(",")}`;
             upsertExp.entity.alias = originalAlias;
         }
-        const relations = new AndExpression(...upsertExp.entity.primaryColumns.map((o) => new StrictEqualExpression(o, tvpExp.columns.find(p => p.propertyName === o.propertyName))));
+        const relations = new AndExpression(...upsertExp.entity.primaryColumns.map((o) => new StrictEqualExpression(o, tvpExp.properties[o.propertyName])));
 
         const setQuery = Object.keys(upsertExp.setter).map((prop: StringKeyOf<TE>) => {
-            const column = upsertExp.entity.columns.find((c) => c.propertyName === prop);
+            const column = upsertExp.entity.properties[prop];
             const valExp = upsertExp.setter[prop];
-            const valQuery = isNull(valExp) ? this.toString(tvpExp.columns.find(o => o.propertyName == prop), context) : this.toOperandString(valExp, context);
+            const valQuery = isNull(valExp) ? this.toString(tvpExp.properties[prop], context) : this.toOperandString(valExp, context);
             return `${this.enclose(column.columnName)} = ${valQuery}`;
         }).join(`,${this.newLine(1, false)}`);
         let updateQuery = `UPDATE ${this.enclose(upsertExp.entity.alias ?? upsertExp.entity.name)} WITH (UPDLOCK, HOLDLOCK)` +
@@ -284,7 +285,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
         ArrayExtension.delete(upsertExp.paramExps, tvpExp);
 
         const insertSelect = new SelectExpression(tvpExp);
-        insertSelect.selects = upsertExp.insertColumns.map(col => tvpExp.columns.find(o => o.propertyName === col.propertyName));
+        insertSelect.selects = upsertExp.insertColumns.map(col => tvpExp.properties[col.propertyName]);
         insertSelect.addWhere(new RawSqlExpression(Boolean, `NOT EXISTS (` +
             this.newLine(1) + `SELECT 1 FROM ${this.entityName(upsertExp.entity)}${upsertExp.entity.alias ? ` AS ${this.enclose(upsertExp.entity.alias)}` : ""} WITH (UPDLOCK, HOLDLOCK)` +
             this.newLine() + `WHERE ${this.toString(relations.asOperand())}` +
@@ -317,7 +318,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
             else {
                 let column = sqlExp.entity.primaryColumns[0];
                 if (!column) {
-                    column = sqlExp.entity.columns[0];
+                    column = Object.values<IColumnExpression<TE>>(sqlExp.entity.properties)[0];
                 }
                 result += `${this.newLine()}ORDER BY ${this.toString(column, context)}`;
             }
@@ -361,7 +362,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
             throw new Error(`Sql Parameter ${expression.toString()} no supported`);
         }
         if (context?.option?.supportTVP == true && expression instanceof SqlTableValueParameterExpression) {
-            const column = expression.columns.map((col, i) => {
+            const column = Object.values(expression.properties).map((col, i) => {
                 const itemType = expression.itemSchema?.[col.propertyName];
                 let columnType: string;
                 let valueType: GenericType<ValueType>;
@@ -389,7 +390,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
             query: `DROP TABLE IF EXISTS ${this.entityName(tvpExp)}`,
             type: QueryType.DDL
         });
-        const columnDefinition = tvpExp.columns.map((c) => {
+        const columnDefinition = Object.values<IColumnExpression<TE>>(tvpExp.properties).map((c) => {
             const colTypeConfig = this.translator.resolveValueType(c.type) ?? this.translator.resolveValueType(Null);
             return `${this.enclose(c.columnName)} ${this.columnTypeString(colTypeConfig.columnType)}`;
         }).join("," + this.newLine(1, false));
@@ -405,7 +406,7 @@ export class MssqlQueryBuilder extends RelationalQueryBuilder {
         });
 
         let i = 0;
-        const columns = tvpExp.columns;
+        const columns = Object.values<IColumnExpression<TE>>(tvpExp.properties);
         const insertQuery = new InsertExpression(tvpExp, [], columns);
         for (const item of values) {
             const itemExp: { [key: string]: IExpression } = {};

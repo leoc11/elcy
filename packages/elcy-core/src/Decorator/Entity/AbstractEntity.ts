@@ -2,10 +2,8 @@ import { ClassBase } from "../../Common/Constant";
 import { InheritanceType } from "../../Common/Enum";
 import { OrderDirection } from "../../Common/StringType";
 import { IObjectType } from "../../Common/Type";
-import { IOrderDefinition } from "@elcy/enumerable";
 import { ArrayValueExpression } from "../../ExpressionBuilder/Expression/ArrayValueExpression";
 import { ValueExpression } from "../../ExpressionBuilder/Expression/ValueExpression";
-import { ExpressionBuilder } from "../../ExpressionBuilder/ExpressionBuilder";
 import { AbstractEntityMetaData } from "../../MetaData/AbstractEntityMetaData";
 import { ComputedColumnMetaData } from "../../MetaData/ComputedColumnMetaData";
 import { EntityMetaData } from "../../MetaData/EntityMetaData";
@@ -16,6 +14,8 @@ import { InheritedComputedColumnMetaData } from "../../MetaData/Relation/Inherit
 import { IEntityOption } from "../Option/IEntityOption";
 import { ArrayExtension } from "src/Extensions/ArrayExtension";
 import { LazyFunctionExpression } from "src/ExpressionBuilder/Expression/LazyFunctionExpression";
+import { BooleanColumnMetaData, DateTimeColumnMetaData } from "src/MetaData";
+import { IOrderDefinition } from "@elcy/enumerable";
 
 export function AbstractEntity<T extends TParent = any, TParent extends object = object>(option: IEntityOption<T>): ClassDecorator;
 export function AbstractEntity<T extends TParent = any, TParent extends object = object>(name?: string, defaultOrders?: Array<IOrderDefinition<T>>, allowInheritance?: boolean): ClassDecorator;
@@ -64,8 +64,9 @@ export function AbstractEntity<T extends TParent = any, TParent extends object =
                     isInheritance = true;
                 }
                 if (isInheritance) {
-                    for (const parentColumnMeta of parentMetaData.columns) {
-                        const existing = entityMetadata.columns.find((o) => o.propertyName === parentColumnMeta.propertyName);
+                    for (const propertyKey in parentMetaData.properties) {
+                        const parentColumnMeta = parentMetaData.properties[propertyKey];
+                        const existing = entityMetadata.properties[propertyKey];
                         let inheritedColumnMeta: IColumnMetaData<T>;
                         if (parentColumnMeta instanceof ComputedColumnMetaData) {
                             if (!existing) {
@@ -73,37 +74,38 @@ export function AbstractEntity<T extends TParent = any, TParent extends object =
                             }
                         }
                         else {
-                            if (existing) {
-                                ArrayExtension.delete(entityMetadata.columns, existing);
-                            }
                             inheritedColumnMeta = new InheritedColumnMetaData(entityMetadata, parentColumnMeta);
                         }
 
                         if (inheritedColumnMeta) {
-                            entityMetadata.columns.push(inheritedColumnMeta);
+                            entityMetadata.properties[propertyKey] = inheritedColumnMeta;
+                            entityMetadata.columns[inheritedColumnMeta.columnName] = inheritedColumnMeta;
                             setColumnMetadata(type, parentColumnMeta.propertyName, inheritedColumnMeta as any);
                         }
                     }
+
                     if (entityMetadata.inheritance.inheritanceType !== InheritanceType.None) {
-                        const additionProperties = entityMetadata.columns.filter((o) => parentMetaData.columns.every((p) => p.propertyName !== o.propertyName));
+                        const additionProperties = Object.values<IColumnMetaData<T>>(entityMetadata.properties).filter((o) => !parentMetaData.properties[o.propertyName as unknown as keyof TParent]);
                         for (const columnMeta of additionProperties) {
                             // TODO
-                            parentMetaData.columns.push(columnMeta as unknown as IColumnMetaData<TParent>);
+                            const parentColumnMeta = columnMeta as unknown as IColumnMetaData<TParent>;
+                            parentMetaData.properties[parentColumnMeta.propertyName] = parentColumnMeta;
+                            parentMetaData.columns[parentColumnMeta.columnName] = parentColumnMeta;
                         }
                     }
 
                     if (parentMetaData.primaryKeys.length > 0) {
-                        entityMetadata.primaryKeys = parentMetaData.primaryKeys.map((o) => entityMetadata.columns.find((p) => p.propertyName === o.propertyName));
+                        entityMetadata.primaryKeys = parentMetaData.primaryKeys.map((o) => entityMetadata.properties[o.propertyName]);
                     }
 
                     if (parentMetaData.createDateColumn) {
-                        entityMetadata.createDateColumn = entityMetadata.columns.find((p) => p.propertyName === parentMetaData.createDateColumn.propertyName) as any;
+                        entityMetadata.createDateColumn = entityMetadata.properties[parentMetaData.createDateColumn.propertyName] as DateTimeColumnMetaData<T>;
                     }
                     if (parentMetaData.modifiedDateColumn) {
-                        entityMetadata.modifiedDateColumn = entityMetadata.columns.find((p) => p.propertyName === parentMetaData.modifiedDateColumn.propertyName) as any;
+                        entityMetadata.modifiedDateColumn = entityMetadata.properties[parentMetaData.modifiedDateColumn.propertyName] as DateTimeColumnMetaData<T>;
                     }
                     if (parentMetaData.deletedColumn) {
-                        entityMetadata.deletedColumn = entityMetadata.columns.find((p) => p.propertyName === parentMetaData.deletedColumn.propertyName) as any;
+                        entityMetadata.deletedColumn = entityMetadata.properties[parentMetaData.deletedColumn.propertyName] as BooleanColumnMetaData<T>;
                     }
                     if (parentMetaData.defaultOrders && !entityMetadata.defaultOrders) {
                         entityMetadata.defaultOrders = parentMetaData.defaultOrders;

@@ -31,14 +31,14 @@ import { ParameterExpression } from "src/ExpressionBuilder/Expression/ParameterE
 
 export class SelectExpression<TE extends object = any, T = unknown> implements IQueryExpression<T> {
     public get allColumns(): IEnumerable<IColumnExpression> {
-        let columns = Enumerable.from(this.entity.columns).union(this.resolvedSelects);
+        let columns = Enumerable.from(Object.values<IColumnExpression>(this.entity.properties)).union(this.resolvedSelects);
         for (const join of this.joins) {
             const child = join.child;
-            columns = columns.union(child.entity.columns).union(child.resolvedSelects);
+            columns = columns.union(Object.values(child.entity.properties)).union(child.resolvedSelects);
         }
         for (const include of this.includes.filter((o) => o.isEmbedded)) {
             const child = include.child;
-            columns = columns.union(child.entity.columns).union(child.resolvedSelects);
+            columns = columns.union(Object.values(child.entity.properties)).union(child.resolvedSelects);
         }
         return columns;
     }
@@ -109,7 +109,7 @@ export class SelectExpression<TE extends object = any, T = unknown> implements I
                 mapReplaceExp(cloneMap, include.child.entity, this.entity);
                 // add column which include in embedded relation
                 const childSelects = include.child.resolvedSelects.map((o) => {
-                    let curCol = this.entity.columns.find((c) => c.propertyName === o.propertyName);
+                    let curCol = this.entity.properties[o.propertyName as keyof TE];
                     if (!curCol) {
                         curCol = o.clone(cloneMap);
                     }
@@ -138,11 +138,11 @@ export class SelectExpression<TE extends object = any, T = unknown> implements I
             this.itemExpression = itemExp;
 
             if (entity instanceof ProjectionEntityExpression) {
-                this.selects = entity.columns.slice(0);
+                this.selects = Object.values(entity.properties);
                 this.paramExps = entity.paramExps.slice(0);
             }
             else {
-                this.selects = entity.columns.filter((o) => o.columnMeta && o.columnMeta.isProjected);
+                this.selects = Object.values<IColumnExpression<TE>>(entity.properties).filter((o) => o.columnMeta?.isProjected);
             }
             entity.select = this;
         }
@@ -238,8 +238,8 @@ export class SelectExpression<TE extends object = any, T = unknown> implements I
 
             const andExp = new AndExpression();
             for (const [parentColMeta, childColMeta] of relationMeta.relationMaps) {
-                const parentCol: IColumnExpression<TE, ValueType> = this.entity.columns.find((o) => o.propertyName === parentColMeta.propertyName);
-                const childCol: IColumnExpression<TChild, ValueType> = child.entity.columns.find((o) => o.propertyName === childColMeta.propertyName);
+                const parentCol: IColumnExpression<TE, ValueType> = this.entity.properties[parentColMeta.propertyName as keyof TE];
+                const childCol: IColumnExpression<TChild, ValueType> = child.entity.properties[childColMeta.propertyName as keyof TChild];
                 const logicalExp = new StrictEqualExpression(parentCol, childCol);
                 andExp.operands.push(logicalExp);
             }
@@ -278,8 +278,8 @@ export class SelectExpression<TE extends object = any, T = unknown> implements I
 
             const andExp = new AndExpression();
             for (const [parentColMeta, childColMeta] of relationMeta.relationMaps) {
-                const parentCol: IColumnExpression<TE, ValueType> = this.entity.columns.find((o) => o.propertyName === parentColMeta.propertyName);
-                const childCol: IColumnExpression<TChild, ValueType> = child.entity.columns.find((o) => o.propertyName === childColMeta.propertyName);
+                const parentCol: IColumnExpression<TE, ValueType> = this.entity.properties[parentColMeta.propertyName as keyof TE];
+                const childCol: IColumnExpression<TChild, ValueType> = child.entity.properties[childColMeta.propertyName as keyof TChild];
 
                 const logicalExp = new StrictEqualExpression(parentCol, childCol);
                 andExp.operands.push(logicalExp);

@@ -1,7 +1,7 @@
 import { ClassBase } from "../Common/Constant";
 import { ColumnGeneration } from "../Common/Enum";
 import { OrderDirection } from "../Common/StringType";
-import { GenericType, IObjectType } from "../Common/Type";
+import { GenericType, IObjectType, ValueType } from "../Common/Type";
 import { ArrayValueExpression } from "../ExpressionBuilder/Expression/ArrayValueExpression";
 import { isNotNull } from "../Helper/Util";
 import { BooleanColumnMetaData } from "./BooleanColumnMetaData";
@@ -17,12 +17,12 @@ import { InheritanceMetaData } from "./Relation/InheritanceMetaData";
 
 export class AbstractEntityMetaData<TE extends TBase, TBase extends object = object> implements IEntityMetaData<TE, TBase> {
     public get insertGeneratedColumns() {
-        return this.columns.filter((o) => {
+        return Object.values<IColumnMetaData<TE>>(this.properties).filter((o) => {
             return !isNotNull(o.defaultExp) || (o.generation & ColumnGeneration.Insert) as any;
         });
     }
     public get updateGeneratedColumns() {
-        return this.columns.filter((o) => (o.generation & ColumnGeneration.Update));
+        return Object.values<IColumnMetaData<TE>>(this.properties).filter((o) => (o.generation & ColumnGeneration.Update));
     }
 
     constructor(public type: IObjectType<TE>, name?: string) {
@@ -43,10 +43,11 @@ export class AbstractEntityMetaData<TE extends TBase, TBase extends object = obj
         }
     }
     public allowInheritance = false;
-    public columns: Array<IColumnMetaData<TE>> = [];
+    public properties: { [K in keyof TE]?: IColumnMetaData<TE> } = {};
+    public columns: { [K in string]?: IColumnMetaData<TE> } = {};
     public constraints: Array<IConstraintMetaData<TE>> = [];
     public createDateColumn?: DateTimeColumnMetaData<TE>;
-    public defaultOrders?: Array<ArrayValueExpression<((...param: TE[]) => unknown) | OrderDirection>>;
+    public defaultOrders?: Array<ArrayValueExpression<((...param: TE[]) => ValueType) | OrderDirection>>;
     public deletedColumn?: BooleanColumnMetaData<TE>;
     public indices: Array<IndexMetaData<TE>> = [];
     public inheritance: InheritanceMetaData<TBase>;

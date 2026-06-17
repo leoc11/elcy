@@ -9,14 +9,15 @@ import { IQueryExpression } from "./IQueryExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
 import { ColumnGeneration } from "src/Common/Enum";
 import { IQueryIncludeRelation } from "./IQueryIncludeRelation";
+import { IColumnMetaData } from "src/MetaData";
 
 export interface IUpsertIncludeRelation<TE extends object = any, TChild extends object = any> extends IQueryIncludeRelation<TE, TChild, UpsertExpression<TChild>, UpsertExpression<TE>> { }
 export class UpsertExpression<TE extends object = object> implements IQueryExpression<TE> {
     public get insertColumns(): Array<IColumnExpression<TE>> {
         if (!this._insertColumns) {
-            this._insertColumns = Enumerable.from(this.entity.metaData.columns)
+            this._insertColumns = Enumerable.from(Object.values<IColumnMetaData<TE>>(this.entity.metaData.properties))
                 .except(this.entity.metaData.insertGeneratedColumns)
-                .map((o) => this.entity.columns.find((c) => c.propertyName === o.propertyName)).toArray();
+                .map((o) => this.entity.properties[o.propertyName]).toArray();
         }
 
         return this._insertColumns;
@@ -30,7 +31,7 @@ export class UpsertExpression<TE extends object = object> implements IQueryExpre
             this.setter = setter;
         }
         else {
-            this.setter = this.entity.columns
+            this.setter = Object.values<IColumnExpression<TE>>(this.entity.properties)
                 .filter(o => !(o.columnMeta?.generation & ColumnGeneration.Update) && !o.isPrimary)
                 .reduce((r, o) => {
                     r[o.propertyName] = null;
