@@ -38,16 +38,14 @@ export const queryableTest = (db: ITestContext) => {
                 expect(results.length).toBeGreaterThan(0);
                 for (const o of results) {
                     expect(o).toBeInstanceOf(Table1);
-                    const properties = table1Meta.columns.map((o) => o.propertyName);
-                    for (const property of properties) {
+                    for (const property in table1Meta.properties) {
                         expect(o).toHaveProperty(property as any);
                         expect(o[property]).not.toBeNull();
                     }
                     expect(o.table1Manies).toBeInstanceOf(Array);
                     for (const od of o.table1Manies) {
                         expect(od).toBeInstanceOf(Table1Many);
-                        const odProps = table1ManyMeta.columns.map((o) => o.propertyName);
-                        for (const prop of odProps) {
+                        for (const prop in table1ManyMeta.properties) {
                             expect(od).toHaveProperty(prop as any);
                             expect(od[prop]).not.toBeNull();
                         }
@@ -2211,8 +2209,7 @@ export const queryableTest = (db: ITestContext) => {
                 expect(results.length).toBeGreaterThan(0);
                 for (const o of results) {
                     expect(o).toBeInstanceOf(Table1);
-                    const properties = table1Meta.columns.map((o) => o.propertyName);
-                    for (const property of properties) {
+                    for (const property in table1Meta.properties) {
                         expect(o).toHaveProperty(property as any);
                         expect(o[property]).not.toBeNull();
                     }
@@ -2223,8 +2220,7 @@ export const queryableTest = (db: ITestContext) => {
                     expect(o.table1Manies).toBeInstanceOf(Array);
                     for (const od of o.table1Manies) {
                         expect(od).toBeInstanceOf(Table1Many);
-                        const odProps = table1ManyMeta.columns.map((o) => o.propertyName);
-                        for (const prop of odProps) {
+                        for (const prop in table1ManyMeta.properties) {
                             expect(od).toHaveProperty(prop as any);
                             expect(od[prop]).not.toBeNull();
                         }
@@ -3068,7 +3064,7 @@ SELECT 3 as id, 'name 3' as name`;
             });
             it("should union", async () => {
                 const spy = vi.spyOn(db.connection, "query");
-                
+
                 const rawQuery = db.map({ id: BigInt, name: String }).fromSql`SELECT 1 as id, 'name 1' as name
 UNION ALL
 SELECT 2 as id, 'name 2' as name
@@ -3088,8 +3084,8 @@ SELECT 3 as id, 'name 3' as name`;
                     expect(typeof o).toBe("bigint");
                 }
             });
-            it.skip("should not support withRelated if custom schema", async () => {});
-            it.skip("should support withRelated if not custom schema", async () => {});
+            it.skip("should not support withRelated if custom schema", async () => { });
+            it.skip("should support withRelated if not custom schema", async () => { });
         });
     });
 }

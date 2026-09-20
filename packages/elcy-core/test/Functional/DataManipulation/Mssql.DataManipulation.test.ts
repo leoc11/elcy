@@ -1,4 +1,4 @@
-import { describe } from "node:test";
+import { describe } from "bun:test";
 import { MssqlContext } from "../../fixture";
 import { dataManipulationTest } from "./DataManipulation.shared.test";
 

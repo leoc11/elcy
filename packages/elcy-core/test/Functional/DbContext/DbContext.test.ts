@@ -6,7 +6,7 @@ import { Uuid } from "../../../src/Data/Uuid";
 import { mockContext } from "../../fixture/mock/MockContext";
 import { PostgresqlContext, Table1, Table1Many, Table1Table2 } from "../../fixture";
 import { IQuery } from "packages/elcy-core/src/Query/IQuery";
-import { beforeEach } from "node:test";
+import { beforeEach } from "bun:test";
 import { Enumerable } from "@elcy/enumerable";
 
 const db = new PostgresqlContext();

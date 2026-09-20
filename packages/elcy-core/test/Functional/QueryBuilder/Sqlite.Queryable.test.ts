@@ -1,4 +1,4 @@
-import { describe } from "node:test";
+import { describe } from "bun:test";
 import { queryableTest } from "./Queryable.share.test";
 import { SqliteContext } from "../../fixture/SqliteContext";
 

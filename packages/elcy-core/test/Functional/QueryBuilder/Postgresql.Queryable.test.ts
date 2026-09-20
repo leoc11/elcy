@@ -1,4 +1,4 @@
-import { describe } from "node:test";
+import { describe } from "bun:test";
 import { PostgresqlContext } from "../../fixture";
 import { queryableTest } from "./Queryable.share.test";
 
