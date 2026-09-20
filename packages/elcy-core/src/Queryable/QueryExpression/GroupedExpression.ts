@@ -14,8 +14,30 @@ import { SelectExpression } from "./SelectExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { StringKeyOf } from "src/Common/Type";
+import { IEntityExpression } from "./IEntityExpression";
 
-export class GroupedExpression<TE extends object, K = unknown, T = TE> extends SelectExpression<TE, T> {
+export class GroupedExpression<TE, K = unknown> extends SelectExpression<TE> {
+    constructor();
+    constructor(select: SelectExpression<TE>, key: IEntityExpression<K>);
+    constructor(select?: SelectExpression<TE>, key?: IEntityExpression<K>) {
+        super();
+        if (select) {
+            this.key = key;
+            this.entity = select.entity;
+            this.itemExpression = select.itemExpression;
+            this.selects = select.selects.slice();
+            this.distinct = select.distinct;
+            this.isAggregated = select.isAggregated;
+            this.where = select.where;
+            this.orders = select.orders.slice();
+            Object.assign(this.paging, select.paging);
+
+            this.isSubSelect = select.isSubSelect;
+            this.paramExps = select.paramExps.slice();
+        }
+    }
+    public key: IEntityExpression<K>;
+
     public override get allColumns() {
         return Enumerable.from(this.groupBy).union(super.allColumns);
     }
@@ -67,27 +89,7 @@ export class GroupedExpression<TE extends object, K = unknown, T = TE> extends S
     public override get projectedColumns(): IEnumerable<IColumnExpression> {
         return Enumerable.from(super.projectedColumns).union(this.groupBy);
     }
-    constructor();
-    constructor(select: SelectExpression<TE, T>, key: IExpression<K>);
-    constructor(select?: SelectExpression<TE, T>, key?: IExpression<K>) {
-        super();
-        if (select) {
-            this.key = key;
-            this.entity = select.entity;
-            this.itemExpression = select.itemExpression;
-            this.selects = select.selects.slice();
-            this.distinct = select.distinct;
-            this.isAggregated = select.isAggregated;
-            this.where = select.where;
-            this.orders = select.orders.slice();
-            Object.assign(this.paging, select.paging);
-
-            this.isSubSelect = select.isSubSelect;
-            this.paramExps = select.paramExps.slice();
-        }
-    }
     public groupByExp: GroupByExpression<TE, K, T>;
-    public key: IExpression<K>;
 
     private _groupBy: IColumnExpression[];
 

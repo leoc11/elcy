@@ -1,4 +1,3 @@
-import type { ColumnType } from "../../Common/ColumnType";
 import type { GenericType, PrimitiveType, StringKeyOf, ValueType } from "../../Common/Type";
 import type { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import type { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
@@ -6,18 +5,28 @@ import type { IColumnExpression } from "./IColumnExpression";
 import type { IEntityExpression } from "./IEntityExpression";
 import { resolveClone } from "../../Helper/Expression";
 import { hashCode } from "../../Helper/Hash";
+import { isColumnExp, isColumnMeta } from "src/Helper/Util";
 
-export class ColumnExpression<TE extends object = any, T = ValueType> implements IColumnExpression<TE, T> {
+export class ColumnExpression<TE = any, T = ValueType> implements IColumnExpression<TE, T> {
     public get dataPropertyName() {
         return this.alias || this.columnName;
     }
+    constructor(entity: IEntityExpression<TE>, columnExp: IColumnExpression<TE, T>);
     constructor(entity: IEntityExpression<TE>, columnMeta: IColumnMetaData<TE, T>, isPrimary?: boolean);
-    constructor(entity: IEntityExpression<TE>, type: PrimitiveType<T>, propertyName: StringKeyOf<TE>, columnName: string, isPrimary?: boolean, isNullable?: boolean, columnType?: ColumnType);
-    constructor(entity: IEntityExpression<TE>, type: GenericType<T>, propertyName: StringKeyOf<TE>, columnName: string, isPrimary?: boolean, isNullable?: boolean, columnType?: ColumnType);
-    constructor(entity: IEntityExpression<TE>, columnMetaOrType: IColumnMetaData<TE, T> | GenericType<T>, isPrimaryOrPropertyName?: boolean | StringKeyOf<TE>, columnName?: string, isPrimary?: boolean, isNullable?: boolean, columnType?: ColumnType) {
+    constructor(entity: IEntityExpression<TE>, type: PrimitiveType<T>, propertyName: StringKeyOf<TE>, columnName: string, isPrimary?: boolean, isNullable?: boolean);
+    constructor(entity: IEntityExpression<TE>, type: GenericType<T>, propertyName: StringKeyOf<TE>, columnName: string, isPrimary?: boolean, isNullable?: boolean);
+    constructor(entity: IEntityExpression<TE>, colExpOrColMetaOrType: IColumnExpression<TE, T> | IColumnMetaData<TE, T> | GenericType<T>, isPrimaryOrPropertyName?: boolean | StringKeyOf<TE>, columnName?: string, isPrimary?: boolean, isNullable?: boolean) {
         this.entity = entity;
-        if ((columnMetaOrType as IColumnMetaData).entity) {
-            this.columnMeta = columnMetaOrType as IColumnMetaData<TE, T>;
+        if (isColumnExp<TE, T>(colExpOrColMetaOrType)) {
+            this.type = colExpOrColMetaOrType.type;
+            this.propertyName = colExpOrColMetaOrType.propertyName;
+            this.columnName = colExpOrColMetaOrType.columnName;
+            this.isPrimary = colExpOrColMetaOrType.isPrimary;
+            this.isNullable = colExpOrColMetaOrType.isNullable;
+            this.columnMeta = colExpOrColMetaOrType.columnMeta;
+        }
+        else if (isColumnMeta<TE, T>(colExpOrColMetaOrType)) {
+            this.columnMeta = colExpOrColMetaOrType;
             this.type = this.columnMeta.type;
             this.propertyName = this.columnMeta.propertyName;
             this.columnName = this.columnMeta.columnName;
@@ -25,7 +34,7 @@ export class ColumnExpression<TE extends object = any, T = ValueType> implements
             this.isNullable = this.columnMeta.nullable;
         }
         else {
-            this.type = columnMetaOrType as GenericType<T>;
+            this.type = colExpOrColMetaOrType;
             this.propertyName = isPrimaryOrPropertyName as StringKeyOf<TE>;
             this.columnName = columnName;
             this.isPrimary = isPrimary;

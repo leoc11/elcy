@@ -1,12 +1,13 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "types": ["bun"],
     "composite": true,
     "module": "esnext",
     "outDir": "dist",
     "rootDir": "./src",
-    "baseUrl": ".",
     "skipLibCheck": true,
+    "experimentalDecorators":false,
     "declaration": true,
     "noEmit": false
   },

@@ -11,6 +11,11 @@ import { ValueExpression } from "src/ExpressionBuilder/Expression/ValueExpressio
 import { JoinRelation } from "src/Queryable/Interface/JoinRelation";  // TODO: COLDSTART
 import { Null } from "src/Common/Constant";
 import { VALUE_TYPES } from "./Type";
+import { SelectExpression } from "src/Queryable/QueryExpression/SelectExpression";
+import { IBinaryOperatorExpression } from "src/ExpressionBuilder/Expression/IBinaryOperatorExpression";
+import { IUnaryOperatorExpression } from "src/ExpressionBuilder/Expression/IUnaryOperatorExpression";
+import { IMultiOperatorExpression } from "src/ExpressionBuilder/Expression/IMultiOperatorExpression";
+import { JoinType } from "src/Common/StringType";
 
 export const isIterable = (value: unknown): value is Iterable<any> => {
     return typeof (value as any)?.[Symbol.iterator] === 'function';
@@ -23,18 +28,36 @@ export const isEqual = function (a: any, b: any) {
             && b.hasOwnProperty(Symbol.toPrimitive) && a[Symbol.toPrimitive]() === b[Symbol.toPrimitive]()
         );
 };
-export const isEntityExp = <T>(data: IExpression<T>): data is IEntityExpression<T & object> => {
-    return !!(data as IEntityExpression<T & object>)?.entityTypes;
+export const isEntityExp = <T = any>(data: unknown): data is IEntityExpression<T> => {
+    return Boolean((data as IEntityExpression)?.entityTypes);
 };
 export const isExpression = (data: unknown): data is IExpression => {
     const dataEx = data as IExpression;
     return !!(dataEx.type && dataEx.hashCode && dataEx.clone);
 };
+export const isSelectExp = <TE = unknown>(exp: unknown): exp is SelectExpression<TE> => {
+    return exp instanceof SelectExpression;
+}
 export const isGroupExp = (data: IExpression): data is GroupByExpression => {
     return !!(data as GroupByExpression).itemSelect;
 };
-export const isColumnExp = (data: IExpression): data is IColumnExpression => {
+export const isBinaryExp = <T = unknown>(exp: unknown): exp is IBinaryOperatorExpression<T> => {
+    return Boolean((exp as IBinaryOperatorExpression)?.leftOperand);
+};
+export const isUnaryExp = <T = unknown>(exp: unknown): exp is IUnaryOperatorExpression<T> => {
+    return Boolean((exp as IUnaryOperatorExpression)?.operand);
+};
+export const isMultiExp = <T = unknown>(exp: unknown): exp is IMultiOperatorExpression<T> => {
+    return Boolean((exp as IMultiOperatorExpression)?.operands?.length);
+};
+export const isColumnExp = <TE = any, T = ValueType>(data: unknown): data is IColumnExpression<TE, T> => {
     return !!(data as IColumnExpression).entity;
+};
+export const isColumnMeta = <TE extends object = object, T = ValueType>(data: unknown): data is IColumnMetaData<TE, T> => {
+    return isEntityMeta((data as IColumnMetaData).entity);
+};
+export const isEntityMeta = (data: unknown): data is IEntityMetaData => {
+    return Boolean((data as IEntityMetaData).properties && (data as IEntityMetaData).name);
 };
 export const isNonNullExp = (data: IExpression): boolean => {
     if (isColumnExp(data)) {
@@ -74,7 +97,15 @@ export const isNativeFunction = (fn: Function) => {
     const fnString = toString.call(fn);
     return fnString.indexOf("=>") < 0 && fnString.includes("[native code]");
 };
-
+export const reverseJoinType = (joinType: JoinType): JoinType => {
+    switch (joinType) {
+        case "LEFT": return "INNER";
+        case "INNER": return "INNER";
+        case "RIGHT": return "LEFT";
+        case "FULL": return "FULL";
+        case "CROSS": return "CROSS";
+    }
+}
 export const toHexaString = function (binary: ArrayBufferLike | ArrayView): string {
     let bytes: Uint8Array;
     if (!ArrayBuffer.isView(binary)) {
@@ -90,7 +121,7 @@ export const toHexaString = function (binary: ArrayBufferLike | ArrayView): stri
     let hexaString = "";
     for (let i = 0, len = bytes.length; i < len; i++) {
         const a = bytes[i].toString(16);
-        hexaString +=  a.length < 2 ? "0" + a : a;
+        hexaString += a.length < 2 ? "0" + a : a;
     }
     if (!hexaString) {
         hexaString = "0";

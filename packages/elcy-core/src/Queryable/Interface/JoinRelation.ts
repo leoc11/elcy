@@ -3,13 +3,15 @@ import { AndExpression } from "../../ExpressionBuilder/Expression/AndExpression"
 import { EqualExpression } from "../../ExpressionBuilder/Expression/EqualExpression";
 import type { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { StrictEqualExpression } from "../../ExpressionBuilder/Expression/StrictEqualExpression";
-import { isColumnExp } from "../../Helper/Util";
+import { isColumnExp, isExpression } from "../../Helper/Util";
 import { visitExpression, resolveClone } from "../../Helper/Expression";
 import type { IColumnExpression } from "../QueryExpression/IColumnExpression";
-import type { SelectExpression } from "../QueryExpression/SelectExpression";
-import type { ISelectRelation } from "./ISelectRelation";
+import { IEntityExpression } from "../QueryExpression/IEntityExpression";
+import { EmbeddedRelationMetaData, IBaseRelationMetaData, RelationMetaData } from "src/MetaData";
+import { ValueType } from "src/Common/Type";
+import { ValueExpression } from "src/ExpressionBuilder/Expression/ValueExpression";
 
-export class JoinRelation<TE extends object = any, TChild extends object = any> implements ISelectRelation<TE, TChild> {
+export class JoinRelation<TE = any, TChild = any> {
     public get childColumns() {
         if (!this._childColumns) {
             this.analyzeRelation();
@@ -35,23 +37,57 @@ export class JoinRelation<TE extends object = any, TChild extends object = any> 
         this._relations = value;
         this._childColumns = this._parentColumns = this._isManyManyRelation = null;
     }
-    constructor();
-    constructor(parent: SelectExpression<TE, any>, child: SelectExpression<TChild, any>, relations: IExpression<boolean>, type: JoinType);
-    constructor(parent?: SelectExpression<TE, any>, child?: SelectExpression<TChild, any>, relations?: IExpression<boolean>, type?: JoinType) {
-        if (parent) {
-            this.parent = parent;
-            this.child = child;
-            this.relation = relations;
-            this.type = type;
+
+    constructor(parent: IEntityExpression<TE>, child: IEntityExpression<TChild>, relationMeta: IBaseRelationMetaData<TE, TChild>);
+    constructor(parent: IEntityExpression<TE>, child: IEntityExpression<TChild>, relationExp: IExpression<boolean>, type: JoinType);
+    constructor(parent: IEntityExpression<TE>, child: IEntityExpression<TChild>, relMetaOrRelExp?: IBaseRelationMetaData<TE, TChild> | IExpression<boolean>, type?: JoinType) {
+        this.parent = parent;
+        this.child = child;
+
+        let relationExp: IExpression<boolean>;
+        if (isExpression(relMetaOrRelExp)) {
+            relationExp = relMetaOrRelExp;
         }
+        if (relMetaOrRelExp instanceof EmbeddedRelationMetaData) {
+            type = "INNER";
+            relationExp = new ValueExpression(true);
+            this.isEmbedded = true;
+        }
+        else if (relMetaOrRelExp instanceof RelationMetaData) {
+            const relationMeta = relMetaOrRelExp;
+            if (relationMeta.completeRelationType === "many-many") {
+                throw new Error("many-many relation not supported");
+            }
+
+            const andExp = new AndExpression();
+            for (const [parentColMeta, childColMeta] of relationMeta.relationMaps) {
+                const parentCol = parent.properties[parentColMeta.propertyName];
+                const childCol = child.properties[childColMeta.propertyName];
+
+                const logicalExp = new StrictEqualExpression(parentCol, childCol);
+                andExp.operands.push(logicalExp);
+            }
+            relationExp = andExp.asOperand();
+
+            if (relationMeta.relationType === "many") {
+                type = "LEFT";
+            }
+            else if (!type) {
+                type = relationMeta.nullable || relationMeta.isMaster ? "LEFT" : "INNER";
+            }
+        }
+
+        this.relation = relationExp;
+        this.type = type;
     }
-    public child: SelectExpression<TChild>;
+    public parent: IEntityExpression<TE>;
+    public child: IEntityExpression<TChild>;
+    public type: JoinType;
+
     public isEmbedded: boolean;
     //#endregion
 
     //#region Properties
-    public parent: SelectExpression<TE>;
-    public type: JoinType;
     private _childColumns: IColumnExpression[];
     private _isManyManyRelation: boolean;
 
@@ -66,7 +102,7 @@ export class JoinRelation<TE extends object = any, TChild extends object = any> 
         const relation = this.relation ? resolveClone(this.relation, replaceMap) : null;
         const clone = new JoinRelation(parent, child, relation, this.type);
         if (child !== this.child) {
-            child.parentRelation = clone;
+            child.parentJoin = clone;
         }
         clone.isEmbedded = this.isEmbedded;
         return clone;
@@ -76,17 +112,11 @@ export class JoinRelation<TE extends object = any, TChild extends object = any> 
         this._childColumns = [];
         if (this.relation) {
             visitExpression(this.relation, (exp: IExpression) => {
-                if (isColumnExp(exp)) {
-                    if (this.child.entity === exp.entity) {
+                if (isColumnExp<unknown>(exp)) {
+                    if (this.child === exp.entity) {
                         this._childColumns.push(exp);
                     }
-                    else if (this.parent.entity === exp.entity) {
-                        this._parentColumns.push(exp);
-                    }
-                    else if (this.child.allSelects.map((o) => o.entity).includes(exp.entity)) {
-                        this._childColumns.push(exp);
-                    }
-                    else if (this.parent.allSelects.map((o) => o.entity).includes(exp.entity)) {
+                    else if (this.parent === exp.entity) {
                         this._parentColumns.push(exp);
                     }
                 }
@@ -96,11 +126,19 @@ export class JoinRelation<TE extends object = any, TChild extends object = any> 
             });
 
             if (!this._isManyManyRelation) {
-                const childPks = this.child.allSelects.flatMap((o) => o.primaryKeys);
-                const parentPks = this.parent.allSelects.flatMap((o) => o.primaryKeys);
+                const childPks = this.child.primaryColumns;
+                const parentPks = this.parent.primaryColumns;
                 this._isManyManyRelation = this._childColumns.some((o) => !childPks.includes(o)) && this._parentColumns.some((o) => !parentPks.includes(o));
             }
         }
+    }
+    public reverse() {
+        let reverseType = this.type;
+        switch (reverseType) {
+            case "LEFT": reverseType = "INNER"; break;
+            case "RIGHT": reverseType = "LEFT"; break;
+        }
+        return new JoinRelation(this.child, this.parent, this.relation, reverseType);
     }
     //#endregion
 }

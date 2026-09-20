@@ -5,7 +5,7 @@ import { Enumerable } from "@elcy/enumerable";
 import { mockContext } from "../../fixture/mock/MockContext";
 import { IQuery } from "../../../src/Query/IQuery";
 import { getEntityMetadata } from "../../../src/MetaData/MetaDataMapper";
-import { Table1, Table1Many, Table1One, Table1Table2, Table1Table2Many, Table2, Table2Table3, Table3 } from "../../fixture";
+import { PostgresqlContext, Table1, Table1Many, Table1One, Table1Table2, Table1Table2Many, Table2, Table2Table3, Table3 } from "../../fixture";
 import { ITestContext } from "../../fixture/ITestContext";
 import { Temporal } from "../../../src/Data/Temporal";
 import { Querify } from "../../../src/Queryable/Interface/Querify";
@@ -38,18 +38,16 @@ export const queryableTest = (db: ITestContext) => {
                 expect(results.length).toBeGreaterThan(0);
                 for (const o of results) {
                     expect(o).toBeInstanceOf(Table1);
-                    const properties = table1Meta.columns.map((o) => o.propertyName);
-                    for (const property of properties) {
-                        expect(o).toHaveProperty(property as any);
-                        expect(o[property]).not.toBeNull();
+                    for (const property in table1Meta.properties) {
+                        expect(o).toHaveProperty(property);
+                        expect(o[property as keyof Table1]).not.toBeNull();
                     }
                     expect(o.table1Manies).toBeInstanceOf(Array);
                     for (const od of o.table1Manies) {
                         expect(od).toBeInstanceOf(Table1Many);
-                        const odProps = table1ManyMeta.columns.map((o) => o.propertyName);
-                        for (const prop of odProps) {
-                            expect(od).toHaveProperty(prop as any);
-                            expect(od[prop]).not.toBeNull();
+                        for (const prop in table1ManyMeta.properties) {
+                            expect(od).toHaveProperty(prop);
+                            expect(od[prop as keyof Table1Many]).not.toBeNull();
                         }
                     }
                 }
@@ -2211,10 +2209,9 @@ export const queryableTest = (db: ITestContext) => {
                 expect(results.length).toBeGreaterThan(0);
                 for (const o of results) {
                     expect(o).toBeInstanceOf(Table1);
-                    const properties = table1Meta.columns.map((o) => o.propertyName);
-                    for (const property of properties) {
-                        expect(o).toHaveProperty(property as any);
-                        expect(o[property]).not.toBeNull();
+                    for (const property in table1Meta.properties) {
+                        expect(o).toHaveProperty(property);
+                        expect(o[property as keyof Table1]).not.toBeNull();
                     }
                     expect(o.table1Table2s).toBeInstanceOf(Array);
                     for (const od of o.table1Table2s) {
@@ -2223,10 +2220,9 @@ export const queryableTest = (db: ITestContext) => {
                     expect(o.table1Manies).toBeInstanceOf(Array);
                     for (const od of o.table1Manies) {
                         expect(od).toBeInstanceOf(Table1Many);
-                        const odProps = table1ManyMeta.columns.map((o) => o.propertyName);
-                        for (const prop of odProps) {
-                            expect(od).toHaveProperty(prop as any);
-                            expect(od[prop]).not.toBeNull();
+                        for (const prop in table1ManyMeta.properties) {
+                            expect(od).toHaveProperty(prop);
+                            expect(od[prop as keyof Table1Many]).not.toBeNull();
                         }
                     }
                 }
@@ -3093,3 +3089,5 @@ SELECT 3 as id, 'name 3' as name`;
         });
     });
 }
+
+queryableTest(new PostgresqlContext());

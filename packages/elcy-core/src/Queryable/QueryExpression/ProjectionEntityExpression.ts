@@ -11,7 +11,7 @@ import { IEntityExpression } from "./IEntityExpression";
 import { SelectExpression } from "./SelectExpression";
 import { SqlParameterExpression } from "./SqlParameterExpression";
 
-export class ProjectionEntityExpression<TE extends object = object> implements IEntityExpression<TE> {
+export class ProjectionEntityExpression<TE = any> implements IEntityExpression<TE> {
     public get primaryColumns(): IColumnExpression<TE>[] {
         if (!this._primaryColumns) {
             this._primaryColumns = Object.values<IColumnExpression<TE>>(this.properties).filter((o) => o.isPrimary);
@@ -27,7 +27,7 @@ export class ProjectionEntityExpression<TE extends object = object> implements I
         }
         return this._selectedColumns;
     }
-    constructor(public subSelect: SelectExpression<TE>, type?: GenericType<TE>) {
+    constructor(public subSelect: SelectExpression, type?: GenericType<TE>) {
         subSelect.isSubSelect = true;
         this.alias = subSelect.entity.alias;
         this.name = subSelect.entity.name;
@@ -42,7 +42,7 @@ export class ProjectionEntityExpression<TE extends object = object> implements I
         // TODO
         // this.defaultOrders = subSelect.orders.slice(0) as any;
         this.entityTypes = this.subSelect.entity.entityTypes.slice();
-        this.type = type ?? subSelect.itemType as GenericType<TE>;
+        this.type = type ?? subSelect.itemType as GenericType<TE> ?? Object;
         this.paramExps = subSelect.paramExps;
     }
     public alias: string;

@@ -107,7 +107,7 @@ export class QueryTranslator {
         map[""] = translateItem;
     }
 
-    public resolve(object: any, memberName?: string) {
+    public resolve(object: unknown, memberName?: string) {
         const map = this._map.get(object);
         let item = map && map[memberName || ""];
         if (!item?.translate) {

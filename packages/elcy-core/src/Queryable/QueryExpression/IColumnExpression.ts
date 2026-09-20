@@ -4,9 +4,9 @@ import { IColumnMetaData } from "../../MetaData/Interface/IColumnMetaData";
 import { IEntityExpression } from "./IEntityExpression";
 
 // TODO: should be implemented as uninary expression
-export interface IColumnExpression<TE extends object = any, T = ValueType> extends IExpression<T> {
+export interface IColumnExpression<TE = any, T = ValueType> extends IExpression<T> {
     alias?: string;
-    columnMeta?: IColumnMetaData<TE, T>;
+    columnMeta?: IColumnMetaData<Extract<TE, object>, T>;
     columnName: string;
     dataPropertyName: string;
     entity: IEntityExpression<TE>;
@@ -14,6 +14,5 @@ export interface IColumnExpression<TE extends object = any, T = ValueType> exten
     isPrimary: boolean;
     propertyName: StringKeyOf<TE>;
     type: GenericType<T>;
-    clone(replaceMap?: Map<IExpression, IExpression>): IColumnExpression<TE, T>;
     hashCode(): number;
 }

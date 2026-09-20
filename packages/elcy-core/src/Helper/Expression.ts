@@ -43,7 +43,64 @@ export const mapReplaceExp = function (replaceMap: Map<IExpression, IExpression>
             }
         }
     }
-};export const mapKeepExp = function (replaceMap: Map<IExpression, IExpression>, exp: IExpression) {
+};
+export const createExpression = <T extends IExpression>(template: T, searchExp: IExpression, replaceExp?: IExpression) => {
+    if (!replaceExp) {
+        replaceExp = searchExp;
+    }
+    const replaceMap = createReplaceMap(searchExp, replaceExp);
+    return template.clone(replaceMap);
+}
+export const createExpression2 = <T extends IExpression>(template: T, searchExps: IExpression[], replaceExps?: IExpression[]) => {
+    if (!replaceExps) {
+        replaceExps = replaceExps;
+    }
+    const replaceMap = new Map();
+    let i = 0;
+    for (const searchExp of searchExps) {
+        createReplaceMap(searchExp, replaceExps[i++], replaceMap);
+    }
+    return template.clone(replaceMap);
+}
+export const createReplaceMap = function (sourceExp: IExpression, targetExp: IExpression, replaceMap?: Map<IExpression, IExpression>) {
+    if (!replaceMap) {
+        replaceMap = new Map();
+    }
+
+    replaceMap.set(sourceExp, targetExp);
+    if ((sourceExp as SelectExpression).projectedColumns && (targetExp as SelectExpression).projectedColumns) {
+        const selectExp1 = sourceExp as SelectExpression;
+        const selectExp2 = targetExp as SelectExpression;
+        createReplaceMap(selectExp1.entity, selectExp2.entity, replaceMap);
+        if (isGroupExp(selectExp1) && isGroupExp(selectExp2)) {
+            createReplaceMap(selectExp1.key, selectExp2.key, replaceMap);
+            createReplaceMap(selectExp1.itemSelect, selectExp2.itemSelect, replaceMap);
+        }
+
+        const projectedCol = selectExp2.projectedColumns;
+        for (const col of selectExp1.projectedColumns) {
+            const tCol = projectedCol.find((o) => o.propertyName === col.propertyName);
+            if (tCol) {
+                replaceMap.set(col, tCol);
+            }
+        }
+    }
+    else if ((sourceExp as IEntityExpression).primaryColumns && (targetExp as IEntityExpression).primaryColumns) {
+        const entityExp1 = sourceExp as IEntityExpression;
+        const entityExp2 = targetExp as IEntityExpression;
+        for (const propertyKey in entityExp1.properties) {
+            const tCol = entityExp2.properties[propertyKey];
+            if (tCol) {
+                const col = entityExp1.properties[propertyKey];
+                replaceMap.set(col, tCol);
+            }
+        }
+    }
+
+    return replaceMap;
+};
+
+export const mapKeepExp = function (replaceMap: Map<IExpression, IExpression>, exp: IExpression) {
     replaceMap.set(exp, exp);
     if ((exp as SelectExpression).projectedColumns) {
         const selectExp = exp as SelectExpression;

@@ -37,3 +37,18 @@ const match = <T>(actual: T, matchValue: ObjectLike<T>, path: string[]): boolean
 
     return false;
 }
+
+export const matchSnapshotWhitelist = <T>(actual: T, ignores: any[]) => {
+    const json = JSON.parse(JSON.stringify(actual, (_, value) => {
+        if (ignores.includes(value)) {
+            return expect.anything();
+        }
+        if (typeof value === "string") {
+            return ignores.reduce((r, o) => r.replaceAll(o, expect.anything()), value);
+        }
+
+        return value;
+    }));
+
+    expect(json).toMatchSnapshot();
+};

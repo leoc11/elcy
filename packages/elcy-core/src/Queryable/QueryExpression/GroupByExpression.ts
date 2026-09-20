@@ -17,8 +17,27 @@ import { SelectExpression } from "./SelectExpression";
 import { IOrderExpression } from "./IOrderExpression";
 import { IGroupArray } from "src/Common/IGroupArray";
 import { StringKeyOf } from "src/Common/Type";
+import { IEntityExpression } from "./IEntityExpression";
 
-export class GroupByExpression<TE extends object = object, K = unknown, T = unknown> extends SelectExpression<TE, IGroupArray<K, T>> {
+export class GroupByExpression<TE = any, K = unknown> extends SelectExpression<IGroupArray<K, TE>> {
+    constructor(select: SelectExpression<TE>, key: IEntityExpression<K>) {
+        super();
+        
+        this.entity = key;
+
+        const groupedExp = new GroupedExpression(select, key);
+        const relations = new AndExpression();
+        for (const prop in key.properties) {
+            
+        }
+        this.addInclude("items", groupedExp,)
+        this.itemSelect.groupByExp = this;
+        this.entity.select = this;
+        this.selects = Object.values(key.properties);
+    }
+
+
+
     public override get allColumns() {
         return Enumerable.from(this.groupBy).concat(super.allColumns);
     }
@@ -72,10 +91,10 @@ export class GroupByExpression<TE extends object = object, K = unknown, T = unkn
         }
     }
     public get key() {
-        return this.itemSelect.key;
+        return this.itemSelect.key as unknown as IEntityExpression<TE>;
     }
     public set key(value) {
-        this.itemSelect.key = value;
+        this.itemSelect.key = value as unknown as IEntityExpression<TE>;
     }
     public override get orders() {
         return this.itemSelect.orders;
@@ -183,54 +202,6 @@ export class GroupByExpression<TE extends object = object, K = unknown, T = unkn
     public override set where(value) {
         if (this.itemSelect) {
             this.itemSelect.where = value;
-        }
-    }
-
-    constructor(grouped: GroupedExpression<TE, K, T>);
-    constructor(select: SelectExpression<TE, T>, key: IExpression);
-    constructor(select: SelectExpression<TE, T> | GroupedExpression<TE, T>, key?: IExpression<K>) {
-        super();
-        if (select instanceof GroupedExpression) {
-            this.itemSelect = select as GroupedExpression<TE, K, T>;
-            this.itemSelect.groupByExp = this;
-        }
-        else {
-            this.itemSelect = new GroupedExpression(select, key);
-            this.itemSelect.groupByExp = this;
-            this.entity.select = this;
-            this.selects = this.groupBy.slice();
-            for (const include of select.includes) {
-                this.addInclude(include.name, include.child, include.relation, include.type);
-            }
-            for (const join of select.joins) {
-                this.addJoin(join.child, join.relation, join.type);
-            }
-
-            const parentRel = select.parentRelation;
-            if (parentRel) {
-                parentRel.child = this as SelectExpression<TE, unknown>;
-                this.parentRelation = parentRel;
-                select.parentRelation = null;
-            }
-
-            if (isEntityExp(key)) {
-                // set key parent relation to this.
-                const selectExp = key.select;
-                const keyParentRel = selectExp.parentRelation;
-                if (keyParentRel) {
-                    const replaceMap = new Map();
-                    for (const col of keyParentRel.childColumns) {
-                        replaceMap.set(col, col);
-                    }
-                    for (const oriCol of keyParentRel.parentColumns) {
-                        const col = this.projectedColumns.find(o => o.columnName === oriCol.columnName);
-                        replaceMap.set(oriCol, col);
-                    }
-                    const relation = resolveClone(keyParentRel.relation, replaceMap);
-                    this.addKeyRelation(selectExp, relation, "one");
-                    this.keyRelation.isEmbedded = keyParentRel.isEmbedded;
-                }
-            }
         }
     }
 

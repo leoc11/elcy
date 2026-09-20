@@ -11,7 +11,7 @@ import { SelectExpression } from "../QueryExpression/SelectExpression";
 import { ISelectRelation } from "./ISelectRelation";
 import { Enumerable } from "@elcy/enumerable";
 
-export class IncludeRelation<TE extends object = any, TChild extends object = any> implements ISelectRelation<TE, TChild> {
+export class IncludeRelation<TE = any, TChild = any> implements ISelectRelation<TE, TChild> {
     public get childColumns() {
         if (!this._childColumns) {
             this.analyzeRelation();
@@ -31,8 +31,8 @@ export class IncludeRelation<TE extends object = any, TChild extends object = an
         return this._parentColumns;
     }
     constructor();
-    constructor(parent: SelectExpression<TE, any>, child: SelectExpression<TChild, any>, name: string, type: RelationshipType, relations?: IExpression<boolean>);
-    constructor(parent?: SelectExpression<TE, any>, child?: SelectExpression<TChild, any>, name?: string, type?: RelationshipType, relations?: IExpression<boolean>) {
+    constructor(parent: SelectExpression<TE>, child: SelectExpression<TChild>, name: string, type: RelationshipType, relations?: IExpression<boolean>);
+    constructor(parent?: SelectExpression<TE>, child?: SelectExpression<TChild>, name?: string, type?: RelationshipType, relations?: IExpression<boolean>) {
         if (parent) {
             this.parent = parent;
             this.child = child;

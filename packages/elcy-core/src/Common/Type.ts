@@ -39,7 +39,7 @@ export type ValueType = ValueTypeRegistry[keyof ValueTypeRegistry];
 export type DbValue = string | number | boolean | null | bigint | Date | Uint8Array;
 export type ArrayView = Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array
     | Uint32Array | Uint8ClampedArray | Float32Array | Float64Array | ArrayBufferView;
-export type ElementType<T> = T extends (infer K)[] ? K : never;
+export type ElementType<T> = T extends Iterable<infer K> ? K : never;
 export type MethodKey<T> = { [K in StringKeyOf<T>]: T[K] extends (...args: unknown[]) => unknown ? K : never; }[StringKeyOf<T>];
 export type MethodReturnType<T, K extends StringKeyOf<T>> = T[K] extends (...args: unknown[]) => infer R ? R : never;
 export type SetterObj<TE, T extends TE[keyof TE] = TE[keyof TE]> = { [K in keyof TE]?: IExpression<T> }

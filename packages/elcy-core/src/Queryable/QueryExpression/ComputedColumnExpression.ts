@@ -1,11 +1,13 @@
+import { IColumnMetaData } from "src/MetaData";
 import { GenericType, StringKeyOf, ValueType } from "../../Common/Type";
 import { IExpression } from "../../ExpressionBuilder/Expression/IExpression";
 import { resolveClone } from "../../Helper/Expression";
 import { hashCode, hashCodeAdd } from "../../Helper/Hash";
+import { ColumnExpression } from "./ColumnExpression";
 import { IColumnExpression } from "./IColumnExpression";
 import { IEntityExpression } from "./IEntityExpression";
 
-export class ComputedColumnExpression<TE extends object = object, T = ValueType> implements IColumnExpression<TE, T> {
+export class ComputedColumnExpression<TE = any, T = ValueType> implements IColumnExpression<TE, T> {
     public get columnName() {
         return this.propertyName;
     }
@@ -18,7 +20,12 @@ export class ComputedColumnExpression<TE extends object = object, T = ValueType>
     constructor(public entity: IEntityExpression<TE>, public expression: IExpression<T>, public propertyName: StringKeyOf<TE>, public alias?: string) {
         if (expression instanceof ComputedColumnExpression) {
             this.expression = expression.expression;
+            this.columnMeta = expression.columnMeta;
         }
+        else if (expression instanceof ColumnExpression) {
+            this.columnMeta = expression.columnMeta;
+        }
+
         if (!this.alias) {
             this.alias = this.propertyName;
         }
@@ -29,6 +36,7 @@ export class ComputedColumnExpression<TE extends object = object, T = ValueType>
     public isDeclared = false;
     public isNullable = true;
     public isPrimary = false;
+    public columnMeta?: IColumnMetaData<Extract<TE, object>, T>;
     public clone(replaceMap?: Map<IExpression, IExpression>) {
         if (!replaceMap) {
             replaceMap = new Map();
@@ -39,7 +47,7 @@ export class ComputedColumnExpression<TE extends object = object, T = ValueType>
         replaceMap.set(this, clone);
         clone.isPrimary = this.isPrimary;
         clone.isNullable = this.isNullable;
-        return clone;
+        return clone as this;
     }
     public hashCode() {
         return hashCode(this.propertyName, hashCodeAdd(this.entity.hashCode(), this.expression.hashCode()));
